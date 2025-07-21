@@ -1,0 +1,48 @@
+# Node.js (frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.DS_Store
+
+# Go
+cdl-api/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Database dumps/backups
+*.sql
+*.sqlite
+*.db
+
+# System files
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# Vite/Build
+frontend/.vite/
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependency files (if not needed)
+go.sum
+package-lock.json
+
+# Misc
+.env
