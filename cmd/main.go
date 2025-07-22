@@ -89,7 +89,7 @@ func setupRouter() *gin.Engine {
 
 func corsMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     []string{"https://cdlystics.me", "https://cdlystics.com"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
