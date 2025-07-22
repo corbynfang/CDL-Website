@@ -1,15 +1,16 @@
-# 1. Build the frontend
+# 1. Build the frontend with Yarn for lower memory usage
 FROM node:20 AS frontend-build
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm install -g yarn
+RUN yarn install
 COPY frontend/ ./
-RUN npm run build
+RUN yarn build
 
 # 2. Build the backend
 FROM golang:1.21 AS backend-build
 WORKDIR /app
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN go build -o main ./cmd/main.go
