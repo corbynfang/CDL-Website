@@ -23,18 +23,23 @@ func ConnectDatabase() {
 		log.Println("No .env file found, using system environment variables")
 	}
 
-	// Build connection string
-	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s&TimeZone=UTC",
-		getEnv("DB_USER", "postgres"),
-		getEnv("DB_PASSWORD", ""),
-		getEnv("DB_HOST", "localhost"),
-		getEnv("DB_PORT", "5432"),
-		getEnv("DB_NAME", "cdl_stats"),
-		getEnv("DB_SSLMODE", "disable"),
-	)
-
-	log.Printf("Connecting to database with DSN: %s", dsn)
-
+	var dsn string
+	dbURL := getEnv("DB_URL", "")
+	if dbURL != "" {
+		dsn = dbURL
+		log.Println("Using DB_URL from environment")
+	} else {
+		// Build connection string from individual parts
+		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s&TimeZone=UTC",
+			getEnv("DB_USER", "postgres"),
+			getEnv("DB_PASSWORD", ""),
+			getEnv("DB_HOST", "localhost"),
+			getEnv("DB_PORT", "5432"),
+			getEnv("DB_NAME", "cdl_stats"),
+			getEnv("DB_SSLMODE", "disable"),
+		)
+		log.Println("Using individual DB environment variables")
+	}
 	// Connect to database
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
