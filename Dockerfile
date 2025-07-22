@@ -2,10 +2,9 @@
 FROM node:20 AS frontend-build
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install -g yarn
-RUN yarn install
+RUN npm install
 COPY frontend/ ./
-RUN yarn build
+RUN npm run build
 
 # 2. Build the backend
 FROM golang:1.24 AS backend-build
