@@ -8,9 +8,9 @@ COPY frontend/ ./
 RUN yarn build
 
 # 2. Build the backend
-FROM golang:1.21 AS backend-build
+FROM golang:1.24 AS backend-build
 WORKDIR /app
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN go build -o main ./cmd/main.go
