@@ -24,10 +24,10 @@ func ConnectDatabase() {
 	}
 
 	var dsn string
-	dbURL := getEnv("DB_URL", "")
+	dbURL := getEnv("DATABASE_URL", "")
 	if dbURL != "" {
 		dsn = dbURL
-		log.Println("Using DB_URL from environment")
+		log.Println("Using DATABASE_URL from environment")
 	} else {
 		// Build connection string from individual parts
 		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s&TimeZone=UTC",
@@ -40,6 +40,7 @@ func ConnectDatabase() {
 		)
 		log.Println("Using individual DB environment variables")
 	}
+
 	// Connect to database
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
