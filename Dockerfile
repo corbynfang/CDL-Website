@@ -1,6 +1,8 @@
 # 1. Build the frontend with Yarn for lower memory usage
 FROM node:20 AS frontend-build
 WORKDIR /app/frontend
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
