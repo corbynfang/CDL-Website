@@ -35,7 +35,7 @@ func main() {
 	})
 
 	// API routes
-	api := r.Group("/api")
+	api := r.Group("/api/v1")
 	{
 		// Team routes
 		api.GET("/teams", handlers.GetTeams)
