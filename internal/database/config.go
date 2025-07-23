@@ -25,6 +25,7 @@ func ConnectDatabase() {
 
 	var dsn string
 	dbURL := getEnv("DATABASE_URL", "")
+	log.Printf("DATABASE_URL: %s", dbURL) // debug
 	if dbURL != "" {
 		dsn = dbURL
 		log.Println("Using DATABASE_URL from environment")

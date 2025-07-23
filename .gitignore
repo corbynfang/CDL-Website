@@ -45,3 +45,6 @@ package-lock.json
 
 # Misc
 .env
+
+# Local environment variables
+.env
