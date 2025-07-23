@@ -2,65 +2,40 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
+	"path/filepath"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
 	"github.com/corbynfang/CDL-Website/internal/handlers"
-
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
-	}
-
+	// Connect to database
 	database.ConnectDatabase()
-	// Enable AutoMigrate to ensure GORM can map the tables properly
-	database.AutoMigrate()
 	defer database.CloseDatabase()
 
-	router := setupRouter()
+	// Auto-migrate database tables
+	database.AutoMigrate()
 
-	port := getEnv("PORT", "8080")
-	log.Printf("Starting server on port %s", port)
+	// Create Gin router
+	r := gin.Default()
 
-	go func() {
-		if err := router.Run(":" + port); err != nil {
-			log.Fatal("Failed to start server: ", err)
+	// CORS middleware (if needed)
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
 		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Println("Shutting down server...")
-}
-
-func setupRouter() *gin.Engine {
-	if getEnv("GIN_MODE", "debug") == "release" {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	router := gin.Default()
-
-	router.Use(corsMiddleware())
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
-
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  "healthy",
-			"message": "CDL Stats API is running",
-		})
+		c.Next()
 	})
 
-	api := router.Group("/api/v1")
+	// API routes
+	api := r.Group("/api")
 	{
 		// Team routes
 		api.GET("/teams", handlers.GetTeams)
@@ -72,34 +47,45 @@ func setupRouter() *gin.Engine {
 		api.GET("/players", handlers.GetPlayers)
 		api.GET("/players/:id", handlers.GetPlayer)
 		api.GET("/players/:id/stats", handlers.GetPlayerStats)
-		api.GET("/players/:id/kd-stats", handlers.GetPlayerKDStats)
-		api.GET("/stats/top-kd", handlers.GetTopKDPlayers)
-		api.GET("/stats/top-kd-new", handlers.GetTopKDPlayersNew)
+		api.GET("/players/:id/kd", handlers.GetPlayerKDStats)
+		api.GET("/players/top-kd", handlers.GetTopKDPlayers)
+		api.GET("/players/top-kd-new", handlers.GetTopKDPlayersNew)
+		api.GET("/players/all-kd-stats", handlers.GetAllPlayersKDStats)
 
 		// Tournament routes
 		api.GET("/tournaments", handlers.GetTournaments)
 		api.GET("/tournaments/:id", handlers.GetTournament)
-
-		// KD stats for all players and all majors
-		api.GET("/stats/all-kd-by-tournament", handlers.GetAllPlayersKDStats)
 	}
 
-	return router
-}
+	// Serve static files from frontend/dist
+	r.Static("/assets", "./frontend/dist/assets")
+	r.StaticFile("/favicon.ico", "./frontend/dist/favicon.ico")
 
-func corsMiddleware() gin.HandlerFunc {
-	return cors.New(cors.Config{
-		AllowOrigins:     []string{"https://cdlystics.me", "https://cdlystics.com"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
+	// Serve index.html for all non-API routes (SPA catch-all)
+	r.NoRoute(func(c *gin.Context) {
+		// Don't serve index.html for API routes
+		if len(c.Request.URL.Path) >= 4 && c.Request.URL.Path[:4] == "/api" {
+			c.JSON(404, gin.H{"error": "API endpoint not found"})
+			return
+		}
+
+		// Check if file exists in dist folder
+		filePath := filepath.Join("./frontend/dist", c.Request.URL.Path)
+		if _, err := os.Stat(filePath); err == nil {
+			c.File(filePath)
+			return
+		}
+
+		// Serve index.html for all other routes (SPA routing)
+		c.File("./frontend/dist/index.html")
 	})
-}
 
-func getEnv(key, fallback string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+	// Get port from environment variable (Railway sets this)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // Default port for local development
 	}
-	return fallback
+
+	log.Printf("Server starting on port %s", port)
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
