@@ -24,21 +24,26 @@ func ConnectDatabase() {
 	}
 
 	var dsn string
-	dbURL := getEnv("DATABASE_URL", "")
-	log.Printf("DATABASE_URL: %s", dbURL) // debug
+	var dbURL string
+
 	if dbURL != "" {
 		dsn = dbURL
 		log.Println("Using DATABASE_URL from environment")
 	} else {
 		// Build connection string from individual parts
+		host := getEnv("DB_HOST", "localhost")
+		port := getEnv("DB_PORT", "5432")
+		user := getEnv("DB_USER", "postgres")
+		password := getEnv("DB_PASSWORD", "")
+		dbname := getEnv("DB_NAME", "cdl_stats")
+		sslmode := getEnv("DB_SSLMODE", "disable")
+
+		// Log the values being used (without password)
+		log.Printf("DB connection details - Host: %s, Port: %s, User: %s, DB: %s, SSL: %s",
+			host, port, user, dbname, sslmode)
+
 		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s&TimeZone=UTC",
-			getEnv("DB_USER", "postgres"),
-			getEnv("DB_PASSWORD", ""),
-			getEnv("DB_HOST", "localhost"),
-			getEnv("DB_PORT", "5432"),
-			getEnv("DB_NAME", "cdl_stats"),
-			getEnv("DB_SSLMODE", "disable"),
-		)
+			user, password, host, port, dbname, sslmode)
 		log.Println("Using individual DB environment variables")
 	}
 

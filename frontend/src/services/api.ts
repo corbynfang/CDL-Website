@@ -114,7 +114,7 @@ export const playerApi = {
 
   // Get player KD stats
   getPlayerKDStats: async (playerId: number): Promise<PlayerKDStatsData> => {
-    const response: AxiosResponse<PlayerKDStatsData> = await api.get(`/players/${playerId}/kd-stats`);
+    const response: AxiosResponse<PlayerKDStatsData> = await api.get(`/players/${playerId}/kd`);
     return response.data;
   },
 };
