@@ -51,6 +51,7 @@ func main() {
 		api.GET("/players/top-kd", handlers.GetTopKDPlayers)
 		api.GET("/players/top-kd-new", handlers.GetTopKDPlayersNew)
 		api.GET("/players/all-kd-stats-tournament", handlers.GetAllPlayersKDStats)
+		api.GET("/stats/all-kd-by-tournament", handlers.GetAllPlayersKDStats)
 
 		// Tournament routes
 		api.GET("/tournaments", handlers.GetTournaments)
