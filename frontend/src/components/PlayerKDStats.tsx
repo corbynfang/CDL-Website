@@ -264,7 +264,7 @@ const PlayerKDStats: React.FC = () => {
         </div>
       )}
 
-      {/* Recent Tournaments */}
+      {/* Recent Tournaments - Updated to show tournament names */}
       {kdStats.tournament_stats && kdStats.tournament_stats.length > 0 && (
         <div className="card">
           <h3 className="text-lg font-semibold text-white mb-4">Recent Tournaments</h3>
