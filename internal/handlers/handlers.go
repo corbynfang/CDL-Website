@@ -152,11 +152,11 @@ func GetPlayerKDStats(c *gin.Context) {
 		return
 	}
 
-	var stats []database.PlayerMatchStats
+	var stats []database.PlayerTournamentStats
 	if err := database.DB.Where("player_id = ?", playerID).
-		Preload("Match").
+		Preload("Tournament").
 		Preload("Team").
-		Order("match_id DESC").
+		Order("tournament_id DESC").
 		Find(&stats).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player K/D stats"})
 		return
@@ -168,7 +168,7 @@ func GetPlayerKDStats(c *gin.Context) {
 	var totalMaps int
 
 	for _, stat := range stats {
-		tournamentID := int(stat.Match.TournamentID)
+		tournamentID := int(stat.TournamentID)
 
 		if tournamentStats[tournamentID] == nil {
 			// Get tournament name
@@ -201,13 +201,13 @@ func GetPlayerKDStats(c *gin.Context) {
 		tournament["kills"] = tournament["kills"].(int) + stat.TotalKills
 		tournament["deaths"] = tournament["deaths"].(int) + stat.TotalDeaths
 		tournament["assists"] = tournament["assists"].(int) + stat.TotalAssists
-		tournament["maps_played"] = tournament["maps_played"].(int) + stat.MapsPlayed
+		tournament["maps_played"] = tournament["maps_played"].(int) + 1 // Each tournament stat represents one tournament
 		tournament["matches"] = tournament["matches"].(int) + 1
 
 		totalKills += stat.TotalKills
 		totalDeaths += stat.TotalDeaths
 		totalAssists += stat.TotalAssists
-		totalMaps += stat.MapsPlayed
+		totalMaps += 1
 	}
 
 	// Calculate KD ratios for each tournament
@@ -241,6 +241,23 @@ func GetPlayerKDStats(c *gin.Context) {
 		avgADR = float64(totalKills*100) / float64(totalMaps) // Simplified ADR calculation
 	}
 
+	// Create mock match stats from tournament stats for compatibility
+	var matchStats []gin.H
+	for _, stat := range stats {
+		matchStats = append(matchStats, gin.H{
+			"id":            stat.ID,
+			"match_id":      stat.TournamentID,
+			"player_id":     stat.PlayerID,
+			"team_id":       stat.TeamID,
+			"maps_played":   1,
+			"total_kills":   stat.TotalKills,
+			"total_deaths":  stat.TotalDeaths,
+			"total_assists": stat.TotalAssists,
+			"kd_ratio":      stat.KDRatio,
+			"kda_ratio":     stat.KDARatio,
+		})
+	}
+
 	response := gin.H{
 		"player_id":        playerID,
 		"total_matches":    len(stats),
@@ -252,7 +269,7 @@ func GetPlayerKDStats(c *gin.Context) {
 		"avg_kda":          avgKDA,
 		"avg_adr":          avgADR,
 		"tournament_stats": tournamentStatsList,
-		"match_stats":      stats,
+		"match_stats":      matchStats,
 	}
 
 	c.JSON(http.StatusOK, response)

@@ -149,6 +149,28 @@ func (PlayerMatchStats) TableName() string {
 	return "player_match_stats"
 }
 
+type PlayerTournamentStats struct {
+	ID           uint    `json:"id" gorm:"primaryKey"`
+	PlayerID     uint    `json:"player_id"`
+	TeamID       uint    `json:"team_id"`
+	TournamentID uint    `json:"tournament_id"`
+	TotalKills   int     `json:"total_kills"`
+	TotalDeaths  int     `json:"total_deaths"`
+	TotalAssists int     `json:"total_assists"`
+	TotalDamage  int     `json:"total_damage"`
+	KDRatio      float64 `json:"kd_ratio"`
+	KDARatio     float64 `json:"kda_ratio"`
+
+	// Relationships
+	Player     Player     `json:"player" gorm:"foreignKey:PlayerID"`
+	Team       Team       `json:"team" gorm:"foreignKey:TeamID"`
+	Tournament Tournament `json:"tournament" gorm:"foreignKey:TournamentID"`
+}
+
+func (PlayerTournamentStats) TableName() string {
+	return "player_tournament_stats"
+}
+
 type TeamTournamentStats struct {
 	ID            uint      `json:"id" gorm:"primaryKey"`
 	TournamentID  uint      `json:"tournament_id"`

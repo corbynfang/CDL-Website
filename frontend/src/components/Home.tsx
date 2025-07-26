@@ -67,7 +67,7 @@ const Home: React.FC = () => {
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Live Statistics</h3>
             <p className="text-gray-400">
-              Real-time match data, K/D ratios, damage statistics, and more.
+              Real-time match data (BETA), K/D ratios, damage statistics, and more.
             </p>
           </div>
         </div>

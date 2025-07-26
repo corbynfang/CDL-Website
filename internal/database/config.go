@@ -44,7 +44,7 @@ func ConnectDatabase() {
 		log.Printf("DB connection details - Host: %s, Port: %s, User: %s, DB: %s, SSL: %s",
 			host, port, user, dbname, sslmode)
 
-		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s&TimeZone=UTC",
+		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
 			user, password, host, port, dbname, sslmode)
 		log.Println("Using individual DB environment variables")
 	}
@@ -95,6 +95,7 @@ func AutoMigrate() {
 		&Tournament{},
 		&Match{},
 		&PlayerMatchStats{},
+		&PlayerTournamentStats{},
 		&TeamTournamentStats{},
 	)
 
