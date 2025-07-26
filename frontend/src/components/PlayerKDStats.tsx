@@ -264,15 +264,15 @@ const PlayerKDStats: React.FC = () => {
         </div>
       )}
 
-      {/* Match History */}
-      {kdStats.match_stats.length > 0 && (
+      {/* Recent Tournaments */}
+      {kdStats.tournament_stats && kdStats.tournament_stats.length > 0 && (
         <div className="card">
-          <h3 className="text-lg font-semibold text-white mb-4">Recent Matches</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Recent Tournaments</h3>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-700">
-                  <th className="text-left py-2 px-4 text-gray-300 text-sm">Match</th>
+                  <th className="text-left py-2 px-4 text-gray-300 text-sm">Tournament</th>
                   <th className="text-right py-2 px-4 text-gray-300 text-sm">Maps</th>
                   <th className="text-right py-2 px-4 text-gray-300 text-sm">Kills</th>
                   <th className="text-right py-2 px-4 text-gray-300 text-sm">Deaths</th>
@@ -282,39 +282,39 @@ const PlayerKDStats: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {kdStats.match_stats.slice(0, 10).map((match) => (
-                  <tr key={match.id} className="border-b border-gray-800">
-                    <td className="py-2 px-4 text-white text-sm">
-                      Match #{match.match_id}
+                {kdStats.tournament_stats.map((tournament) => (
+                  <tr key={tournament.tournament_id} className="border-b border-gray-800">
+                    <td className="py-2 px-4 text-white text-sm font-medium">
+                      {tournament.tournament_name}
                     </td>
                     <td className="py-2 px-4 text-right text-gray-300 text-sm">
-                      {match.maps_played}
+                      {tournament.maps_played}
                     </td>
                     <td className="py-2 px-4 text-right text-green-400 text-sm font-medium">
-                      {match.total_kills}
+                      {tournament.kills}
                     </td>
                     <td className="py-2 px-4 text-right text-red-400 text-sm font-medium">
-                      {match.total_deaths}
+                      {tournament.deaths}
                     </td>
                     <td className="py-2 px-4 text-right text-blue-400 text-sm font-medium">
-                      {match.total_assists}
+                      {tournament.assists}
                     </td>
                     <td className="py-2 px-4 text-right text-sm">
                       <span className={`font-medium ${
-                        match.kd_ratio >= 1.5 ? 'text-green-400' :
-                        match.kd_ratio >= 1.0 ? 'text-yellow-400' :
+                        tournament.kd_ratio >= 1.5 ? 'text-green-400' :
+                        tournament.kd_ratio >= 1.0 ? 'text-yellow-400' :
                         'text-red-400'
                       }`}>
-                        {match.kd_ratio.toFixed(2)}
+                        {tournament.kd_ratio.toFixed(2)}
                       </span>
                     </td>
                     <td className="py-2 px-4 text-right text-sm">
                       <span className={`font-medium ${
-                        match.kda_ratio >= 2.0 ? 'text-green-400' :
-                        match.kda_ratio >= 1.5 ? 'text-yellow-400' :
+                        tournament.kda_ratio >= 2.0 ? 'text-green-400' :
+                        tournament.kda_ratio >= 1.5 ? 'text-yellow-400' :
                         'text-red-400'
                       }`}>
-                        {match.kda_ratio.toFixed(2)}
+                        {tournament.kda_ratio.toFixed(2)}
                       </span>
                     </td>
                   </tr>
@@ -325,10 +325,10 @@ const PlayerKDStats: React.FC = () => {
         </div>
       )}
 
-      {kdStats.match_stats.length === 0 && kdStats.tournament_stats.length === 0 && (
+      {(!kdStats.tournament_stats || kdStats.tournament_stats.length === 0) && kdStats.match_stats.length === 0 && (
         <div className="card text-center py-8">
-          <div className="text-gray-400 text-lg mb-2">No match data available</div>
-          <p className="text-gray-500">This player hasn't played any matches yet.</p>
+          <div className="text-gray-400 text-lg mb-2">No tournament data available</div>
+          <p className="text-gray-500">This player hasn't played any tournaments yet.</p>
         </div>
       )}
     </div>
