@@ -49,24 +49,29 @@ const Players: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-white">CDL Players</h1>
-        <div className="text-gray-400">
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="text-center py-16 bg-gradient-to-r from-green-900 to-blue-900 rounded-lg mb-8">
+        <h1 className="text-5xl font-bold text-white mb-6">CDL Players</h1>
+        <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+          Professional Call of Duty League players competing at the highest level.
+          Explore individual statistics, performance metrics, and player profiles.
+        </p>
+        <div className="mt-8 text-gray-400 text-lg">
           {players.length} Active Players
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {players.map((player) => (
-          <div key={player.id} className="card hover:bg-gray-750 transition-colors duration-200">
-            <div className="flex items-center space-x-4 mb-4">
-              <PlayerAvatar player={player} size="lg" />
+          <div key={player.id} className="card hover:bg-gray-750 transition-all duration-300 transform hover:scale-105 border border-gray-700 hover:border-green-500 overflow-hidden">
+            <div className="flex items-center space-x-4 mb-6 p-6">
+              <PlayerAvatar player={player} size="xl" />
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-white">{player.gamertag}</h3>
+                  <h3 className="text-2xl font-bold text-white">{player.gamertag}</h3>
                   {player.is_active && (
-                    <span className="text-xs text-green-400 bg-green-900 px-2 py-1 rounded">
+                    <span className="text-xs text-green-400 bg-green-900 px-3 py-1 rounded-full font-bold">
                       Active
                     </span>
                   )}

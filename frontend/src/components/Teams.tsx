@@ -70,12 +70,13 @@ const Teams: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <div className="text-center py-12 bg-gradient-to-r from-blue-900 to-purple-900 rounded-lg">
-        <h1 className="text-5xl font-bold text-white mb-4">Meet the Teams</h1>
-        <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-          Discover the elite organizations and their star players competing in the Call of Duty League
+      <div className="text-center py-16 bg-gradient-to-r from-blue-900 to-purple-900 rounded-lg mb-8">
+        <h1 className="text-5xl font-bold text-white mb-6">CDL Teams</h1>
+        <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+          Professional Call of Duty League organizations competing at the highest level.
+          Explore team rosters, player profiles, and comprehensive statistics.
         </p>
-        <div className="mt-6 text-gray-400">
+        <div className="mt-8 text-gray-400 text-lg">
           {teams.length} Active Teams
         </div>
       </div>
@@ -84,19 +85,19 @@ const Teams: React.FC = () => {
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {teams.map((team) => (
           <div key={team.id} className="group">
-            <div className="card hover:bg-gray-750 transition-all duration-300 transform hover:scale-105 border border-gray-700 hover:border-blue-500">
+            <div className="card hover:bg-gray-750 transition-all duration-300 transform hover:scale-105 border border-gray-700 hover:border-blue-500 overflow-hidden">
               {/* Team Header */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-6 p-6">
                 <div className="flex items-center space-x-4">
                   {/* Team Logo */}
-                  <TeamLogo team={team} size="lg" />
+                  <TeamLogo team={team} size="xl" />
                   <div>
                     <h3 className="text-2xl font-bold text-white">{team.name}</h3>
                     <p className="text-gray-400">{team.city}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  <span className="inline-block bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold">
                     {team.abbreviation}
                   </span>
                 </div>
