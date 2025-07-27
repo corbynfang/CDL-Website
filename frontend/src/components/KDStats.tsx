@@ -25,10 +25,6 @@ const KDStats: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Add multiple cache-busting parameters
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substring(7);
-      
       // Force fresh data by adding cache-busting parameters
       const response = await statsApi.getAllPlayersKDStats();
       
