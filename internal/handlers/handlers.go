@@ -463,9 +463,14 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		}
 	}
 
-	// Ensure every player has a KD for every major (1-5)
+	// Only include players who have stats for at least one tournament
+	// and ensure every player has a KD for every major (1-5)
 	for _, p := range playerMap {
 		majors := p["majors"].(map[uint]float64)
+		// Only include players who have at least one tournament stat
+		if len(majors) == 0 {
+			continue
+		}
 		for i := 1; i <= 5; i++ {
 			if _, ok := majors[uint(i)]; !ok {
 				majors[uint(i)] = 0.0 // or use null if you prefer
