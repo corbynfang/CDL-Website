@@ -433,6 +433,7 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		playerMap[p.ID] = gin.H{
 			"player_id":     p.ID,
 			"gamertag":      p.Gamertag,
+			"avatar_url":    p.AvatarURL,
 			"team_abbr":     "",
 			"majors":        map[uint]float64{},
 			"season_kills":  0,
@@ -471,6 +472,7 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		result = append(result, gin.H{
 			"player_id":            p["player_id"],
 			"gamertag":             p["gamertag"],
+			"avatar_url":           p["avatar_url"],
 			"team_abbr":            p["team_abbr"],
 			"season_kd":            seasonKD,
 			"season_kd_plus_minus": seasonKDPlusMinus,

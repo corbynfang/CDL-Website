@@ -73,14 +73,16 @@ const KDStats: React.FC = () => {
               <tr key={player.player_id} className="border-b border-gray-800 hover:bg-gray-800">
                 <td className="py-3 px-4">
                   <div className="flex items-center space-x-3">
-                    <PlayerAvatar 
-                      player={{
-                        id: player.player_id,
-                        gamertag: player.gamertag,
-                        avatar_url: `/assets/avatars/${player.gamertag}.webp`
-                      }} 
-                      size="sm" 
-                    />
+                    <div className="flex-shrink-0">
+                      <PlayerAvatar 
+                        player={{
+                          id: player.player_id,
+                          gamertag: player.gamertag,
+                          avatar_url: player.avatar_url || `/assets/avatars/${player.gamertag}.webp`
+                        }} 
+                        size="sm" 
+                      />
+                    </div>
                     <Link to={`/players/${player.player_id}`} className="text-white hover:text-blue-400 font-medium">
                       {player.gamertag}
                     </Link>
