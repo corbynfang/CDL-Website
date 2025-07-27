@@ -33,14 +33,20 @@ const Home: React.FC = () => {
           <div className="hero-overlay"></div>
         </div>
         
+                {/* Video Overlay Text */}
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-8xl md:text-9xl font-black text-white tracking-tight mb-4">
+              CDL<span className="text-red-500">YTICS</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-300 uppercase tracking-widest">
+              CALL OF DUTY LEAGUE ANALYTICS
+            </p>
+          </div>
+        </div>
+
         {/* Content */}
         <div className="hero-content text-center px-4 max-w-6xl mx-auto">
-          <h1 className="text-hero text-white mb-8 tracking-tight">
-            CDL <span className="text-red-500">STATS</span>
-          </h1>
-          <p className="text-subheading text-gray-300 max-w-4xl mx-auto mb-12 leading-relaxed">
-            THE DEFINITIVE PLATFORM FOR CALL OF DUTY LEAGUE STATISTICS, PLAYER ANALYTICS, AND COMPETITIVE INSIGHTS.
-          </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link
               to="/teams"

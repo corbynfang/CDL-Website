@@ -11,7 +11,7 @@ const Layout: React.FC = () => {
             {/* Logo */}
             <div className="flex items-center">
               <Link to="/" className="text-3xl font-black text-white tracking-tight">
-                CDL STATS
+                CDLYTICS
               </Link>
             </div>
 
@@ -70,7 +70,7 @@ const Layout: React.FC = () => {
       <footer className="bg-black border-t border-gray-800 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-400 text-sm uppercase tracking-wider">
-            <p>&copy; 2025 CDL STATS. ALL RIGHTS RESERVED.</p>
+            <p>&copy; 2025 CDLYTICS. ALL RIGHTS RESERVED.</p>
           </div>
         </div>
       </footer>
