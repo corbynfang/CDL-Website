@@ -36,6 +36,7 @@ export interface Player {
   is_active: boolean;
   liquipedia_url?: string;
   twitter_handle?: string;
+  avatar_url?: string;
   created_at: string;
   updated_at: string;
 }

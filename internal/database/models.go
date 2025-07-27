@@ -48,6 +48,7 @@ type Player struct {
 	IsActive      bool       `json:"is_active" gorm:"default:true"`
 	LiquipediaURL string     `json:"liquipedia_url"`
 	TwitterHandle string     `json:"twitter_handle" gorm:"size:100"`
+	AvatarURL     string     `json:"avatar_url"`
 	CreatedAt     time.Time  `json:"created_at"`
 	UpdatedAt     time.Time  `json:"updated_at"`
 }

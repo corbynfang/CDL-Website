@@ -1,19 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import type { Team } from '../types';
+import type { Team, Player } from '../types';
 import { teamApi } from '../services/api';
+import TeamLogo from './TeamLogo';
+import PlayerAvatar from './PlayerAvatar';
+
+interface TeamWithPlayers extends Team {
+  players?: Player[];
+}
 
 const Teams: React.FC = () => {
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<TeamWithPlayers[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTeams = async () => {
+    const fetchTeamsWithPlayers = async () => {
       try {
         setLoading(true);
-        const data = await teamApi.getTeams();
-        setTeams(data);
+        const teamsData = await teamApi.getTeams();
+        
+        // Fetch players for each team
+        const teamsWithPlayers = await Promise.all(
+          teamsData.map(async (team) => {
+            try {
+              const players = await teamApi.getTeamPlayers(team.id);
+              return { ...team, players };
+            } catch (err) {
+              console.error(`Failed to fetch players for team ${team.id}:`, err);
+              return { ...team, players: [] };
+            }
+          })
+        );
+        
+        setTeams(teamsWithPlayers);
       } catch (err) {
         setError('Failed to fetch teams');
         console.error('Error fetching teams:', err);
@@ -22,7 +42,7 @@ const Teams: React.FC = () => {
       }
     };
 
-    fetchTeams();
+    fetchTeamsWithPlayers();
   }, []);
 
   if (loading) {
@@ -48,61 +68,152 @@ const Teams: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-white">CDL Teams</h1>
-        <div className="text-gray-400">
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="text-center py-12 bg-gradient-to-r from-blue-900 to-purple-900 rounded-lg">
+        <h1 className="text-5xl font-bold text-white mb-4">Meet the Teams</h1>
+        <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          Discover the elite organizations and their star players competing in the Call of Duty League
+        </p>
+        <div className="mt-6 text-gray-400">
           {teams.length} Active Teams
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Teams Grid */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {teams.map((team) => (
-          <div key={team.id} className="card hover:bg-gray-750 transition-colors duration-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-white">{team.name}</h3>
-              <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded">
-                {team.abbreviation}
-              </span>
-            </div>
+          <div key={team.id} className="group">
+            <div className="card hover:bg-gray-750 transition-all duration-300 transform hover:scale-105 border border-gray-700 hover:border-blue-500">
+              {/* Team Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  {/* Team Logo */}
+                  <TeamLogo team={team} size="lg" />
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">{team.name}</h3>
+                    <p className="text-gray-400">{team.city}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    {team.abbreviation}
+                  </span>
+                </div>
+              </div>
 
-            <div className="space-y-2 mb-4">
-              {team.city && (
-                <div className="flex items-center text-gray-300">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  {team.city}
+              {/* Team Stats */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-400">
+                    {team.players?.length || 0}
+                  </div>
+                  <div className="text-gray-400 text-sm">Players</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-400">
+                    {team.is_active ? 'Active' : 'Inactive'}
+                  </div>
+                  <div className="text-gray-400 text-sm">Status</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-400">
+                    {team.founded_date ? new Date(team.founded_date).getFullYear() : 'N/A'}
+                  </div>
+                  <div className="text-gray-400 text-sm">Founded</div>
+                </div>
+              </div>
+
+              {/* Team Colors */}
+              {team.primary_color && (
+                <div className="mb-6">
+                  <h4 className="text-white font-semibold mb-2">Team Colors</h4>
+                  <div className="flex space-x-2">
+                    <div 
+                      className="w-8 h-8 rounded-full border-2 border-gray-600"
+                      style={{ backgroundColor: team.primary_color }}
+                    ></div>
+                    {team.secondary_color && (
+                      <div 
+                        className="w-8 h-8 rounded-full border-2 border-gray-600"
+                        style={{ backgroundColor: team.secondary_color }}
+                      ></div>
+                    )}
+                  </div>
                 </div>
               )}
 
-
-
-              <div className="flex items-center text-gray-300">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {team.is_active ? 'Active' : 'Inactive'}
+              {/* Players Section */}
+              <div className="mb-6">
+                <h4 className="text-white font-semibold mb-3">Current Roster</h4>
+                {team.players && team.players.length > 0 ? (
+                  <div className="space-y-2">
+                    {team.players.slice(0, 4).map((player) => (
+                      <div key={player.id} className="flex items-center justify-between p-2 bg-gray-800 rounded">
+                        <div className="flex items-center space-x-3">
+                          <PlayerAvatar player={player} size="sm" />
+                          <div>
+                            <div className="text-white font-medium">{player.gamertag}</div>
+                            <div className="text-gray-400 text-xs">{player.role || 'Player'}</div>
+                          </div>
+                        </div>
+                        <Link 
+                          to={`/players/${player.id}`}
+                          className="text-blue-400 hover:text-blue-300 text-sm"
+                        >
+                          View
+                        </Link>
+                      </div>
+                    ))}
+                    {team.players.length > 4 && (
+                      <div className="text-center py-2">
+                        <span className="text-gray-400 text-sm">
+                          +{team.players.length - 4} more players
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <div className="text-gray-400 text-sm">No players assigned</div>
+                  </div>
+                )}
               </div>
-            </div>
 
-            <div className="flex space-x-2">
-              <Link
-                to={`/teams/${team.id}`}
-                className="btn-primary flex-1 text-center"
-              >
-                View Details
-              </Link>
-              <Link
-                to={`/teams/${team.id}/players`}
-                className="btn-secondary flex-1 text-center"
-              >
-                Players
-              </Link>
+              {/* Action Buttons */}
+              <div className="flex space-x-2">
+                <Link
+                  to={`/teams/${team.id}`}
+                  className="btn-primary flex-1 text-center"
+                >
+                  Team Details
+                </Link>
+                <Link
+                  to={`/teams/${team.id}/players`}
+                  className="btn-secondary flex-1 text-center"
+                >
+                  Full Roster
+                </Link>
+              </div>
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Call to Action */}
+      <div className="text-center py-12 bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg">
+        <h2 className="text-3xl font-bold text-white mb-4">Follow Your Favorite Team</h2>
+        <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+          Stay updated with the latest news, match results, and player statistics from your favorite CDL teams.
+        </p>
+        <div className="flex justify-center space-x-4">
+          <Link to="/players" className="btn-primary">
+            View All Players
+          </Link>
+          <Link to="/" className="btn-secondary">
+            Back to Home
+          </Link>
+        </div>
       </div>
 
       {teams.length === 0 && (
