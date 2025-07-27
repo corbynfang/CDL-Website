@@ -58,8 +58,8 @@ func main() {
 		api.GET("/tournaments/:id", handlers.GetTournament)
 	}
 
-	// Serve static files from frontend/src/assets
-	r.Static("/assets", "./frontend/src/assets")
+	// Serve static files from frontend/dist/assets
+	r.Static("/assets", "./frontend/dist/assets")
 	r.StaticFile("/favicon.ico", "./frontend/dist/favicon.ico")
 
 	// Serve index.html for all non-API routes (SPA catch-all)

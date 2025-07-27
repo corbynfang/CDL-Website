@@ -26,6 +26,9 @@ COPY --from=backend-build /app/main .
 # Copy frontend build output
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
+# Copy assets to dist folder for static serving
+COPY frontend/src/assets ./frontend/dist/assets
+
 # (Optional) Install runtime dependencies
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
