@@ -405,14 +405,7 @@ func GetAllPlayersKDStats(c *gin.Context) {
 	c.Header("Expires", "0")
 	c.Header("X-Railway-Cache", "disabled")
 
-	// Get all players
-	var players []database.Player
-	if err := database.DB.Find(&players).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch players"})
-		return
-	}
-
-	// Get all player_tournament_stats for Majors 1-4 and Champs (tournament_id 1-5)
+	// Get all players with tournament stats in one optimized query
 	type KDRow struct {
 		PlayerID     uint
 		TeamID       uint
@@ -422,18 +415,21 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		KDRatio      float64
 		Gamertag     string
 		TeamAbbr     string
+		AvatarURL    string
 	}
 
 	var kdRows []KDRow
-	db := database.DB
-	db.Raw(`
-		SELECT pts.player_id, pts.team_id, pts.tournament_id, pts.total_kills, pts.total_deaths, pts.kd_ratio, p.gamertag, t.abbreviation as team_abbr
+	if err := database.DB.Raw(`
+		SELECT pts.player_id, pts.team_id, pts.tournament_id, pts.total_kills, pts.total_deaths, pts.kd_ratio, p.gamertag, t.abbreviation as team_abbr, p.avatar_url
 		FROM player_tournament_stats pts
 		JOIN players p ON pts.player_id = p.id
 		JOIN teams t ON pts.team_id = t.id
 		WHERE pts.tournament_id IN (1,2,3,4,5)
 		ORDER BY pts.player_id, pts.tournament_id
-	`).Scan(&kdRows)
+	`).Scan(&kdRows).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
+		return
+	}
 
 	// Build a map: playerID -> {majors: {tournamentID: KD}, ...}
 	playerMap := make(map[uint]gin.H)
@@ -444,26 +440,28 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		"Crimsix":  true,
 	}
 
-	for _, p := range players {
-		// Skip coaches
-		if excludedCoaches[p.Gamertag] {
+	// Initialize player map from kdRows
+	for _, row := range kdRows {
+		if excludedCoaches[row.Gamertag] {
 			continue
 		}
 
-		playerMap[p.ID] = gin.H{
-			"player_id":     p.ID,
-			"gamertag":      p.Gamertag,
-			"avatar_url":    p.AvatarURL,
-			"team_abbr":     "",
-			"majors":        map[uint]float64{},
-			"season_kills":  0,
-			"season_deaths": 0,
+		if playerMap[row.PlayerID] == nil {
+			playerMap[row.PlayerID] = gin.H{
+				"player_id":     row.PlayerID,
+				"gamertag":      row.Gamertag,
+				"avatar_url":    row.AvatarURL,
+				"team_abbr":     row.TeamAbbr,
+				"majors":        map[uint]float64{},
+				"season_kills":  0,
+				"season_deaths": 0,
+			}
 		}
 	}
 
+	// Process tournament stats
 	for _, row := range kdRows {
 		if playerMap[row.PlayerID] != nil {
-			playerMap[row.PlayerID]["team_abbr"] = row.TeamAbbr
 			playerMap[row.PlayerID]["majors"].(map[uint]float64)[row.TournamentID] = row.KDRatio
 			playerMap[row.PlayerID]["season_kills"] = playerMap[row.PlayerID]["season_kills"].(int) + row.TotalKills
 			playerMap[row.PlayerID]["season_deaths"] = playerMap[row.PlayerID]["season_deaths"].(int) + row.TotalDeaths

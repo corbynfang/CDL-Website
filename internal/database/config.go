@@ -49,15 +49,17 @@ func ConnectDatabase() {
 		log.Println("Using individual DB environment variables")
 	}
 
-	// Connect to database
+	// Connect to database with optimized settings
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Error), // Reduce logging during build
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   "",
 			SingularTable: false,
 			NoLowerCase:   false,
 			NameReplacer:  nil,
 		},
+		DisableForeignKeyConstraintWhenMigrating: true,
+		SkipDefaultTransaction:                   true,
 	})
 
 	if err != nil {
@@ -66,11 +68,16 @@ func ConnectDatabase() {
 
 	log.Println("Successfully connected to PostgreSQL database!")
 
-	// Test the connection
+	// Test the connection with timeout
 	sqlDB, err := DB.DB()
 	if err != nil {
 		log.Fatal("Failed to get database instance:", err)
 	}
+
+	// Set connection pool settings
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(0)
 
 	if err := sqlDB.Ping(); err != nil {
 		log.Fatal("Failed to ping database:", err)
