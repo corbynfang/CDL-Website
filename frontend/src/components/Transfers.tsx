@@ -143,16 +143,17 @@ const Transfers: React.FC = () => {
               >
                 <option value="">All Teams</option>
                 <option value="1">OpTic TEX</option>
-                <option value="2">ATL FaZe</option>
-                <option value="3">TOR Ultra</option>
-                <option value="4">LV Falcons</option>
-                <option value="5">CAR Royal Ravens</option>
-                <option value="6">LA Guerrillas M8</option>
+                <option value="2">TOR Ultra</option>
+                <option value="3">BOS Breach</option>
+                <option value="4">CAR Royal Ravens</option>
+                <option value="5">LA Thieves</option>
+                <option value="6">ATL FaZe</option>
                 <option value="7">VAN Surge</option>
                 <option value="8">MIA Heretics</option>
-                <option value="9">MIN RØKKR</option>
-                <option value="10">BOS Breach</option>
-                <option value="11">LA Thieves</option>
+                <option value="9">LA Guerrillas M8</option>
+                <option value="10">MIN RØKKR</option>
+                <option value="11">Cloud9 NY</option>
+                <option value="12">LV Falcons</option>
               </select>
             </div>
           </div>
