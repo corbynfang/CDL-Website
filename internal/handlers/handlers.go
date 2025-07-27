@@ -425,6 +425,7 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		JOIN players p ON pts.player_id = p.id
 		JOIN teams t ON pts.team_id = t.id
 		WHERE pts.tournament_id IN (1,2,3,4,5)
+		ORDER BY pts.player_id, pts.tournament_id
 	`).Scan(&kdRows)
 
 	// Build a map: playerID -> {majors: {tournamentID: KD}, ...}
