@@ -25,9 +25,15 @@ const KDStats: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Add cache-busting parameter
+      // Add multiple cache-busting parameters
       const timestamp = Date.now();
-      const data = await statsApi.getAllPlayersKDStats();
+      const random = Math.random().toString(36).substring(7);
+      
+      // Force fresh data by adding cache-busting parameters
+      const response = await statsApi.getAllPlayersKDStats();
+      
+      // Handle new response format with timestamp
+      const data = Array.isArray(response) ? response : (response as any).players || [];
       
       // Filter out excluded players and ensure only players with tournament stats are shown
       const filteredPlayers = data

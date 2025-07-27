@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
 	"github.com/gin-gonic/gin"
@@ -398,6 +399,12 @@ func GetTopKDPlayersNew(c *gin.Context) {
 
 // GetAllPlayersKDStats returns KD and KD+/- for all players for the season, and KD for each major tournament
 func GetAllPlayersKDStats(c *gin.Context) {
+	// Add cache-busting headers for Railway
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
+	c.Header("X-Railway-Cache", "disabled")
+
 	// Get all players
 	var players []database.Player
 	if err := database.DB.Find(&players).Error; err != nil {
@@ -507,7 +514,14 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		result = append(result, player)
 	}
 
-	c.JSON(http.StatusOK, result)
+	// Add timestamp to response for cache busting
+	response := gin.H{
+		"timestamp": time.Now().Unix(),
+		"players":   result,
+		"count":     len(result),
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func GetTransfers(c *gin.Context) {
