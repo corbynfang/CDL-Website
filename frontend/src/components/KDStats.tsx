@@ -11,6 +11,9 @@ const MAJOR_LABELS = {
   5: 'Champs',
 };
 
+// Players to exclude from Black Ops 6 season
+const EXCLUDED_PLAYERS = ['Abe', 'Vikul'];
+
 const KDStats: React.FC = () => {
   const [players, setPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +24,11 @@ const KDStats: React.FC = () => {
       try {
         setLoading(true);
         const data = await statsApi.getAllPlayersKDStats();
-        setPlayers(data);
+        // Filter out excluded players
+        const filteredPlayers = data.filter((player: any) => 
+          !EXCLUDED_PLAYERS.includes(player.gamertag)
+        );
+        setPlayers(filteredPlayers);
       } catch (err) {
         setError('Failed to fetch KD statistics');
         console.error('Error fetching KD stats:', err);
@@ -63,22 +70,22 @@ const KDStats: React.FC = () => {
       </div>
 
       <div className="card overflow-x-auto">
-        <table className="table">
+        <table className="w-full">
           <thead>
-            <tr>
-              <th>PLAYER</th>
-              <th>TEAM</th>
-              <th className="text-right">SEASON KD</th>
-              <th className="text-right">KD +/-</th>
+            <tr className="border-b border-gray-800">
+              <th className="py-4 px-6 text-left text-white font-bold uppercase tracking-wider">PLAYER</th>
+              <th className="py-4 px-6 text-left text-white font-bold uppercase tracking-wider">TEAM</th>
+              <th className="py-4 px-6 text-right text-white font-bold uppercase tracking-wider">SEASON KD</th>
+              <th className="py-4 px-6 text-right text-white font-bold uppercase tracking-wider">KD +/-</th>
               {Object.entries(MAJOR_LABELS).map(([id, label]) => (
-                <th key={id} className="text-right">{label.toUpperCase()} KD</th>
+                <th key={id} className="py-4 px-6 text-right text-white font-bold uppercase tracking-wider">{label.toUpperCase()} KD</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {players.map((player) => (
-              <tr key={player.player_id} className="hover:bg-gray-900">
-                <td>
+              <tr key={player.player_id} className="border-b border-gray-800 hover:bg-gray-900">
+                <td className="py-4 px-6">
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0">
                       <PlayerAvatar 
@@ -95,15 +102,15 @@ const KDStats: React.FC = () => {
                     </Link>
                   </div>
                 </td>
-                <td className="text-gray-300 uppercase tracking-wider">{player.team_abbr}</td>
-                <td className="text-right font-bold text-white">
+                <td className="py-4 px-6 text-gray-300 uppercase tracking-wider">{player.team_abbr}</td>
+                <td className="py-4 px-6 text-right font-bold text-white">
                   {player.season_kd ? player.season_kd.toFixed(3) : '-'}
                 </td>
-                <td className={`text-right font-bold ${player.season_kd_plus_minus > 0 ? 'text-green-400' : player.season_kd_plus_minus < 0 ? 'text-red-400' : 'text-gray-300'}`}>
+                <td className={`py-4 px-6 text-right font-bold ${player.season_kd_plus_minus > 0 ? 'text-green-400' : player.season_kd_plus_minus < 0 ? 'text-red-400' : 'text-gray-300'}`}>
                   {player.season_kd_plus_minus ? player.season_kd_plus_minus.toFixed(3) : '-'}
                 </td>
                 {Object.keys(MAJOR_LABELS).map((id) => (
-                  <td key={id} className="text-right font-bold text-white">
+                  <td key={id} className="py-4 px-6 text-right font-bold text-white">
                     {player.majors && player.majors[id] ? player.majors[id].toFixed(3) : '-'}
                   </td>
                 ))}
