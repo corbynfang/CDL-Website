@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { Player } from '../types';
 import { playerApi } from '../services/api';
+import PlayerAvatar from './PlayerAvatar';
 
 const Players: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -59,13 +60,18 @@ const Players: React.FC = () => {
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {players.map((player) => (
           <div key={player.id} className="card hover:bg-gray-750 transition-colors duration-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-white">{player.gamertag}</h3>
-              {player.is_active && (
-                <span className="text-xs text-green-400 bg-green-900 px-2 py-1 rounded">
-                  Active
-                </span>
-              )}
+            <div className="flex items-center space-x-4 mb-4">
+              <PlayerAvatar player={player} size="lg" />
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-white">{player.gamertag}</h3>
+                  {player.is_active && (
+                    <span className="text-xs text-green-400 bg-green-900 px-2 py-1 rounded">
+                      Active
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2 mb-4">

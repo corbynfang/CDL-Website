@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { PlayerKDStatsData, Player } from '../types';
 import { playerApi } from '../services/api';
+import PlayerAvatar from './PlayerAvatar';
 
 const PlayerKDStats: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -67,9 +68,12 @@ const PlayerKDStats: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">{player.gamertag}</h1>
-          <p className="text-gray-400">KD Statistics</p>
+        <div className="flex items-center space-x-6">
+          <PlayerAvatar player={player} size="xl" />
+          <div>
+            <h1 className="text-3xl font-bold text-white">{player.gamertag}</h1>
+            <p className="text-gray-400">KD Statistics</p>
+          </div>
         </div>
         <Link to="/players" className="btn-secondary">
           Back to Players
