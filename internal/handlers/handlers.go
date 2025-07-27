@@ -429,7 +429,19 @@ func GetAllPlayersKDStats(c *gin.Context) {
 
 	// Build a map: playerID -> {majors: {tournamentID: KD}, ...}
 	playerMap := make(map[uint]gin.H)
+
+	// Coaches to exclude from the KD stats
+	excludedCoaches := map[string]bool{
+		"Accuracy": true,
+		"Crimsix":  true,
+	}
+
 	for _, p := range players {
+		// Skip coaches
+		if excludedCoaches[p.Gamertag] {
+			continue
+		}
+
 		playerMap[p.ID] = gin.H{
 			"player_id":     p.ID,
 			"gamertag":      p.Gamertag,
@@ -440,6 +452,7 @@ func GetAllPlayersKDStats(c *gin.Context) {
 			"season_deaths": 0,
 		}
 	}
+
 	for _, row := range kdRows {
 		if playerMap[row.PlayerID] != nil {
 			playerMap[row.PlayerID]["team_abbr"] = row.TeamAbbr
@@ -459,8 +472,8 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		}
 	}
 
-	// Build response
-	var result []gin.H
+	// Build response - use a map to ensure no duplicates by player_id
+	uniquePlayers := make(map[uint]gin.H)
 	for _, p := range playerMap {
 		seasonKills := p["season_kills"].(int)
 		seasonDeaths := p["season_deaths"].(int)
@@ -469,15 +482,23 @@ func GetAllPlayersKDStats(c *gin.Context) {
 			seasonKD = float64(seasonKills) / float64(seasonDeaths)
 		}
 		seasonKDPlusMinus := seasonKD - 1.0
-		result = append(result, gin.H{
-			"player_id":            p["player_id"],
+
+		playerID := p["player_id"].(uint)
+		uniquePlayers[playerID] = gin.H{
+			"player_id":            playerID,
 			"gamertag":             p["gamertag"],
 			"avatar_url":           p["avatar_url"],
 			"team_abbr":            p["team_abbr"],
 			"season_kd":            seasonKD,
 			"season_kd_plus_minus": seasonKDPlusMinus,
 			"majors":               p["majors"],
-		})
+		}
+	}
+
+	// Convert map to slice
+	var result []gin.H
+	for _, player := range uniquePlayers {
+		result = append(result, player)
 	}
 
 	c.JSON(http.StatusOK, result)
