@@ -41,6 +41,12 @@ const Layout: React.FC = () => {
               >
                 KD Stats
               </Link>
+              <Link
+                to="/transfers"
+                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+              >
+                Transfers
+              </Link>
 
             </nav>
 

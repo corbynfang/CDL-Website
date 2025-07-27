@@ -30,6 +30,7 @@ Thumbs.db
 ehthumbs.db
 Icon?
 Desktop.ini
+.env.railway
 
 # Vite/Build
 frontend/.vite/
@@ -48,4 +49,3 @@ package-lock.json
 
 # Local environment variables
 .env
-.env.railway

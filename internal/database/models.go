@@ -211,3 +211,24 @@ type Coach struct {
 func (Coach) TableName() string {
 	return "coaches"
 }
+
+type PlayerTransfer struct {
+	ID           uint      `json:"id" gorm:"primaryKey"`
+	PlayerID     uint      `json:"player_id"`
+	FromTeamID   *uint     `json:"from_team_id"` // Nullable for free agent joins
+	ToTeamID     uint      `json:"to_team_id"`
+	TransferDate time.Time `json:"transfer_date"`
+	TransferType string    `json:"transfer_type" gorm:"size:50"` // 'CDL', 'Challengers', 'Free Agent'
+	Role         string    `json:"role" gorm:"size:50"`
+	Season       string    `json:"season" gorm:"size:20"`
+	CreatedAt    time.Time `json:"created_at"`
+
+	// Relationships
+	Player   Player `json:"player" gorm:"foreignKey:PlayerID"`
+	FromTeam *Team  `json:"from_team" gorm:"foreignKey:FromTeamID"`
+	ToTeam   Team   `json:"to_team" gorm:"foreignKey:ToTeamID"`
+}
+
+func (PlayerTransfer) TableName() string {
+	return "player_transfers"
+}

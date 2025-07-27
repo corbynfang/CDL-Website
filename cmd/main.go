@@ -56,6 +56,9 @@ func main() {
 		// Tournament routes
 		api.GET("/tournaments", handlers.GetTournaments)
 		api.GET("/tournaments/:id", handlers.GetTournament)
+
+		// Transfer routes
+		api.GET("/transfers", handlers.GetTransfers)
 	}
 
 	// Serve static files from frontend/dist/assets

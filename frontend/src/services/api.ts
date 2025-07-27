@@ -7,6 +7,7 @@ import type {
   TeamTournamentStats,
   PlayerKDStatsData,
   TopKDPlayer,
+  PlayerTransfer,
   ApiResponse 
 } from '../types';
 
@@ -138,6 +139,15 @@ export const statsApi = {
 export const healthApi = {
   checkHealth: async (): Promise<ApiResponse<{ status: string; message: string }>> => {
     const response: AxiosResponse<ApiResponse<{ status: string; message: string }>> = await api.get('/health');
+    return response.data;
+  },
+};
+
+// Transfers API functions
+export const transfersApi = {
+  // Get all transfers
+  getTransfers: async (params?: { season?: string; team_id?: number; type?: string }): Promise<PlayerTransfer[]> => {
+    const response: AxiosResponse<PlayerTransfer[]> = await api.get('/transfers', { params });
     return response.data;
   },
 };

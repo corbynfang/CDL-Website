@@ -480,3 +480,31 @@ func GetAllPlayersKDStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+func GetTransfers(c *gin.Context) {
+	var transfers []database.PlayerTransfer
+
+	query := database.DB.Preload("Player").Preload("FromTeam").Preload("ToTeam")
+
+	// Add filters if provided
+	if season := c.Query("season"); season != "" {
+		query = query.Where("season = ?", season)
+	}
+
+	if teamID := c.Query("team_id"); teamID != "" {
+		query = query.Where("from_team_id = ? OR to_team_id = ?", teamID, teamID)
+	}
+
+	if transferType := c.Query("type"); transferType != "" {
+		query = query.Where("transfer_type = ?", transferType)
+	}
+
+	// Order by transfer date (most recent first)
+	if err := query.Order("transfer_date DESC").Find(&transfers).Error; err != nil {
+		log.Printf("Database Error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transfers"})
+		return
+	}
+
+	c.JSON(http.StatusOK, transfers)
+}

@@ -179,4 +179,19 @@ export interface TopKDPlayer {
   avg_kd: number;
   avg_kda: number;
   matches_played: number;
+}
+
+export interface PlayerTransfer {
+  id: number;
+  player_id: number;
+  from_team_id?: number;
+  to_team_id: number;
+  transfer_date: string;
+  transfer_type: string;
+  role: string;
+  season: string;
+  created_at: string;
+  player?: Player;
+  from_team?: Team;
+  to_team?: Team;
 } 

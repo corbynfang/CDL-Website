@@ -8,6 +8,7 @@ import Players from './components/Players';
 import KDStats from './components/KDStats';
 import PlayerKDStats from './components/PlayerKDStats';
 import PlayerDetails from './components/PlayerDetails';
+import Transfers from './components/Transfers';
 
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path="players/:id" element={<PlayerDetails />} />
           <Route path="kd-stats" element={<KDStats />} />
           <Route path="players/:id/kd-stats" element={<PlayerKDStats />} />
+          <Route path="transfers" element={<Transfers />} />
 
           {/* Add more routes as needed */}
         </Route>
