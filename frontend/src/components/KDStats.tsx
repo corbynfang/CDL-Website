@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { statsApi } from '../services/api';
+import PlayerAvatar from './PlayerAvatar';
 
 const MAJOR_LABELS = {
   1: 'Major 1',
@@ -71,9 +72,19 @@ const KDStats: React.FC = () => {
             {players.map((player) => (
               <tr key={player.player_id} className="border-b border-gray-800 hover:bg-gray-800">
                 <td className="py-3 px-4">
-                  <Link to={`/players/${player.player_id}`} className="text-white hover:text-blue-400 font-medium">
-                    {player.gamertag}
-                  </Link>
+                  <div className="flex items-center space-x-3">
+                    <PlayerAvatar 
+                      player={{
+                        id: player.player_id,
+                        gamertag: player.gamertag,
+                        avatar_url: `/assets/avatars/${player.gamertag}.webp`
+                      }} 
+                      size="sm" 
+                    />
+                    <Link to={`/players/${player.player_id}`} className="text-white hover:text-blue-400 font-medium">
+                      {player.gamertag}
+                    </Link>
+                  </div>
                 </td>
                 <td className="py-3 px-4 text-gray-300">{player.team_abbr}</td>
                 <td className="py-3 px-4 text-right font-bold">
