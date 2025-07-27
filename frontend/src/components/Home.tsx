@@ -14,11 +14,21 @@ const Home: React.FC = () => {
             muted
             playsInline
             className="hero-video"
+            onError={(e) => {
+              console.error('Video error:', e);
+              // Hide video and show fallback if video fails
+              const videoElement = e.target as HTMLVideoElement;
+              if (videoElement) {
+                videoElement.style.display = 'none';
+              }
+            }}
+            onLoadStart={() => console.log('Video loading started')}
+            onCanPlay={() => console.log('Video can play')}
           >
-            <source src="/src/assets/video/webvideo.mp4" type="video/mp4" />
-            {/* Fallback for browsers that don't support video */}
-            <div className="video-fallback"></div>
+            <source src="/webvideo.mp4" type="video/mp4" />
           </video>
+          {/* Fallback background - shows if video fails to load */}
+          <div className="video-fallback"></div>
           {/* Overlay to ensure text readability */}
           <div className="hero-overlay"></div>
         </div>
