@@ -311,10 +311,8 @@ func GetPlayerKDStats(c *gin.Context) {
 	}
 
 	// Add EWC2025 detailed stats if available
-	if ewcDetailed != nil {
-		for key, value := range ewcDetailed {
-			response[key] = value
-		}
+	for key, value := range ewcDetailed {
+		response[key] = value
 	}
 
 	c.JSON(http.StatusOK, response)
