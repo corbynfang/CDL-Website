@@ -40,9 +40,9 @@ func ConnectDatabase() {
 		dbname := getEnv("DB_NAME", "cdl_stats")
 		sslmode := getEnv("DB_SSLMODE", "disable")
 
-		// Log the values being used (without password)
-		log.Printf("DB connection details - Host: %s, Port: %s, User: %s, DB: %s, SSL: %s",
-			host, port, user, dbname, sslmode)
+		// Log minimal connection info for security
+		log.Printf("Connecting to database: %s:%s/%s (SSL: %s)",
+			host, port, dbname, sslmode)
 
 		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
 			user, password, host, port, dbname, sslmode)

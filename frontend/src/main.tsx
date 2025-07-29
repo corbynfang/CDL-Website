@@ -6,14 +6,14 @@ import './index.css'
 // Register service worker for cache management
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(
-      (registration) => {
-        console.log('SW registered: ', registration);
-      },
-      (registrationError) => {
-        console.log('SW registration failed: ', registrationError);
-      }
-    );
+          navigator.serviceWorker.register('/sw.js').then(
+        () => {
+          // console.log('SW registered: ', registration);
+        },
+        () => {
+          // console.log('SW registration failed: ', registrationError);
+        }
+      );
   });
 }
 

@@ -5,11 +5,56 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
 	"github.com/corbynfang/CDL-Website/internal/handlers"
 	"github.com/gin-gonic/gin"
 )
+
+// Rate limiting map
+var requestCounts = make(map[string]int)
+var lastReset = time.Now()
+
+// Rate limiting middleware
+func rateLimit() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+		now := time.Now()
+
+		// Reset counters every minute
+		if now.Sub(lastReset) > time.Minute {
+			requestCounts = make(map[string]int)
+			lastReset = now
+		}
+
+		// Check rate limit (100 requests per minute per IP)
+		if requestCounts[clientIP] > 100 {
+			c.JSON(429, gin.H{"error": "Rate limit exceeded"})
+			c.Abort()
+			return
+		}
+
+		requestCounts[clientIP]++
+		c.Next()
+	}
+}
+
+// Input validation middleware
+func validateInput() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Validate ID parameters
+		if id := c.Param("id"); id != "" {
+			if _, err := strconv.Atoi(id); err != nil {
+				c.JSON(400, gin.H{"error": "Invalid ID parameter"})
+				c.Abort()
+				return
+			}
+		}
+		c.Next()
+	}
+}
 
 func main() {
 	// Connect to database
@@ -22,17 +67,40 @@ func main() {
 	// Create Gin router
 	r := gin.Default()
 
-	// CORS middleware (if needed)
+	// Security middleware
 	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		// Security headers
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;")
+
+		// CORS - restrict to your domain only
+		origin := c.Request.Header.Get("Origin")
+		allowedOrigins := []string{"https://cdlytics.me", "http://localhost:3000", "http://localhost:5173"}
+
+		for _, allowed := range allowedOrigins {
+			if origin == allowed {
+				c.Header("Access-Control-Allow-Origin", origin)
+				break
+			}
+		}
+
+		c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type")
+		c.Header("Access-Control-Max-Age", "86400")
+
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
 		c.Next()
 	})
+
+	// Apply rate limiting and input validation
+	r.Use(rateLimit())
+	r.Use(validateInput())
 
 	// API routes
 	api := r.Group("/api/v1")

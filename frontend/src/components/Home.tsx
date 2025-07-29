@@ -22,8 +22,8 @@ const Home: React.FC = () => {
                 videoElement.style.display = 'none';
               }
             }}
-            onLoadStart={() => console.log('Video loading started')}
-            onCanPlay={() => console.log('Video can play')}
+            onLoadStart={() => {/* console.log('Video loading started') */}}
+onCanPlay={() => {/* console.log('Video can play') */}}
           >
             <source src="/webvideo.mp4" type="video/mp4" />
           </video>

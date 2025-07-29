@@ -27,7 +27,7 @@ const api = axios.create({
 // Request interceptor for logging and aggressive cache-busting
 api.interceptors.request.use(
   (config) => {
-    console.log(`Making ${config.method?.toUpperCase()} request to ${config.url}`);
+    // console.log(`Making ${config.method?.toUpperCase()} request to ${config.url}`);
     
     // Add multiple cache-busting parameters for GET requests
     if (config.method === 'get') {
