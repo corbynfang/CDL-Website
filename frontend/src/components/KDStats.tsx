@@ -128,7 +128,7 @@ const KDStats: React.FC = () => {
 
       {/* Mobile Card View */}
       <div className="block lg:hidden">
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {players.map((player, index) => (
             <div key={player.player_id} className="card p-4">
               <div className="flex items-center justify-between mb-3">
@@ -151,16 +151,16 @@ const KDStats: React.FC = () => {
                 <div className="text-gray-300 uppercase tracking-wider text-xs sm:text-sm">{player.team_abbr}</div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
                 <div>
                   <div className="text-gray-400 text-xs uppercase tracking-wider">SEASON KD</div>
-                  <div className={`font-bold text-lg ${getKDColor(player.season_kd)}`}>
+                  <div className={`font-bold text-base sm:text-lg ${getKDColor(player.season_kd)}`}>
                     {player.season_kd ? player.season_kd.toFixed(3) : '-'}
                   </div>
                 </div>
                 <div>
                   <div className="text-gray-400 text-xs uppercase tracking-wider">KD +/-</div>
-                  <div className={`font-bold ${player.season_kd_plus_minus > 0 ? 'text-green-400' : player.season_kd_plus_minus < 0 ? 'text-red-400' : 'text-gray-300'}`}>
+                  <div className={`font-bold text-base sm:text-lg ${player.season_kd_plus_minus > 0 ? 'text-green-400' : player.season_kd_plus_minus < 0 ? 'text-red-400' : 'text-gray-300'}`}>
                     {player.season_kd_plus_minus ? player.season_kd_plus_minus.toFixed(3) : '-'}
                   </div>
                 </div>

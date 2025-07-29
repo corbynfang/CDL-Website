@@ -36,7 +36,7 @@ const Home: React.FC = () => {
         {/* Main Content Overlay */}
         <div className="relative z-10 min-h-screen flex flex-col">
           {/* Hero Section */}
-          <div className="flex-1 flex items-center justify-center px-4 sm:px-6">
+          <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pt-safe pb-safe">
             <div className="text-center w-full max-w-4xl">
               <h1 className="mobile-hero-text text-white tracking-tight mb-4 sm:mb-6">
                 CDL<span className="text-red-500">YTICS</span>

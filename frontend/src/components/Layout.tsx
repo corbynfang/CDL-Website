@@ -15,7 +15,7 @@ const Layout: React.FC = () => {
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="bg-black border-b border-gray-800 relative z-50">
+      <header className="bg-black border-b border-gray-800 relative z-50 pt-safe">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-20">
             {/* Logo */}
@@ -123,7 +123,7 @@ const Layout: React.FC = () => {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-safe">
         <Outlet />
       </main>
 
