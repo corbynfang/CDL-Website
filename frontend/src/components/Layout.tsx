@@ -77,48 +77,48 @@ const Layout: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Navigation Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden absolute top-full left-0 right-0 bg-black border-b border-gray-800 z-50">
-              <nav className="px-4 py-6 space-y-4">
-                <Link
-                  to="/"
-                  className="block nav-link text-lg py-3 border-b border-gray-800"
-                  onClick={closeMobileMenu}
-                >
-                  HOME
-                </Link>
-                <Link
-                  to="/teams"
-                  className="block nav-link text-lg py-3 border-b border-gray-800"
-                  onClick={closeMobileMenu}
-                >
-                  TEAMS
-                </Link>
-                <Link
-                  to="/players"
-                  className="block nav-link text-lg py-3 border-b border-gray-800"
-                  onClick={closeMobileMenu}
-                >
-                  PLAYERS
-                </Link>
-                <Link
-                  to="/kd-stats"
-                  className="block nav-link text-lg py-3 border-b border-gray-800"
-                  onClick={closeMobileMenu}
-                >
-                  KD STATS
-                </Link>
-                <Link
-                  to="/transfers"
-                  className="block nav-link text-lg py-3"
-                  onClick={closeMobileMenu}
-                >
-                  TRANSFERS
-                </Link>
-              </nav>
-            </div>
-          )}
+                      {/* Mobile Navigation Menu */}
+            {mobileMenuOpen && (
+              <div className="mobile-menu md:hidden">
+                <div className="mobile-menu-content">
+                  <Link
+                    to="/"
+                    className="mobile-menu-link"
+                    onClick={closeMobileMenu}
+                  >
+                    HOME
+                  </Link>
+                  <Link
+                    to="/teams"
+                    className="mobile-menu-link"
+                    onClick={closeMobileMenu}
+                  >
+                    TEAMS
+                  </Link>
+                  <Link
+                    to="/players"
+                    className="mobile-menu-link"
+                    onClick={closeMobileMenu}
+                  >
+                    PLAYERS
+                  </Link>
+                  <Link
+                    to="/kd-stats"
+                    className="mobile-menu-link"
+                    onClick={closeMobileMenu}
+                  >
+                    KD STATS
+                  </Link>
+                  <Link
+                    to="/transfers"
+                    className="mobile-menu-link"
+                    onClick={closeMobileMenu}
+                  >
+                    TRANSFERS
+                  </Link>
+                </div>
+              </div>
+            )}
         </div>
       </header>
 

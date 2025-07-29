@@ -108,25 +108,85 @@ const KDStats: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Hero Section */}
-      <div className="text-center py-16 bg-black border border-gray-800 mb-8">
-        <h1 className="text-heading text-white mb-6">KD STATISTICS</h1>
-        <p className="text-subheading text-gray-400 max-w-3xl mx-auto leading-relaxed uppercase tracking-wider">
+      <div className="text-center py-8 sm:py-16 bg-black border border-gray-800 mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tight">KD STATISTICS</h1>
+        <p className="text-sm sm:text-base lg:text-lg text-gray-400 max-w-3xl mx-auto leading-relaxed uppercase tracking-wider px-4">
           COMPREHENSIVE KILL/DEATH RATIOS FOR ALL CDL PLAYERS ACROSS SEASON AND MAJOR TOURNAMENTS
         </p>
-        <div className="mt-8 text-gray-400 text-lg uppercase tracking-wider">
+        <div className="mt-6 sm:mt-8 text-gray-400 text-sm sm:text-lg uppercase tracking-wider">
           {players.length} PLAYERS • RANKED BY SEASON KD
         </div>
         <button 
           onClick={handleRefresh}
-          className="mt-4 px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-wider transition-colors"
+          className="mt-4 px-4 sm:px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-wider transition-colors text-sm sm:text-base"
         >
           REFRESH DATA
         </button>
       </div>
 
-      <div className="card overflow-x-auto">
+      {/* Mobile Card View */}
+      <div className="block lg:hidden">
+        <div className="space-y-4">
+          {players.map((player, index) => (
+            <div key={player.player_id} className="card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className={`font-bold text-lg ${getRankColor(index)}`}>
+                    #{index + 1}
+                  </div>
+                  <PlayerAvatar 
+                    player={{
+                      id: player.player_id,
+                      gamertag: player.gamertag,
+                      avatar_url: player.avatar_url || `/assets/avatars/${player.gamertag}.webp`
+                    }} 
+                    size="sm" 
+                  />
+                  <Link to={`/players/${player.player_id}`} className="text-white hover:text-red-500 font-medium uppercase tracking-wider text-sm sm:text-base">
+                    {player.gamertag}
+                  </Link>
+                </div>
+                <div className="text-gray-300 uppercase tracking-wider text-xs sm:text-sm">{player.team_abbr}</div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="text-gray-400 text-xs uppercase tracking-wider">SEASON KD</div>
+                  <div className={`font-bold text-lg ${getKDColor(player.season_kd)}`}>
+                    {player.season_kd ? player.season_kd.toFixed(3) : '-'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-400 text-xs uppercase tracking-wider">KD +/-</div>
+                  <div className={`font-bold ${player.season_kd_plus_minus > 0 ? 'text-green-400' : player.season_kd_plus_minus < 0 ? 'text-red-400' : 'text-gray-300'}`}>
+                    {player.season_kd_plus_minus ? player.season_kd_plus_minus.toFixed(3) : '-'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tournament KDs - Horizontal scroll */}
+              <div className="mt-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wider mb-2">TOURNAMENT KDS</div>
+                <div className="flex space-x-4 overflow-x-auto pb-2">
+                  {Object.entries(MAJOR_LABELS).map(([id, label]) => (
+                    <div key={id} className="flex-shrink-0 text-center">
+                      <div className="text-gray-400 text-xs uppercase tracking-wider">{label}</div>
+                      <div className="font-bold text-white text-sm">
+                        {player.majors && player.majors[id] && player.majors[id] > 0 ? player.majors[id].toFixed(3) : '-'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block card overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-800">
