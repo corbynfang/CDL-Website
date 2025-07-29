@@ -13,6 +13,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #000000;
   color: #ffffff;
+  overflow-x: hidden;
+  /* Improve mobile scrolling */
+  -webkit-overflow-scrolling: touch;
 }
 
 #root {
@@ -52,6 +55,12 @@ body {
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  /* Mobile touch target improvement */
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-primary:hover {
@@ -73,6 +82,12 @@ body {
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  /* Mobile touch target improvement */
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-secondary:hover {
@@ -138,7 +153,7 @@ a:focus {
 
 /* Video background styles */
 .hero-video {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -148,12 +163,12 @@ a:focus {
 }
 
 .hero-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 1;
 }
 
@@ -164,13 +179,19 @@ a:focus {
 
 /* Video fallback */
 .video-fallback {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
   z-index: 0;
+}
+
+/* Backdrop blur for content cards */
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* Typography */
@@ -201,6 +222,10 @@ a:focus {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: color 0.3s ease;
+  /* Mobile touch target improvement */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
 .nav-link:hover {
@@ -243,6 +268,8 @@ a:focus {
   border-radius: 0;
   font-size: 1rem;
   transition: border-color 0.3s ease;
+  /* Mobile touch target improvement */
+  min-height: 44px;
 }
 
 .input:focus {
@@ -259,4 +286,43 @@ a:focus {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Improve touch targets on mobile */
+  button, a, input, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Better spacing for mobile */
+  .card {
+    padding: 16px;
+  }
+  
+  /* Improve table responsiveness */
+  .table {
+    font-size: 14px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 8px 12px;
+  }
+  
+  /* Better button sizing for mobile */
+  .btn-primary,
+  .btn-secondary {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}
+
+/* Prevent zoom on input focus on iOS */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  select,
+  textarea,
+  input {
+    font-size: 16px;
+  }
 }

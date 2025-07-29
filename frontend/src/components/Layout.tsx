@@ -1,22 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 
 const Layout: React.FC = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="bg-black border-b border-gray-800">
+      <header className="bg-black border-b border-gray-800 relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-16 sm:h-20">
             {/* Logo */}
             <div className="flex items-center">
-              <Link to="/" className="text-3xl font-black text-white tracking-tight">
+              <Link to="/" className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 CDLYTICS
               </Link>
             </div>
 
-            {/* Navigation */}
-            <nav className="hidden md:flex space-x-12">
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-8 lg:space-x-12">
               <Link
                 to="/"
                 className="nav-link text-sm"
@@ -51,25 +61,76 @@ const Layout: React.FC = () => {
 
             {/* Mobile menu button */}
             <div className="md:hidden">
-              <button className="text-white hover:text-gray-300 p-2 transition-colors duration-200">
+              <button 
+                onClick={toggleMobileMenu}
+                className="text-white hover:text-gray-300 p-2 transition-colors duration-200"
+                aria-label="Toggle mobile menu"
+              >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
                 </svg>
               </button>
             </div>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden absolute top-full left-0 right-0 bg-black border-b border-gray-800 z-50">
+              <nav className="px-4 py-6 space-y-4">
+                <Link
+                  to="/"
+                  className="block nav-link text-lg py-3 border-b border-gray-800"
+                  onClick={closeMobileMenu}
+                >
+                  HOME
+                </Link>
+                <Link
+                  to="/teams"
+                  className="block nav-link text-lg py-3 border-b border-gray-800"
+                  onClick={closeMobileMenu}
+                >
+                  TEAMS
+                </Link>
+                <Link
+                  to="/players"
+                  className="block nav-link text-lg py-3 border-b border-gray-800"
+                  onClick={closeMobileMenu}
+                >
+                  PLAYERS
+                </Link>
+                <Link
+                  to="/kd-stats"
+                  className="block nav-link text-lg py-3 border-b border-gray-800"
+                  onClick={closeMobileMenu}
+                >
+                  KD STATS
+                </Link>
+                <Link
+                  to="/transfers"
+                  className="block nav-link text-lg py-3"
+                  onClick={closeMobileMenu}
+                >
+                  TRANSFERS
+                </Link>
+              </nav>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <Outlet />
       </main>
 
       {/* Footer */}
       <footer className="bg-black border-t border-gray-800 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-400 text-sm uppercase tracking-wider">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="text-center text-gray-400 text-xs sm:text-sm uppercase tracking-wider">
             <p>&copy; 2025 CDLYTICS. ALL RIGHTS RESERVED.</p>
           </div>
         </div>

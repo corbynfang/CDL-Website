@@ -162,6 +162,32 @@ type PlayerTournamentStats struct {
 	KDRatio      float64 `json:"kd_ratio"`
 	KDARatio     float64 `json:"kda_ratio"`
 
+	// EWC2025 Detailed Stats
+	Rank               *int    `json:"rank"`
+	OverallPlusMinus   int     `json:"overall_plus_minus" gorm:"default:0"`
+	OverallMaps        int     `json:"overall_maps" gorm:"default:0"`
+	SndKills           int     `json:"snd_kills" gorm:"default:0"`
+	SndDeaths          int     `json:"snd_deaths" gorm:"default:0"`
+	SndKDRatio         float64 `json:"snd_kd_ratio" gorm:"default:0"`
+	SndPlusMinus       int     `json:"snd_plus_minus" gorm:"default:0"`
+	SndKPerMap         float64 `json:"snd_k_per_map" gorm:"default:0"`
+	SndFirstKills      int     `json:"snd_first_kills" gorm:"default:0"`
+	SndMaps            int     `json:"snd_maps" gorm:"default:0"`
+	HpKills            int     `json:"hp_kills" gorm:"default:0"`
+	HpDeaths           int     `json:"hp_deaths" gorm:"default:0"`
+	HpKDRatio          float64 `json:"hp_kd_ratio" gorm:"default:0"`
+	HpPlusMinus        int     `json:"hp_plus_minus" gorm:"default:0"`
+	HpKPerMap          float64 `json:"hp_k_per_map" gorm:"default:0"`
+	HpTimeMilliseconds int     `json:"hp_time_milliseconds" gorm:"default:0"`
+	HpMaps             int     `json:"hp_maps" gorm:"default:0"`
+	ControlKills       int     `json:"control_kills" gorm:"default:0"`
+	ControlDeaths      int     `json:"control_deaths" gorm:"default:0"`
+	ControlKDRatio     float64 `json:"control_kd_ratio" gorm:"default:0"`
+	ControlPlusMinus   int     `json:"control_plus_minus" gorm:"default:0"`
+	ControlKPerMap     float64 `json:"control_k_per_map" gorm:"default:0"`
+	ControlCaptures    int     `json:"control_captures" gorm:"default:0"`
+	ControlMaps        int     `json:"control_maps" gorm:"default:0"`
+
 	// Relationships
 	Player     Player     `json:"player" gorm:"foreignKey:PlayerID"`
 	Team       Team       `json:"team" gorm:"foreignKey:TeamID"`

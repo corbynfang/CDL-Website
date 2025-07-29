@@ -9,6 +9,7 @@ const MAJOR_LABELS = {
   3: 'Major 3',
   4: 'Major 4',
   5: 'Champs',
+  7: 'EWC 2025',
 };
 
 // Players to exclude from Black Ops 6 season
@@ -135,7 +136,7 @@ const KDStats: React.FC = () => {
               <th className="py-4 px-6 text-right text-white font-bold uppercase tracking-wider">SEASON KD</th>
               <th className="py-4 px-6 text-right text-white font-bold uppercase tracking-wider">KD +/-</th>
               {Object.entries(MAJOR_LABELS).map(([id, label]) => (
-                <th key={id} className="py-4 px-6 text-right text-white font-bold uppercase tracking-wider">{label.toUpperCase()} KD</th>
+                <th key={id} className="py-4 px-6 text-right text-white font-bold uppercase tracking-wider">{label.toUpperCase()}</th>
               ))}
             </tr>
           </thead>

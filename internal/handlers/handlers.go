@@ -137,7 +137,7 @@ func GetTournament(c *gin.Context) {
 	}
 
 	var tournament database.Tournament
-	if err := database.DB.Preload("Season").First(&tournament, id).Error; err != nil {
+	if err := database.DB.First(&tournament, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tournament not found"})
 		return
 	}
@@ -259,8 +259,45 @@ func GetPlayerKDStats(c *gin.Context) {
 		})
 	}
 
+	// Get player info for response
+	var player database.Player
+	if err := database.DB.First(&player, playerID).Error; err != nil {
+		log.Printf("Error fetching player %d: %v", playerID, err)
+	}
+
+	// Get EWC2025 detailed stats if available
+	var ewcStats database.PlayerTournamentStats
+	var ewcDetailed gin.H
+	if err := database.DB.Where("player_id = ? AND tournament_id = 7", playerID).First(&ewcStats).Error; err == nil {
+		ewcDetailed = gin.H{
+			"ewc_snd_kills":            ewcStats.SndKills,
+			"ewc_snd_deaths":           ewcStats.SndDeaths,
+			"ewc_snd_kd_ratio":         ewcStats.SndKDRatio,
+			"ewc_snd_plus_minus":       ewcStats.SndPlusMinus,
+			"ewc_snd_k_per_map":        ewcStats.SndKPerMap,
+			"ewc_snd_first_kills":      ewcStats.SndFirstKills,
+			"ewc_snd_maps":             ewcStats.SndMaps,
+			"ewc_hp_kills":             ewcStats.HpKills,
+			"ewc_hp_deaths":            ewcStats.HpDeaths,
+			"ewc_hp_kd_ratio":          ewcStats.HpKDRatio,
+			"ewc_hp_plus_minus":        ewcStats.HpPlusMinus,
+			"ewc_hp_k_per_map":         ewcStats.HpKPerMap,
+			"ewc_hp_time_milliseconds": ewcStats.HpTimeMilliseconds,
+			"ewc_hp_maps":              ewcStats.HpMaps,
+			"ewc_control_kills":        ewcStats.ControlKills,
+			"ewc_control_deaths":       ewcStats.ControlDeaths,
+			"ewc_control_kd_ratio":     ewcStats.ControlKDRatio,
+			"ewc_control_plus_minus":   ewcStats.ControlPlusMinus,
+			"ewc_control_k_per_map":    ewcStats.ControlKPerMap,
+			"ewc_control_captures":     ewcStats.ControlCaptures,
+			"ewc_control_maps":         ewcStats.ControlMaps,
+		}
+	}
+
 	response := gin.H{
 		"player_id":        playerID,
+		"gamertag":         player.Gamertag,
+		"avatar_url":       player.AvatarURL,
 		"total_matches":    len(stats),
 		"total_maps":       totalMaps,
 		"total_kills":      totalKills,
@@ -271,6 +308,13 @@ func GetPlayerKDStats(c *gin.Context) {
 		"avg_adr":          avgADR,
 		"tournament_stats": tournamentStatsList,
 		"match_stats":      matchStats,
+	}
+
+	// Add EWC2025 detailed stats if available
+	if ewcDetailed != nil {
+		for key, value := range ewcDetailed {
+			response[key] = value
+		}
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -420,11 +464,11 @@ func GetAllPlayersKDStats(c *gin.Context) {
 
 	var kdRows []KDRow
 	if err := database.DB.Raw(`
-		SELECT pts.player_id, pts.team_id, pts.tournament_id, pts.total_kills, pts.total_deaths, pts.kd_ratio, p.gamertag, t.abbreviation as team_abbr, p.avatar_url
+		SELECT pts.player_id, pts.team_id, pts.tournament_id, pts.total_kills, pts.total_deaths, pts.kd_ratio, p.gamertag, COALESCE(t.abbreviation, 'N/A') as team_abbr, p.avatar_url
 		FROM player_tournament_stats pts
 		JOIN players p ON pts.player_id = p.id
-		JOIN teams t ON pts.team_id = t.id
-		WHERE pts.tournament_id IN (1,2,3,4,5)
+		LEFT JOIN teams t ON pts.team_id = t.id
+		WHERE pts.tournament_id IN (1,2,3,4,5,7)
 		ORDER BY pts.player_id, pts.tournament_id
 	`).Scan(&kdRows).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})

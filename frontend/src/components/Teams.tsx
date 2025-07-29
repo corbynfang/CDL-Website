@@ -55,8 +55,8 @@ const Teams: React.FC = () => {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <div className="text-red-500 text-xl mb-4">{error}</div>
+      <div className="text-center py-8 px-4">
+        <div className="text-red-500 text-lg sm:text-xl mb-4">{error}</div>
         <button
           onClick={() => window.location.reload()}
           className="btn-primary"
@@ -68,53 +68,53 @@ const Teams: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Hero Section */}
-      <div className="text-center py-16 bg-black border border-gray-800 mb-8">
-        <h1 className="text-heading text-white mb-6">CDL TEAMS</h1>
-        <p className="text-subheading text-gray-400 max-w-3xl mx-auto leading-relaxed uppercase tracking-wider">
+      <div className="text-center py-12 sm:py-16 bg-black border border-gray-800 mb-6 sm:mb-8 px-4 sm:px-6">
+        <h1 className="text-3xl sm:text-4xl md:text-heading text-white mb-4 sm:mb-6">CDL TEAMS</h1>
+        <p className="text-base sm:text-lg md:text-subheading text-gray-400 max-w-3xl mx-auto leading-relaxed uppercase tracking-wider px-4">
           PROFESSIONAL CALL OF DUTY LEAGUE ORGANIZATIONS COMPETING AT THE HIGHEST LEVEL.
           EXPLORE TEAM ROSTERS, PLAYER PROFILES, AND COMPREHENSIVE STATISTICS.
         </p>
-        <div className="mt-8 text-gray-400 text-lg uppercase tracking-wider">
+        <div className="mt-6 sm:mt-8 text-gray-400 text-base sm:text-lg uppercase tracking-wider">
           {teams.length} ACTIVE TEAMS
         </div>
       </div>
 
       {/* Teams Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
         {teams.map((team) => (
           <div key={team.id} className="group">
             <div className="card hover:border-white transition-all duration-300 transform hover:scale-105 border border-gray-800 overflow-hidden">
               {/* Team Header */}
-              <div className="flex items-center justify-between mb-6 p-6">
-                <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-between mb-4 sm:mb-6 p-4 sm:p-6">
+                <div className="flex items-center space-x-3 sm:space-x-4">
                   {/* Team Logo */}
-                  <TeamLogo team={team} size="xl" />
+                  <TeamLogo team={team} size="lg" />
                   <div>
-                    <h3 className="text-2xl font-bold text-white uppercase tracking-wider">{team.name}</h3>
-                    <p className="text-gray-400 uppercase tracking-wider">{team.city}</p>
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white uppercase tracking-wider">{team.name}</h3>
+                    <p className="text-gray-400 uppercase tracking-wider text-sm sm:text-base">{team.city}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="inline-block bg-white text-black px-4 py-2 rounded-none text-sm font-bold uppercase tracking-wider">
+                  <span className="inline-block bg-white text-black px-3 sm:px-4 py-1 sm:py-2 rounded-none text-xs sm:text-sm font-bold uppercase tracking-wider">
                     {team.abbreviation}
                   </span>
                 </div>
               </div>
 
               {/* Team Players */}
-              <div className="px-6 pb-6">
-                <h4 className="text-lg font-semibold text-white mb-4 uppercase tracking-wider">ACTIVE ROSTER</h4>
-                <div className="space-y-3">
+              <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+                <h4 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 uppercase tracking-wider">ACTIVE ROSTER</h4>
+                <div className="space-y-2 sm:space-y-3">
                   {team.players && team.players.length > 0 ? (
                     team.players.map((player) => (
-                      <div key={player.id} className="flex items-center space-x-3">
+                      <div key={player.id} className="flex items-center space-x-2 sm:space-x-3">
                         <PlayerAvatar player={player} size="sm" />
                         <div className="flex-1">
                           <Link
                             to={`/players/${player.id}`}
-                            className="text-white hover:text-red-500 font-medium transition-colors duration-200"
+                            className="text-white hover:text-red-500 font-medium transition-colors duration-200 text-sm sm:text-base"
                           >
                             {player.gamertag}
                           </Link>
@@ -127,10 +127,10 @@ const Teams: React.FC = () => {
                 </div>
 
                 {/* View Team Button */}
-                <div className="mt-6">
+                <div className="mt-4 sm:mt-6">
                   <Link
                     to={`/teams/${team.id}`}
-                    className="btn-secondary w-full text-center"
+                    className="btn-secondary w-full text-center text-sm sm:text-base py-2 sm:py-3"
                   >
                     VIEW TEAM
                   </Link>
