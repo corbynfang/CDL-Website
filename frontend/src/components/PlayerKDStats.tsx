@@ -3,14 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { playerApi } from '../services/api';
 import PlayerAvatar from './PlayerAvatar';
 
-const MAJOR_LABELS = {
-  1: 'Major 1',
-  2: 'Major 2',
-  3: 'Major 3',
-  4: 'Major 4',
-  5: 'Champs',
-  7: 'EWC 2025',
-};
+
 
 const PlayerKDStats: React.FC = () => {
   const { id } = useParams<{ id: string }>();
