@@ -70,11 +70,6 @@ const Players: React.FC = () => {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white uppercase tracking-wider">{player.gamertag}</h3>
-                  {player.is_active && (
-                    <span className="text-xs text-black bg-white px-2 sm:px-3 py-1 rounded-none font-bold uppercase tracking-wider">
-                      ACTIVE
-                    </span>
-                  )}
                 </div>
               </div>
             </div>

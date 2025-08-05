@@ -13,7 +13,7 @@ const MAJOR_LABELS = {
 };
 
 // Players to exclude from Black Ops 6 season
-const EXCLUDED_PLAYERS = ['Abe', 'Vikul'];
+const EXCLUDED_PLAYERS = ['Vikul', 'accuracy', 'Crimsix'];
 
 const KDStats: React.FC = () => {
   const [players, setPlayers] = useState<any[]>([]);
@@ -39,9 +39,9 @@ const KDStats: React.FC = () => {
           // Only include players who have at least one tournament stat
           if (!player.majors) return false;
           
-          // Check if player has any non-zero tournament stats
+          // Check if player has any valid tournament stats (including 0.0 for players with no kills/deaths)
           const hasTournamentStats = Object.values(player.majors).some((kd: any) => 
-            kd !== null && kd !== undefined && kd > 0
+            kd !== null && kd !== undefined
           );
           
           return hasTournamentStats;
