@@ -19,11 +19,16 @@ cdl-api/
 
 # Logs
 *.log
+logs/
+security.log
+access.log
 
 # Database dumps/backups
 *.sql
 *.sqlite
 *.db
+database/
+backups/
 
 # System files
 Thumbs.db
@@ -49,3 +54,37 @@ package-lock.json
 
 # Local environment variables
 .env
+.env.local
+.env.production
+.env.staging
+
+# Security and certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+certificates/
+keys/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Security scan results
+security-scan-results/
+vulnerability-reports/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Railway
+.railway/
+railway.toml

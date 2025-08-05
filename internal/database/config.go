@@ -1,9 +1,12 @@
 package database
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -38,18 +41,18 @@ func ConnectDatabase() {
 		user := getEnv("DB_USER", "postgres")
 		password := getEnv("DB_PASSWORD", "")
 		dbname := getEnv("DB_NAME", "cdl_stats")
-		sslmode := getEnv("DB_SSLMODE", "disable")
+		sslmode := getEnv("DB_SSLMODE", "require") // Changed to require for security
 
 		// Log minimal connection info for security
 		log.Printf("Connecting to database: %s:%s/%s (SSL: %s)",
 			host, port, dbname, sslmode)
 
-		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
+		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s&connect_timeout=10",
 			user, password, host, port, dbname, sslmode)
 		log.Println("Using individual DB environment variables")
 	}
 
-	// Connect to database with optimized settings
+	// Connect to database with enhanced security settings
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Error), // Reduce logging during build
 		NamingStrategy: schema.NamingStrategy{
@@ -60,6 +63,10 @@ func ConnectDatabase() {
 		},
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
+		// Enable prepared statements for security
+		PrepareStmt: true,
+		// Use parameterized queries
+		DryRun: false,
 	})
 
 	if err != nil {
@@ -74,13 +81,35 @@ func ConnectDatabase() {
 		log.Fatal("Failed to get database instance:", err)
 	}
 
-	// Set connection pool settings
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(0)
+	// Enhanced connection pool settings for security
+	sqlDB.SetMaxIdleConns(5)  // Reduced for security
+	sqlDB.SetMaxOpenConns(25) // Reduced for security
+	sqlDB.SetConnMaxLifetime(time.Hour)
+	sqlDB.SetConnMaxIdleTime(30 * time.Minute)
 
-	if err := sqlDB.Ping(); err != nil {
+	// Test connection with context timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := sqlDB.PingContext(ctx); err != nil {
 		log.Fatal("Failed to ping database:", err)
+	}
+
+	// Set up connection monitoring
+	go monitorDatabaseConnection(sqlDB)
+}
+
+// monitorDatabaseConnection monitors database connection health
+func monitorDatabaseConnection(sqlDB *sql.DB) {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if err := sqlDB.PingContext(ctx); err != nil {
+			log.Printf("Database connection health check failed: %v", err)
+		}
+		cancel()
 	}
 }
 

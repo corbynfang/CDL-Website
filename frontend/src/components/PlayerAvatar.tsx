@@ -30,29 +30,32 @@ const PlayerAvatar: React.FC<PlayerAvatarProps> = ({ player, size = 'md', classN
   // If we have an avatar URL, use it
   if (player.avatar_url) {
     return (
-      <img
-        src={player.avatar_url}
-        alt={`${player.gamertag} avatar`}
-        className={`${sizeClassesImg[size]} rounded-full object-cover ${className}`}
-        onError={(e) => {
-          // Fallback to placeholder if image fails to load
-          const target = e.target as HTMLImageElement;
-          target.style.display = 'none';
-          const parent = target.parentElement;
-          if (parent) {
-            const fallback = document.createElement('div');
-            fallback.className = `bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold ${sizeClasses[size]} ${className}`;
-            fallback.textContent = player.gamertag.charAt(0).toUpperCase();
-            parent.appendChild(fallback);
-          }
-        }}
-      />
+      <div className={`relative ${sizeClassesImg[size]} ${className}`}>
+        <img
+          src={player.avatar_url}
+          alt={`${player.gamertag} avatar`}
+          className={`w-full h-full rounded-full object-cover object-center`}
+          onError={(e) => {
+            // Fallback to placeholder if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              const fallback = document.createElement('div');
+              fallback.className = `bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold ${sizeClasses[size]} ${className} w-full h-full`;
+              fallback.textContent = player.gamertag.charAt(0).toUpperCase();
+              parent.appendChild(fallback);
+            }
+          }}
+          loading="lazy"
+        />
+      </div>
     );
   }
 
   // Fallback to placeholder
   return (
-    <div className={`bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold ${sizeClasses[size]} ${className}`}>
+    <div className={`bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold ${sizeClasses[size]} ${className} flex-shrink-0`}>
       {player.gamertag.charAt(0).toUpperCase()}
     </div>
   );

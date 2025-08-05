@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/tls"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -56,25 +58,19 @@ func validateInput() gin.HandlerFunc {
 	}
 }
 
-func main() {
-	// Connect to database
-	database.ConnectDatabase()
-	defer database.CloseDatabase()
-
-	// Auto-migrate database tables
-	database.AutoMigrate()
-
-	// Create Gin router
-	r := gin.Default()
-
-	// Security middleware
-	r.Use(func(c *gin.Context) {
-		// Security headers
+// Security middleware with enhanced headers
+func securityMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Enhanced security headers
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;")
+		c.Header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+
+		// Enhanced Content Security Policy
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none';")
 
 		// CORS - restrict to your domain only
 		origin := c.Request.Header.Get("Origin")
@@ -96,9 +92,42 @@ func main() {
 			return
 		}
 		c.Next()
-	})
+	}
+}
 
-	// Apply rate limiting and input validation
+// Request logging middleware
+func requestLogger() gin.HandlerFunc {
+	return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		// Log security-relevant information
+		return fmt.Sprintf("[SECURITY] %s | %d | %s | %s | %s | %s\n",
+			param.TimeStamp.Format("2006/01/02 - 15:04:05"),
+			param.StatusCode,
+			param.Method,
+			param.Path,
+			param.ClientIP,
+			param.Request.UserAgent(),
+		)
+	})
+}
+
+func main() {
+	// Set Gin to release mode for production
+	gin.SetMode(gin.ReleaseMode)
+
+	// Connect to database
+	database.ConnectDatabase()
+	defer database.CloseDatabase()
+
+	// Auto-migrate database tables
+	database.AutoMigrate()
+
+	// Create Gin router
+	r := gin.New() // Use gin.New() instead of gin.Default() for more control
+
+	// Apply middleware in order
+	r.Use(requestLogger())
+	r.Use(gin.Recovery())
+	r.Use(securityMiddleware())
 	r.Use(rateLimit())
 	r.Use(validateInput())
 
@@ -127,6 +156,9 @@ func main() {
 
 		// Transfers routes
 		api.GET("/transfers", handlers.GetTransfers)
+
+		// Debug/Validation routes
+		api.GET("/debug/validation", handlers.GetDatabaseValidation)
 	}
 
 	// Serve static files from frontend/dist/assets
@@ -158,6 +190,27 @@ func main() {
 		port = "8080" // Default port for local development
 	}
 
+	// Create HTTP server with security configurations
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+		// TLS configuration for HTTPS (Railway handles this)
+		TLSConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			},
+		},
+	}
+
 	log.Printf("Server starting on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	log.Fatal(server.ListenAndServe())
 }

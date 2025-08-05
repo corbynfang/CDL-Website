@@ -1,6 +1,11 @@
+/* stylelint-disable at-rule-no-unknown */
+/* postcss-disable-next-line */
 @tailwind base;
+/* postcss-disable-next-line */
 @tailwind components;
+/* postcss-disable-next-line */
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
 
 @layer base {
   body {
@@ -164,6 +169,57 @@
     @apply text-xs sm:text-sm text-gray-400 uppercase tracking-wider;
   }
 
+  /* Team and Player specific mobile improvements */
+  .team-card {
+    @apply bg-gray-800 rounded-lg shadow-lg border border-gray-700 overflow-hidden;
+    @apply hover:border-white transition-all duration-300;
+  }
+
+  .team-card:hover {
+    @apply transform hover:scale-105;
+  }
+
+  .player-item {
+    @apply bg-gray-750 rounded-lg p-2 sm:p-3 hover:bg-gray-700 transition-colors duration-200;
+    @apply flex items-center space-x-2 sm:space-x-3;
+  }
+
+  .team-logo-container {
+    @apply flex justify-center sm:justify-start;
+    @apply flex-shrink-0;
+  }
+
+  .player-avatar-container {
+    @apply flex-shrink-0;
+  }
+
+  .team-info {
+    @apply text-center sm:text-left;
+    @apply flex-1 min-w-0;
+  }
+
+  .team-name {
+    @apply text-lg sm:text-xl lg:text-2xl font-bold text-white uppercase tracking-wider leading-tight;
+  }
+
+  .team-city {
+    @apply text-gray-400 uppercase tracking-wider text-sm sm:text-base mt-1;
+  }
+
+  .player-name {
+    @apply text-white hover:text-red-500 font-medium transition-colors duration-200;
+    @apply text-sm sm:text-base truncate block;
+  }
+
+  /* Custom gray-750 color for better contrast */
+  .bg-gray-750 {
+    background-color: #374151;
+  }
+
+  .hover\:bg-gray-750:hover {
+    background-color: #374151;
+  }
+
   /* Safe area utilities for iPhone */
   .pt-safe {
     padding-top: env(safe-area-inset-top);
@@ -179,6 +235,79 @@
 
   .pr-safe {
     padding-right: env(safe-area-inset-right);
+  }
+
+  /* Mobile-specific flex improvements */
+  .mobile-flex-col {
+    @apply flex flex-col;
+  }
+
+  .mobile-flex-row {
+    @apply flex flex-row;
+  }
+
+  .mobile-justify-center {
+    @apply justify-center;
+  }
+
+  .mobile-justify-start {
+    @apply justify-start;
+  }
+
+  .mobile-items-center {
+    @apply items-center;
+  }
+
+  /* Mobile text truncation */
+  .mobile-truncate {
+    @apply truncate;
+  }
+
+  .mobile-text-center {
+    @apply text-center;
+  }
+
+  .mobile-text-left {
+    @apply text-left;
+  }
+
+  /* Mobile spacing utilities */
+  .mobile-space-y-2 {
+    @apply space-y-2;
+  }
+
+  .mobile-space-y-3 {
+    @apply space-y-3;
+  }
+
+  .mobile-space-x-2 {
+    @apply space-x-2;
+  }
+
+  .mobile-space-x-3 {
+    @apply space-x-3;
+  }
+
+  /* Mobile border utilities */
+  .mobile-border-t {
+    @apply border-t border-gray-700;
+  }
+
+  /* Mobile responsive grid */
+  .mobile-grid-1 {
+    @apply grid grid-cols-1;
+  }
+
+  .mobile-grid-2 {
+    @apply grid grid-cols-1 sm:grid-cols-2;
+  }
+
+  .mobile-grid-3 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .mobile-grid-4 {
+    @apply grid grid-cols-2 sm:grid-cols-4;
   }
 }
 
@@ -237,6 +366,23 @@
   .space-y-8 > * + * {
     margin-top: 2rem;
   }
+
+  /* Mobile team card improvements */
+  .team-card {
+    margin-bottom: 1rem;
+  }
+
+  /* Mobile player item improvements */
+  .player-item {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Mobile logo improvements */
+  .team-logo-container img,
+  .player-avatar-container img {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 /* Prevent zoom on input focus on iOS */
@@ -291,6 +437,23 @@
     .mobile-stats-label {
       font-size: 0.75rem;
     }
+
+    /* iPhone portrait team improvements */
+    .team-card {
+      margin-bottom: 1rem;
+    }
+
+    .team-logo-container {
+      justify-content: center;
+    }
+
+    .team-info {
+      text-align: center;
+    }
+
+    .player-item {
+      padding: 8px;
+    }
   }
   
   /* iPhone landscape specific */
@@ -308,6 +471,19 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 8px;
     }
+
+    /* iPhone landscape team improvements */
+    .team-card {
+      margin-bottom: 0.5rem;
+    }
+
+    .team-logo-container {
+      justify-content: flex-start;
+    }
+
+    .team-info {
+      text-align: left;
+    }
   }
 }
 
@@ -320,5 +496,39 @@
   .mobile-spacing {
     margin-top: 1rem;
     margin-bottom: 1rem;
+  }
+}
+
+/* Additional mobile improvements for team pages */
+@media (max-width: 480px) {
+  .team-card {
+    margin: 0 8px 16px 8px;
+  }
+
+  .player-item {
+    padding: 6px 8px;
+  }
+
+  .team-logo-container img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .player-avatar-container img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .team-name {
+    font-size: 1.125rem;
+    line-height: 1.2;
+  }
+
+  .team-city {
+    font-size: 0.75rem;
+  }
+
+  .player-name {
+    font-size: 0.875rem;
   }
 }

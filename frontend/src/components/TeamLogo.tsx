@@ -29,29 +29,32 @@ const TeamLogo: React.FC<TeamLogoProps> = ({ team, size = 'md', className = '' }
   // If we have a logo URL, use it
   if (team.logo_url) {
     return (
-      <img
-        src={team.logo_url}
-        alt={`${team.name} logo`}
-        className={`${sizeClassesImg[size]} object-contain ${className}`}
-        onError={(e) => {
-          // Fallback to placeholder if image fails to load
-          const target = e.target as HTMLImageElement;
-          target.style.display = 'none';
-          const parent = target.parentElement;
-          if (parent) {
-            const fallback = document.createElement('div');
-            fallback.className = `bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold ${sizeClasses[size]} ${className}`;
-            fallback.textContent = team.abbreviation;
-            parent.appendChild(fallback);
-          }
-        }}
-      />
+      <div className={`relative ${sizeClassesImg[size]} ${className}`}>
+        <img
+          src={team.logo_url}
+          alt={`${team.name} logo`}
+          className={`w-full h-full object-contain object-center`}
+          onError={(e) => {
+            // Fallback to placeholder if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              const fallback = document.createElement('div');
+              fallback.className = `bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold ${sizeClasses[size]} ${className} w-full h-full`;
+              fallback.textContent = team.abbreviation;
+              parent.appendChild(fallback);
+            }
+          }}
+          loading="lazy"
+        />
+      </div>
     );
   }
 
   // Fallback to placeholder
   return (
-    <div className={`bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold ${sizeClasses[size]} ${className}`}>
+    <div className={`bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold ${sizeClasses[size]} ${className} flex-shrink-0`}>
       {team.abbreviation}
     </div>
   );
