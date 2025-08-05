@@ -151,7 +151,9 @@ const Transfers: React.FC = () => {
         {transfers.map((transfer) => (
           <div key={transfer.id} className="card hover:border-white transition-all duration-300">
             <div className="flex items-start space-x-4">
-              <PlayerAvatar player={transfer.player!} size="md" />
+              <div className="flex-shrink-0">
+                <PlayerAvatar player={transfer.player!} size="md" />
+              </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-bold text-white uppercase tracking-wider">

@@ -30,7 +30,7 @@ const KDStats: React.FC = () => {
       const response = await statsApi.getAllPlayersKDStats();
       
       // Handle new response format with timestamp
-      const data = Array.isArray(response) ? response : (response as any).players || [];
+      const data = Array.isArray(response) ? response : (response as any).players || response || [];
       
       // Filter out excluded players and ensure only players with tournament stats are shown
       const filteredPlayers = data

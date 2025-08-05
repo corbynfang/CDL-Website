@@ -46,6 +46,10 @@ const TeamLogo: React.FC<TeamLogoProps> = ({ team, size = 'md', className = '' }
               parent.appendChild(fallback);
             }
           }}
+          onLoad={() => {
+            // Log successful loads for debugging
+            console.log(`Logo loaded successfully: ${team.name} - ${team.logo_url}`);
+          }}
           loading="lazy"
         />
       </div>
