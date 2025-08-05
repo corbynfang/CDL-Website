@@ -30,7 +30,6 @@ COPY go.mod go.sum ./
 # Copy backend files (excluding frontend to avoid overwriting built assets)
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
-COPY database/ ./database/
 COPY railway.json ./
 
 RUN go mod download
