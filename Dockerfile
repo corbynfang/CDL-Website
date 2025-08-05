@@ -12,10 +12,8 @@ RUN npm run build
 FROM golang:1.24-alpine AS backend-build
 WORKDIR /app
 
-# Install security updates and required packages
-RUN apk update && apk upgrade && \
-    apk add --no-cache git ca-certificates tzdata && \
-    update-ca-certificates
+# Install only essential packages (skip security updates to save time/memory)
+RUN apk add --no-cache git ca-certificates
 
 # Copy go mod files
 COPY go.mod go.sum ./
@@ -34,22 +32,17 @@ FROM alpine:latest
 RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
-# Install security updates and minimal runtime dependencies
-RUN apk update && apk upgrade && \
-    apk add --no-cache ca-certificates tzdata && \
-    update-ca-certificates && \
-    rm -rf /var/cache/apk/*
+# Install minimal runtime dependencies (skip security updates to save time/memory)
+RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 
 # Copy backend binary
 COPY --from=backend-build /app/main .
 
-# Copy frontend build output
+# Copy frontend build output and assets
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
-
-# Copy assets to dist folder for static serving
-COPY frontend/src/assets ./frontend/dist/assets
+COPY --from=frontend-build /app/frontend/src/assets ./frontend/dist/assets
 
 # Set proper ownership
 RUN chown -R appuser:appgroup /app
