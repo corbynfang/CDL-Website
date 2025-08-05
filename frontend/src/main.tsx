@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
+// Force rebuild for KDStats fix
+
 // Register service worker for cache management
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

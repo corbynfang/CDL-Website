@@ -36,6 +36,7 @@ const KDStats: React.FC = () => {
       console.log('Sample player:', data[0]);
       console.log('Sample player majors:', data[0]?.majors);
       console.log('Sample player majors keys:', Object.keys(data[0]?.majors || {}));
+      console.log('API Response structure:', typeof response, response);
       
       // Filter out excluded players and ensure only players with tournament stats are shown
       const filteredPlayers = data
