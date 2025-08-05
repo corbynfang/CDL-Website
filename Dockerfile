@@ -26,9 +26,14 @@ RUN ls -la && echo "Starting build..." && npm run build
 # Back to app root and build backend
 WORKDIR /app
 COPY go.mod go.sum ./
-RUN go mod download
 
-COPY . .
+# Copy backend files (excluding frontend to avoid overwriting built assets)
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+COPY database/ ./database/
+COPY railway.json ./
+
+RUN go mod download
 
 # Verify assets are copied correctly
 RUN ls -la frontend/dist/assets/ && echo "Assets copied successfully"
