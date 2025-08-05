@@ -13,7 +13,9 @@ RUN apk add --no-cache go git ca-certificates && \
 # Copy frontend files and build
 COPY frontend/ ./frontend/
 WORKDIR /app/frontend
-RUN npm install --production=false --no-optional
+RUN npm install --production=false
+RUN npm rebuild
+RUN npm install @rollup/rollup-linux-x64-musl
 RUN ls -la && echo "Starting build..." && npm run build
 
 # Back to app root and build backend
