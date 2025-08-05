@@ -6,13 +6,15 @@ WORKDIR /app
 # Install minimal dependencies with specific Node.js version
 RUN apk add --no-cache nodejs npm git ca-certificates && \
     npm config set registry https://registry.npmjs.org/ && \
-    npm cache clean --force
+    npm cache clean --force && \
+    node --version && \
+    npm --version
 
 # Copy frontend files and build
 COPY frontend/ ./frontend/
 WORKDIR /app/frontend
 RUN npm install --production=false --no-optional
-RUN npm run build
+RUN ls -la && echo "Starting build..." && npm run build
 
 # Back to app root and build backend
 WORKDIR /app
