@@ -1,10 +1,10 @@
 # Single-stage build for Railway compatibility
-FROM golang:1.24-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install minimal dependencies with specific Node.js version
-RUN apk add --no-cache nodejs npm git ca-certificates && \
+# Install Go
+RUN apk add --no-cache go git ca-certificates && \
     npm config set registry https://registry.npmjs.org/ && \
     npm cache clean --force && \
     node --version && \
