@@ -34,6 +34,8 @@ const KDStats: React.FC = () => {
       
       console.log('Raw data length:', data.length);
       console.log('Sample player:', data[0]);
+      console.log('Sample player majors:', data[0]?.majors);
+      console.log('Sample player majors keys:', Object.keys(data[0]?.majors || {}));
       
       // Filter out excluded players and ensure only players with tournament stats are shown
       const filteredPlayers = data
@@ -51,13 +53,15 @@ const KDStats: React.FC = () => {
             return false;
           }
           
-          // Check if player has any valid tournament stats (including 0.0 for players with no kills/deaths)
+          // Check if player has any valid tournament stats
           const hasTournamentStats = Object.values(player.majors).some((tournament: any) => 
-            tournament !== null && tournament !== undefined && tournament.kd_ratio !== null && tournament.kd_ratio !== undefined
+            tournament !== null && tournament !== undefined && 
+            (tournament.kd_ratio !== null && tournament.kd_ratio !== undefined || 
+             (tournament.kills !== undefined && tournament.deaths !== undefined))
           );
           
           if (!hasTournamentStats) {
-            console.log('Player has no valid tournament stats:', player.gamertag);
+            console.log('Player has no valid tournament stats:', player.gamertag, player.majors);
           }
           
           return hasTournamentStats;
@@ -74,6 +78,9 @@ const KDStats: React.FC = () => {
           // If same KD, sort by gamertag alphabetically
           return a.gamertag.localeCompare(b.gamertag);
         });
+      
+      console.log('Filtered players length:', filteredPlayers.length);
+      console.log('First few filtered players:', filteredPlayers.slice(0, 3));
       
       setPlayers(filteredPlayers);
     } catch (err) {
