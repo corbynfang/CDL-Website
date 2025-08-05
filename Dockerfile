@@ -30,6 +30,12 @@ RUN go mod download
 
 COPY . .
 
+# Ensure assets are in the correct location for the Go server
+RUN ls -la frontend/dist/ && echo "Checking assets directory..." && \
+    ls -la frontend/dist/assets/ && echo "Assets directory contents:" && \
+    ls -la frontend/dist/assets/logos/ && echo "Logos directory contents:" && \
+    ls -la frontend/dist/assets/avatars/ && echo "Avatars directory contents:"
+
 # Build Go binary
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o main ./cmd/main.go
 
