@@ -32,17 +32,33 @@ const KDStats: React.FC = () => {
       // Handle new response format with timestamp
       const data = Array.isArray(response) ? response : (response as any).players || response || [];
       
+      console.log('Raw data length:', data.length);
+      console.log('Sample player:', data[0]);
+      
       // Filter out excluded players and ensure only players with tournament stats are shown
       const filteredPlayers = data
-        .filter((player: any) => !EXCLUDED_PLAYERS.includes(player.gamertag))
+        .filter((player: any) => {
+          const isExcluded = EXCLUDED_PLAYERS.includes(player.gamertag);
+          if (isExcluded) {
+            console.log('Excluding player:', player.gamertag);
+          }
+          return !isExcluded;
+        })
         .filter((player: any) => {
           // Only include players who have at least one tournament stat
-          if (!player.majors) return false;
+          if (!player.majors) {
+            console.log('Player has no majors:', player.gamertag);
+            return false;
+          }
           
           // Check if player has any valid tournament stats (including 0.0 for players with no kills/deaths)
-          const hasTournamentStats = Object.values(player.majors).some((kd: any) => 
-            kd !== null && kd !== undefined
+          const hasTournamentStats = Object.values(player.majors).some((tournament: any) => 
+            tournament !== null && tournament !== undefined && tournament.kd_ratio !== null && tournament.kd_ratio !== undefined
           );
+          
+          if (!hasTournamentStats) {
+            console.log('Player has no valid tournament stats:', player.gamertag);
+          }
           
           return hasTournamentStats;
         })
@@ -174,7 +190,7 @@ const KDStats: React.FC = () => {
                     <div key={id} className="flex-shrink-0 text-center">
                       <div className="text-gray-400 text-xs uppercase tracking-wider">{label}</div>
                       <div className="font-bold text-white text-sm">
-                        {player.majors && player.majors[id] && player.majors[id] > 0 ? player.majors[id].toFixed(3) : '-'}
+                        {player.majors && player.majors[id] && player.majors[id].kd_ratio ? player.majors[id].kd_ratio.toFixed(3) : '-'}
                       </div>
                     </div>
                   ))}
@@ -234,7 +250,7 @@ const KDStats: React.FC = () => {
                 </td>
                 {Object.keys(MAJOR_LABELS).map((id) => (
                   <td key={id} className="py-4 px-6 text-right font-bold text-white">
-                    {player.majors && player.majors[id] && player.majors[id] > 0 ? player.majors[id].toFixed(3) : '-'}
+                    {player.majors && player.majors[id] && player.majors[id].kd_ratio ? player.majors[id].kd_ratio.toFixed(3) : '-'}
                   </td>
                 ))}
               </tr>
