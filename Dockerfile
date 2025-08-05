@@ -1,10 +1,10 @@
-# 1. Build the frontend with Yarn for lower memory usage
+# 1. Build the frontend
 FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 COPY frontend/package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci && npm cache clean --force
 COPY frontend/ ./
 RUN npm run build
 
