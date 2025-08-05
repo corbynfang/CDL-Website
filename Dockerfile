@@ -3,14 +3,15 @@ FROM golang:1.24-alpine
 
 WORKDIR /app
 
-# Install minimal dependencies
-RUN apk add --no-cache nodejs npm git ca-certificates
+# Install minimal dependencies with specific Node.js version
+RUN apk add --no-cache nodejs npm git ca-certificates && \
+    npm config set registry https://registry.npmjs.org/ && \
+    npm cache clean --force
 
 # Copy frontend files and build
-COPY frontend/package*.json ./frontend/
+COPY frontend/ ./frontend/
 WORKDIR /app/frontend
-RUN npm ci --production=false
-COPY frontend/ ./
+RUN npm install --production=false --no-optional
 RUN npm run build
 
 # Back to app root and build backend
