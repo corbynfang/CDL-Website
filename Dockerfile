@@ -3,12 +3,17 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install Go
-RUN apk add --no-cache go git ca-certificates && \
+# Install Go 1.24.5 from official binary
+RUN apk add --no-cache git ca-certificates wget && \
+    wget -O go.tar.gz https://go.dev/dl/go1.24.5.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go.tar.gz && \
+    rm go.tar.gz && \
+    ln -s /usr/local/go/bin/go /usr/local/bin/go && \
     npm config set registry https://registry.npmjs.org/ && \
     npm cache clean --force && \
     node --version && \
-    npm --version
+    npm --version && \
+    go version
 
 # Copy frontend files and build
 COPY frontend/ ./frontend/
