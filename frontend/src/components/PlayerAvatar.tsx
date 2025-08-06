@@ -8,7 +8,7 @@ interface PlayerAvatarProps {
     last_name?: string;
     avatar_url?: string;
   };
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
 }
 
@@ -17,14 +17,16 @@ const PlayerAvatar: React.FC<PlayerAvatarProps> = ({ player, size = 'md', classN
     sm: 'w-8 h-8 text-xs',
     md: 'w-12 h-12 text-sm',
     lg: 'w-16 h-16 text-lg',
-    xl: 'w-24 h-24 text-xl'
+    xl: 'w-24 h-24 text-xl',
+    '2xl': 'w-32 h-32 text-2xl'
   };
 
   const sizeClassesImg = {
     sm: 'w-8 h-8',
     md: 'w-12 h-12',
     lg: 'w-16 h-16',
-    xl: 'w-24 h-24'
+    xl: 'w-24 h-24',
+    '2xl': 'w-32 h-32'
   };
 
   // If we have an avatar URL, use it
