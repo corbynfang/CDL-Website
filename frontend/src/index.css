@@ -175,9 +175,7 @@
     @apply py-3 px-4 text-white;
   }
 
-  .table-modern td.text-right {
-    @apply text-right;
-  }
+
 
   /* Game Mode Cards */
   .game-mode-card {
