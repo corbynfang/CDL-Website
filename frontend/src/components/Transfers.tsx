@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { PlayerTransfer } from '../types';
 import { useApi } from '../hooks/useApi';
 import PlayerAvatar from './PlayerAvatar';
@@ -12,18 +12,17 @@ const Transfers: React.FC = () => {
     type: ''
   });
 
-  // Build query string from filters
-  const buildQueryString = () => {
+  const apiUrl = useMemo(() => {
     const params = new URLSearchParams();
     if (filters.season) params.append('season', filters.season);
     if (filters.team_id) params.append('team_id', filters.team_id);
     if (filters.type) params.append('type', filters.type);
     const query = params.toString();
-    return query ? `?${query}` : '';
-  };
+    return `/api/v1/transfers${query ? `?${query}` : ''}`;
+  }, [filters.season, filters.team_id, filters.type]);
 
   const { data: transfers, loading, error, refetch } = useApi<PlayerTransfer[]>(
-    `/api/v1/transfers${buildQueryString()}`,
+    apiUrl,
     { retries: 3, retryDelay: 1000 }
   );
 
