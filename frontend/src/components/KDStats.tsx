@@ -71,25 +71,23 @@ const KDStats: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Hero Section */}
-      <div className="text-center py-8 sm:py-16 bg-black border border-gray-800 mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tight">KD STATISTICS</h1>
-        <p className="text-sm sm:text-base lg:text-lg text-gray-400 max-w-3xl mx-auto leading-relaxed uppercase tracking-wider px-4">
-          COMPREHENSIVE KILL/DEATH RATIOS FOR ALL CDL PLAYERS ACROSS SEASON AND MAJOR TOURNAMENTS
-        </p>
-        <div className="mt-6 sm:mt-8 text-gray-400 text-sm sm:text-lg uppercase tracking-wider">
-          {players.length} PLAYERS • RANKED BY SEASON KD
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white">k/d statistics</h1>
+          <button 
+            onClick={handleRefresh}
+            className="text-sm px-4 py-2 rounded-lg transition-all"
+            style={{ backgroundColor: '#1a1a1a', color: '#ffffff' }}
+          >
+            refresh
+          </button>
         </div>
-        <button 
-          onClick={handleRefresh}
-          className="mt-4 px-4 sm:px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-wider transition-colors text-sm sm:text-base"
-        >
-          REFRESH DATA
-        </button>
+        <p className="text-lg" style={{ color: '#a3a3a3' }}>
+          {players.length} players ranked by season k/d
+        </p>
       </div>
 
-      {/* Mobile Card View */}
       <div className="block lg:hidden">
         <div className="space-y-3 sm:space-y-4">
           {players.map((player: any, index: number) => (
