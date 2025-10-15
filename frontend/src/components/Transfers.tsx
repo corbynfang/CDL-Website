@@ -21,10 +21,12 @@ const Transfers: React.FC = () => {
     return `/api/v1/transfers${query ? `?${query}` : ''}`;
   }, [filters.season, filters.team_id, filters.type]);
 
-  const { data: transfers, loading, error, refetch } = useApi<PlayerTransfer[]>(
+  const { data: response, loading, error, refetch } = useApi<{ transfers: PlayerTransfer[]; count: number; timestamp: number }>(
     apiUrl,
     { retries: 3, retryDelay: 1000 }
   );
+
+  const transfers = response?.transfers || [];
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
