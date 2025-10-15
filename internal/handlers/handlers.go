@@ -64,35 +64,18 @@ func sanitizeQueryParam(param string) string {
 }
 
 func GetTeams(c *gin.Context) {
-	// Log request for security monitoring
 	logSecurityEvent("API_ACCESS", "GetTeams", c.ClientIP())
 
 	var teams []database.Team
 
-	// Use context with timeout for database operations
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Fetch teams with their current players
-	if err := database.DB.WithContext(ctx).
-		Preload("Players", "team_rosters.end_date IS NULL").
-		Where("is_active = ?", true).
-		Find(&teams).Error; err != nil {
+	if err := database.DB.WithContext(ctx).Where("is_active = ?", true).Find(&teams).Error; err != nil {
 		log.Printf("Database Error: %v", err)
 		logSecurityEvent("DB_ERROR", "GetTeams failed", c.ClientIP())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teams"})
 		return
-	}
-
-	// For each team, get their current players manually
-	for i := range teams {
-		var players []database.Player
-		if err := database.DB.WithContext(ctx).
-			Joins("JOIN team_rosters ON players.id = team_rosters.player_id").
-			Where("team_rosters.team_id = ? AND team_rosters.end_date IS NULL", teams[i].ID).
-			Find(&players).Error; err == nil {
-			teams[i].Players = players
-		}
 	}
 
 	c.JSON(http.StatusOK, teams)
