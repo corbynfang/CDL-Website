@@ -1,41 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { PlayerTransfer } from '../types';
-import { transfersApi } from '../services/api';
+import { useApi } from '../hooks/useApi';
 import PlayerAvatar from './PlayerAvatar';
 import TeamLogo from './TeamLogo';
+import LoadingSkeleton, { ErrorDisplay } from './LoadingSkeleton';
 
 const Transfers: React.FC = () => {
-  const [transfers, setTransfers] = useState<PlayerTransfer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     season: 'Black Ops 6',
     team_id: '',
     type: ''
   });
 
-  useEffect(() => {
-    fetchTransfers();
-  }, [filters]);
-
-  const fetchTransfers = async () => {
-    try {
-      setLoading(true);
-      const params: any = {};
-      if (filters.season) params.season = filters.season;
-      if (filters.team_id) params.team_id = filters.team_id;
-      if (filters.type) params.type = filters.type;
-      
-      const data = await transfersApi.getTransfers(params);
-      setTransfers(data);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch transfers');
-      console.error('Error fetching transfers:', err);
-    } finally {
-      setLoading(false);
-    }
+  // Build query string from filters
+  const buildQueryString = () => {
+    const params = new URLSearchParams();
+    if (filters.season) params.append('season', filters.season);
+    if (filters.team_id) params.append('team_id', filters.team_id);
+    if (filters.type) params.append('type', filters.type);
+    const query = params.toString();
+    return query ? `?${query}` : '';
   };
+
+  const { data: transfers, loading, error, refetch } = useApi<PlayerTransfer[]>(
+    `/api/v1/transfers${buildQueryString()}`,
+    { retries: 3, retryDelay: 1000 }
+  );
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -46,6 +36,11 @@ const Transfers: React.FC = () => {
   };
 
   const getTransferDescription = (transfer: PlayerTransfer) => {
+    // Use the description field if available, otherwise fall back to the old logic
+    if (transfer.description && transfer.description.trim() !== '') {
+      return transfer.description;
+    }
+
     const playerName = transfer.player?.gamertag || 'Unknown Player';
     const fromTeam = transfer.from_team?.name || 'Free Agent';
     const toTeam = transfer.to_team?.name || 'Unknown Team';
@@ -61,25 +56,11 @@ const Transfers: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-none h-12 w-12 border-b-2 border-white"></div>
-      </div>
-    );
+    return <LoadingSkeleton variant="list" count={5} />;
   }
 
   if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-red-500 text-xl mb-4">{error}</div>
-        <button 
-          onClick={fetchTransfers}
-          className="btn-primary"
-        >
-          RETRY
-        </button>
-      </div>
-    );
+    return <ErrorDisplay message={error} onRetry={refetch} />;
   }
 
   return (
@@ -91,7 +72,7 @@ const Transfers: React.FC = () => {
           TRACK ALL PLAYER MOVEMENTS, ROSTER CHANGES, AND TEAM TRANSITIONS THROUGHOUT THE CDL SEASON
         </p>
         <div className="mt-8 text-gray-400 text-lg uppercase tracking-wider">
-          {transfers.length} TRANSFERS
+          {transfers?.length || 0} TRANSFERS
         </div>
       </div>
 
@@ -148,7 +129,7 @@ const Transfers: React.FC = () => {
 
       {/* Transfers List */}
       <div className="space-y-4">
-        {transfers.map((transfer) => (
+        {transfers && transfers.map((transfer) => (
           <div key={transfer.id} className="card hover:border-white transition-all duration-300">
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0">
@@ -187,7 +168,7 @@ const Transfers: React.FC = () => {
         ))}
       </div>
 
-      {transfers.length === 0 && (
+      {(!transfers || transfers.length === 0) && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-xl mb-4 uppercase tracking-wider">NO TRANSFERS FOUND</div>
           <p className="text-gray-500 uppercase tracking-wider">No transfers match the current filters.</p>

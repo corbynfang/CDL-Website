@@ -1,33 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { playerApi } from '../services/api';
+import { useApi } from '../hooks/useApi';
 import PlayerAvatar from './PlayerAvatar';
+import LoadingSkeleton, { ErrorDisplay } from './LoadingSkeleton';
 
 const PlayerKDStats: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [playerStats, setPlayerStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    const fetchPlayerStats = async () => {
-      if (!id) return;
-      
-      try {
-        setLoading(true);
-        const stats = await playerApi.getPlayerKDStats(parseInt(id));
-        setPlayerStats(stats);
-      } catch (err) {
-        setError('Failed to fetch player KD statistics');
-        console.error('Error fetching player KD stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlayerStats();
-  }, [id]);
+  const { data: playerStats, loading, error, refetch } = useApi<any>(
+    `/api/v1/players/${id}/kd`,
+    { retries: 3, retryDelay: 1000 }
+  );
 
   const getKDColor = (kd: number) => {
     if (kd >= 1.2) return 'text-green-400';
@@ -43,20 +27,11 @@ const PlayerKDStats: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-      </div>
-    );
+    return <LoadingSkeleton variant="profile" />;
   }
 
   if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-red-500 text-xl mb-4">{error}</div>
-        <Link to="/kd-stats" className="btn-primary">Back to KD Stats</Link>
-      </div>
-    );
+    return <ErrorDisplay message={error} onRetry={refetch} />;
   }
 
   if (!playerStats) {

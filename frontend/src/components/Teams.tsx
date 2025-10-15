@@ -4,6 +4,7 @@ import type { Team, Player } from '../types';
 import { teamApi } from '../services/api';
 import TeamLogo from './TeamLogo';
 import PlayerAvatar from './PlayerAvatar';
+import LoadingSkeleton, { ErrorDisplay } from './LoadingSkeleton';
 
 interface TeamWithPlayers extends Team {
   players?: Player[];
@@ -13,58 +14,67 @@ const Teams: React.FC = () => {
   const [teams, setTeams] = useState<TeamWithPlayers[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const fetchTeamsWithPlayers = async () => {
-      try {
-        setLoading(true);
-        const teamsData = await teamApi.getTeams();
-        
-        // Fetch players for each team
-        const teamsWithPlayers = await Promise.all(
-          teamsData.map(async (team) => {
-            try {
-              const players = await teamApi.getTeamPlayers(team.id);
-              return { ...team, players };
-            } catch (err) {
-              console.error(`Failed to fetch players for team ${team.id}:`, err);
-              return { ...team, players: [] };
-            }
-          })
-        );
-        
-        setTeams(teamsWithPlayers);
-      } catch (err) {
-        setError('Failed to fetch teams');
-        console.error('Error fetching teams:', err);
-      } finally {
-        setLoading(false);
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (attempts < maxAttempts) {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          const teamsData = await teamApi.getTeams();
+          
+          // Fetch players for each team
+          const teamsWithPlayers = await Promise.all(
+            teamsData.map(async (team) => {
+              try {
+                const players = await teamApi.getTeamPlayers(team.id);
+                return { ...team, players };
+              } catch (err) {
+                console.error(`Failed to fetch players for team ${team.id}:`, err);
+                return { ...team, players: [] };
+              }
+            })
+          );
+          
+          setTeams(teamsWithPlayers);
+          setError(null);
+          break; // Success, exit retry loop
+        } catch (err) {
+          attempts++;
+          console.error(`Error fetching teams (attempt ${attempts}/${maxAttempts}):`, err);
+          
+          if (attempts >= maxAttempts) {
+            setError('Failed to fetch teams. Please try again.');
+          } else {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+          }
+        } finally {
+          if (attempts >= maxAttempts || !error) {
+            setLoading(false);
+          }
+        }
       }
     };
 
     fetchTeamsWithPlayers();
-  }, []);
+  }, [retryCount]);
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-      </div>
-    );
+    return <LoadingSkeleton variant="card" count={8} />;
   }
 
   if (error) {
-    return (
-      <div className="text-center py-8 px-4">
-        <div className="text-red-500 text-lg sm:text-xl mb-4">{error}</div>
-        <button
-          onClick={() => window.location.reload()}
-          className="btn-primary"
-        >
-          TRY AGAIN
-        </button>
-      </div>
-    );
+    return <ErrorDisplay message={error} onRetry={handleRetry} />;
   }
 
   return (

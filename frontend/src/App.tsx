@@ -25,8 +25,6 @@ function App() {
           <Route path="kd-stats" element={<KDStats />} />
           <Route path="players/:id/kd-stats" element={<PlayerKDStats />} />
           <Route path="transfers" element={<Transfers />} />
-
-          {/* Add more routes as needed */}
         </Route>
       </Routes>
     </Router>

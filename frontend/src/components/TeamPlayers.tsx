@@ -1,57 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { Team, Player } from '../types';
-import { teamApi } from '../services/api';
+import { useApi } from '../hooks/useApi';
 import TeamLogo from './TeamLogo';
 import PlayerAvatar from './PlayerAvatar';
+import LoadingSkeleton, { ErrorDisplay } from './LoadingSkeleton';
 
 const TeamPlayers: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [team, setTeam] = useState<Team | null>(null);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchTeamPlayers = async () => {
-      if (!id) return;
-      
-      try {
-        setLoading(true);
-        const [teamData, playersData] = await Promise.all([
-          teamApi.getTeam(parseInt(id)),
-          teamApi.getTeamPlayers(parseInt(id))
-        ]);
-        setTeam(teamData);
-        setPlayers(playersData);
-      } catch (err) {
-        setError('Failed to fetch team players');
-        console.error('Error fetching team players:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch team and players in parallel
+  const { data: team, loading: teamLoading, error: teamError } = useApi<Team>(
+    `/api/v1/teams/${id}`,
+    { retries: 3 }
+  );
+  const { data: players, loading: playersLoading } = useApi<Player[]>(
+    `/api/v1/teams/${id}/players`,
+    { retries: 3 }
+  );
 
-    fetchTeamPlayers();
-  }, [id]);
+  const loading = teamLoading || playersLoading;
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <LoadingSkeleton variant="card" count={6} />;
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-red-500 text-xl mb-4">{error}</div>
-        <Link to="/teams" className="btn-primary">
-          Back to Teams
-        </Link>
-      </div>
-    );
+  if (teamError) {
+    return <ErrorDisplay message={teamError} onRetry={() => window.location.reload()} />;
   }
 
   if (!team) {
@@ -65,13 +40,15 @@ const TeamPlayers: React.FC = () => {
     );
   }
 
+  const teamPlayers = players || [];
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">{team.name} Roster</h1>
-          <p className="text-gray-400">{players.length} Players</p>
+          <p className="text-gray-400">{teamPlayers.length} Players</p>
         </div>
         <Link to={`/teams/${team.id}`} className="btn-secondary">
           Back to Team
@@ -96,9 +73,9 @@ const TeamPlayers: React.FC = () => {
       </div>
 
       {/* Players Grid */}
-      {players.length > 0 ? (
+      {teamPlayers.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {players.map((player) => (
+          {teamPlayers.map((player) => (
             <div key={player.id} className="card hover:bg-gray-750 transition-all duration-300 transform hover:scale-105">
               {/* Player Header */}
               <div className="flex items-center space-x-4 mb-4">
@@ -197,29 +174,29 @@ const TeamPlayers: React.FC = () => {
       )}
 
       {/* Team Stats Summary */}
-      {players.length > 0 && (
+      {teamPlayers.length > 0 && (
         <div className="card">
           <h3 className="text-xl font-semibold text-white mb-4">Roster Summary</h3>
           <div className="grid md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{players.length}</div>
+              <div className="text-2xl font-bold text-green-400">{teamPlayers.length}</div>
               <div className="text-gray-400 text-sm">Total Players</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-400">
-                {players.filter(p => p.is_active).length}
+                {teamPlayers.filter(p => p.is_active).length}
               </div>
               <div className="text-gray-400 text-sm">Active Players</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-400">
-                {players.filter(p => p.role).length}
+                {teamPlayers.filter(p => p.role).length}
               </div>
               <div className="text-gray-400 text-sm">With Roles</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-400">
-                {players.filter(p => p.country).length}
+                {teamPlayers.filter(p => p.country).length}
               </div>
               <div className="text-gray-400 text-sm">With Country</div>
             </div>

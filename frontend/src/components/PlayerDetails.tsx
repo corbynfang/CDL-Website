@@ -1,52 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { Player } from '../types';
-import { playerApi } from '../services/api';
+import { useApi } from '../hooks/useApi';
 import PlayerAvatar from './PlayerAvatar';
+import LoadingSkeleton, { ErrorDisplay } from './LoadingSkeleton';
 
 const PlayerDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [player, setPlayer] = useState<Player | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    const fetchPlayerData = async () => {
-      if (!id) return;
-      
-      try {
-        setLoading(true);
-        const playerData = await playerApi.getPlayer(parseInt(id));
-        setPlayer(playerData);
-      } catch (err) {
-        setError('Failed to fetch player details');
-        console.error('Error fetching player details:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlayerData();
-  }, [id]);
+  // Use the new useApi hook with automatic retry logic
+  const { data: player, loading, error, refetch } = useApi<Player>(
+    `/api/v1/players/${id}`,
+    { retries: 3, retryDelay: 1000 }
+  );
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <LoadingSkeleton variant="profile" />;
   }
 
   if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-red-500 text-xl mb-4">{error}</div>
-        <Link to="/players" className="btn-primary">
-          Back to Players
-        </Link>
-      </div>
-    );
+    return <ErrorDisplay message={error} onRetry={refetch} />;
   }
 
   if (!player) {

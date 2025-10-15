@@ -1,49 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Player } from '../types';
-import { playerApi } from '../services/api';
+import { useApi } from '../hooks/useApi';
 import PlayerAvatar from './PlayerAvatar';
+import LoadingSkeleton, { ErrorDisplay } from './LoadingSkeleton';
 
 const Players: React.FC = () => {
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchPlayers = async () => {
-      try {
-        setLoading(true);
-        const data = await playerApi.getPlayers();
-        setPlayers(data);
-      } catch (err) {
-        setError('Failed to fetch players');
-        console.error('Error fetching players:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlayers();
-  }, []);
+  const { data: players, loading, error, refetch } = useApi<Player[]>('/api/v1/players', {
+    retries: 3,
+    retryDelay: 1000
+  });
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-none h-12 w-12 border-b-2 border-white"></div>
-      </div>
-    );
+    return <LoadingSkeleton variant="card" count={6} />;
   }
 
   if (error) {
+    return <ErrorDisplay message={error} onRetry={refetch} />;
+  }
+
+  if (!players || players.length === 0) {
     return (
       <div className="text-center py-8 px-4">
-        <div className="text-red-500 text-lg sm:text-xl mb-4">{error}</div>
-        <button
-          onClick={() => window.location.reload()}
-          className="btn-primary"
-        >
-          TRY AGAIN
-        </button>
+        <div className="text-gray-400 text-xl mb-4">No players found</div>
       </div>
     );
   }

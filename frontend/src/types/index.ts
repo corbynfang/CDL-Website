@@ -185,11 +185,12 @@ export interface PlayerTransfer {
   id: number;
   player_id: number;
   from_team_id?: number;
-  to_team_id: number;
+  to_team_id?: number;
   transfer_date: string;
   transfer_type: string;
   role: string;
   season: string;
+  description: string;
   created_at: string;
   player?: Player;
   from_team?: Team;

@@ -58,6 +58,24 @@ func validateInput() gin.HandlerFunc {
 	}
 }
 
+func httpsRedirect() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Railway sets X-Forwarded-Proto header
+		// Only redirect if not localhost and using HTTP
+		proto := c.Request.Header.Get("X-Forwarded-Proto")
+		host := c.Request.Host
+
+		// Don't redirect localhost or if already HTTPS
+		if proto == "http" && host != "localhost:8080" && host != "localhost:3000" {
+			httpsURL := "https://" + c.Request.Host + c.Request.RequestURI
+			c.Redirect(301, httpsURL)
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 // Security middleware with enhanced headers
 func securityMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -118,15 +136,15 @@ func main() {
 	database.ConnectDatabase()
 	defer database.CloseDatabase()
 
-	// Auto-migrate database tables
-	database.AutoMigrate()
+	// Auto-migrate database tables (skip for faster startup since tables exist)
+	// database.AutoMigrate()
 
 	// Create Gin router
 	r := gin.New() // Use gin.New() instead of gin.Default() for more control
 
-	// Apply middleware in order
 	r.Use(requestLogger())
 	r.Use(gin.Recovery())
+	r.Use(httpsRedirect())
 	r.Use(securityMiddleware())
 	r.Use(rateLimit())
 	r.Use(validateInput())
@@ -145,6 +163,7 @@ func main() {
 		api.GET("/players/:id", handlers.GetPlayer)
 		api.GET("/players/:id/stats", handlers.GetPlayerStats)
 		api.GET("/players/:id/kd", handlers.GetPlayerKDStats)
+		api.GET("/players/:id/matches", handlers.GetPlayerMatches)
 		api.GET("/players/top-kd", handlers.GetTopKDPlayers)
 		api.GET("/players/top-kd-new", handlers.GetTopKDPlayersNew)
 		api.GET("/players/all-kd-stats-tournament", handlers.GetAllPlayersKDStats)
@@ -214,4 +233,3 @@ func main() {
 	log.Printf("Server starting on port %s", port)
 	log.Fatal(server.ListenAndServe())
 }
-// Force Railway deployment Tue Aug  5 00:13:29 CDT 2025

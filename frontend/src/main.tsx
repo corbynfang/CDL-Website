@@ -3,23 +3,12 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Force rebuild for KDStats fix
-
-// Register service worker for cache management
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(
-        () => {
-          // console.log('SW registered: ', registration);
-        },
-        () => {
-          // console.log('SW registration failed: ', registrationError);
-        }
-      );
+    navigator.serviceWorker.register('/sw.js');
   });
 }
 
-// Clear any existing caches on page load
 if ('caches' in window) {
   caches.keys().then((names) => {
     names.forEach((name) => {
@@ -33,4 +22,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>,
 )
-// Force rebuild Tue Aug  5 00:08:35 CDT 2025

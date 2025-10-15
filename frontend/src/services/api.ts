@@ -171,9 +171,9 @@ export const healthApi = {
 // Transfers API functions
 export const transfersApi = {
   // Get all transfers
-  getTransfers: async (params?: { season?: string; team_id?: number; type?: string }): Promise<PlayerTransfer[]> => {
-    const response: AxiosResponse<PlayerTransfer[]> = await api.get('/transfers', { params });
-    return response.data;
+  getTransfers: async (params?: { season?: string; team_id?: number; type?: string; player_id?: number }): Promise<PlayerTransfer[]> => {
+    const response: AxiosResponse<{ transfers: PlayerTransfer[]; count: number; timestamp: number }> = await api.get('/transfers', { params });
+    return response.data.transfers;
   },
 };
 

@@ -31,6 +31,9 @@ type Team struct {
 	IsActive       bool       `json:"is_active" gorm:"default:true;column:is_active"`
 	CreatedAt      time.Time  `json:"created_at" gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt      time.Time  `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
+
+	// Relationships
+	Players []Player `json:"players" gorm:"many2many:team_rosters;"`
 }
 
 func (Team) TableName() string {
@@ -222,11 +225,6 @@ func (TeamTournamentStats) TableName() string {
 	return "team_tournament_stats"
 }
 
-// Coaches table
-// Represents a coach for a team in a given season
-// Matches the schema in schema.sql
-// Table name: coaches
-
 type Coach struct {
 	ID       uint   `json:"id" gorm:"primaryKey"`
 	Name     string `json:"name" gorm:"not null;size:100"`
@@ -241,18 +239,19 @@ func (Coach) TableName() string {
 type PlayerTransfer struct {
 	ID           uint      `json:"id" gorm:"primaryKey"`
 	PlayerID     uint      `json:"player_id"`
-	FromTeamID   *uint     `json:"from_team_id"` // Nullable for free agent joins
-	ToTeamID     uint      `json:"to_team_id"`
+	FromTeamID   *uint     `json:"from_team_id"`
+	ToTeamID     *uint     `json:"to_team_id"`
 	TransferDate time.Time `json:"transfer_date"`
-	TransferType string    `json:"transfer_type" gorm:"size:50"` // 'CDL', 'Challengers', 'Free Agent'
+	TransferType string    `json:"transfer_type" gorm:"size:50"`
 	Role         string    `json:"role" gorm:"size:50"`
-	Season       string    `json:"season" gorm:"size:20"`
+	Season       string    `json:"season" gorm:"size:50"`
+	Description  string    `json:"description" gorm:"size:500"`
 	CreatedAt    time.Time `json:"created_at"`
 
 	// Relationships
 	Player   Player `json:"player" gorm:"foreignKey:PlayerID"`
 	FromTeam *Team  `json:"from_team" gorm:"foreignKey:FromTeamID"`
-	ToTeam   Team   `json:"to_team" gorm:"foreignKey:ToTeamID"`
+	ToTeam   *Team  `json:"to_team" gorm:"foreignKey:ToTeamID"`
 }
 
 func (PlayerTransfer) TableName() string {

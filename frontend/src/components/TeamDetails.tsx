@@ -1,58 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { Team, Player, TeamTournamentStats } from '../types';
-import { teamApi } from '../services/api';
+import { useApi } from '../hooks/useApi';
 import TeamLogo from './TeamLogo';
 import PlayerAvatar from './PlayerAvatar';
+import LoadingSkeleton, { ErrorDisplay } from './LoadingSkeleton';
 
 const TeamDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [team, setTeam] = useState<Team | null>(null);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [stats, setStats] = useState<TeamTournamentStats[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchTeamData = async () => {
-      if (!id) return;
-      
-      try {
-        setLoading(true);
-        const [teamData, playersData, statsData] = await Promise.all([
-          teamApi.getTeam(parseInt(id)),
-          teamApi.getTeamPlayers(parseInt(id)),
-          teamApi.getTeamStats(parseInt(id))
-        ]);
-        setTeam(teamData);
-        setPlayers(playersData);
-        setStats(statsData);
-      } catch (err) {
-        setError('Failed to fetch team data');
-        console.error('Error fetching team data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch team, players, and stats in parallel using separate hooks
+  const { data: team, loading: teamLoading, error: teamError } = useApi<Team>(
+    `/api/v1/teams/${id}`,
+    { retries: 3 }
+  );
+  const { data: players, loading: playersLoading } = useApi<Player[]>(
+    `/api/v1/teams/${id}/players`,
+    { retries: 3 }
+  );
+  const { data: stats, loading: statsLoading } = useApi<TeamTournamentStats[]>(
+    `/api/v1/teams/${id}/stats`,
+    { retries: 3 }
+  );
 
-    fetchTeamData();
-  }, [id]);
+  // Combine loading states
+  const loading = teamLoading || playersLoading || statsLoading;
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <LoadingSkeleton variant="profile" />;
   }
 
-  if (error) {
+  if (teamError) {
     return (
       <div className="text-center py-8 px-4">
-        <div className="text-red-500 text-xl mb-4">{error}</div>
-        <Link to="/teams" className="btn-primary">
-          Back to Teams
-        </Link>
+        <ErrorDisplay message={teamError} onRetry={() => window.location.reload()} />
       </div>
     );
   }
@@ -67,6 +48,10 @@ const TeamDetails: React.FC = () => {
       </div>
     );
   }
+
+  // Default to empty arrays if data isn't loaded yet
+  const teamPlayers = players || [];
+  const teamStats = stats || [];
 
   return (
     <div className="space-y-6 sm:space-y-8 px-4 sm:px-6 lg:px-8">
@@ -148,25 +133,25 @@ const TeamDetails: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
         <div className="card text-center">
           <div className="text-2xl sm:text-3xl font-bold text-green-400">
-            {players.length}
+            {teamPlayers.length}
           </div>
           <div className="text-gray-400 text-xs sm:text-sm">Active Players</div>
         </div>
         <div className="card text-center">
           <div className="text-2xl sm:text-3xl font-bold text-blue-400">
-            {stats.length}
+            {teamStats.length}
           </div>
           <div className="text-gray-400 text-xs sm:text-sm">Tournaments</div>
         </div>
         <div className="card text-center">
           <div className="text-2xl sm:text-3xl font-bold text-purple-400">
-            {stats.reduce((total, stat) => total + stat.matches_played, 0)}
+            {teamStats.reduce((total, stat) => total + stat.matches_played, 0)}
           </div>
           <div className="text-gray-400 text-xs sm:text-sm">Matches Played</div>
         </div>
         <div className="card text-center">
           <div className="text-2xl sm:text-3xl font-bold text-yellow-400">
-            {stats.reduce((total, stat) => total + stat.matches_won, 0)}
+            {teamStats.reduce((total, stat) => total + stat.matches_won, 0)}
           </div>
           <div className="text-gray-400 text-xs sm:text-sm">Matches Won</div>
         </div>
@@ -176,12 +161,12 @@ const TeamDetails: React.FC = () => {
       <div className="card">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
           <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2 sm:mb-0">Current Roster</h2>
-          <span className="text-gray-400 text-sm sm:text-base">{players.length} Players</span>
+          <span className="text-gray-400 text-sm sm:text-base">{teamPlayers.length} Players</span>
         </div>
         
-        {players.length > 0 ? (
+        {teamPlayers.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {players.map((player) => (
+            {teamPlayers.map((player) => (
               <div key={player.id} className="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors">
                 <div className="flex items-center space-x-3 mb-3">
                   <div className="flex-shrink-0">
@@ -229,7 +214,7 @@ const TeamDetails: React.FC = () => {
       </div>
 
       {/* Tournament Performance */}
-      {stats.length > 0 && (
+      {teamStats.length > 0 && (
         <div className="card">
           <h2 className="text-xl sm:text-2xl font-semibold text-white mb-4 sm:mb-6">Tournament Performance</h2>
           <div className="overflow-x-auto">
@@ -245,7 +230,7 @@ const TeamDetails: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {stats.map((stat) => (
+                {teamStats.map((stat) => (
                   <tr key={stat.id} className="border-b border-gray-800">
                     <td className="py-2 sm:py-3 px-2 sm:px-4 text-white font-medium">
                       {stat.tournament?.name || 'Unknown Tournament'}

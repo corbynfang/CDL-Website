@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { statsApi } from '../services/api';
+import { useApi } from '../hooks/useApi';
 import PlayerAvatar from './PlayerAvatar';
+import LoadingSkeleton, { ErrorDisplay } from './LoadingSkeleton';
 
 const MAJOR_LABELS = {
   1: 'Major 1',
@@ -16,79 +17,36 @@ const MAJOR_LABELS = {
 const EXCLUDED_PLAYERS = ['Vikul', 'accuracy', 'Crimsix'];
 
 const KDStats: React.FC = () => {
-  const [players, setPlayers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchAllKD = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Force fresh data by adding cache-busting parameters
-      const response = await statsApi.getAllPlayersKDStats();
-      
-      // Handle new response format with timestamp
-      const data = Array.isArray(response) ? response : (response as any).players || response || [];
-      
-      console.log('Raw data length:', data.length);
-      console.log('Sample player:', data[0]);
-      console.log('Sample player majors:', data[0]?.majors);
-      console.log('Sample player majors keys:', Object.keys(data[0]?.majors || {}));
-      console.log('API Response structure:', typeof response, response);
-      
-      // Filter out excluded players and ensure only players with tournament stats are shown
-      const filteredPlayers = data
-        .filter((player: any) => {
-          const isExcluded = EXCLUDED_PLAYERS.includes(player.gamertag);
-          if (isExcluded) {
-            console.log('Excluding player:', player.gamertag);
-          }
-          return !isExcluded;
-        })
-        .filter((player: any) => {
-          // Only include players who have majors data
-          if (!player.majors || Object.keys(player.majors).length === 0) {
-            console.log('Player has no majors:', player.gamertag);
-            return false;
-          }
-          
-          // Include all players with majors data
-          return true;
-        })
-        .sort((a: any, b: any) => {
-          // Sort by season KD descending (highest to lowest)
-          const aKD = a.season_kd || 0;
-          const bKD = b.season_kd || 0;
-          
-          if (bKD !== aKD) {
-            return bKD - aKD;
-          }
-          
-          // If same KD, sort by gamertag alphabetically
-          return a.gamertag.localeCompare(b.gamertag);
-        });
-      
-      console.log('Filtered players length:', filteredPlayers.length);
-      console.log('First few filtered players:', filteredPlayers.slice(0, 3));
-      
-      setPlayers(filteredPlayers);
-    } catch (err) {
-      setError('Failed to fetch KD statistics');
-      console.error('Error fetching KD stats:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAllKD();
-  }, [fetchAllKD, refreshKey]);
+  // Use the new API hook with cache-busting via refreshKey
+  const { data: response, loading, error, refetch } = useApi<any>(
+    `/api/v1/stats/all-kd-by-tournament?_refresh=${refreshKey}`,
+    { retries: 3, retryDelay: 1000 }
+  );
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
+    refetch();
   };
+
+  // Process and filter players
+  const players = useMemo(() => {
+    if (!response) return [];
+    
+    const data = Array.isArray(response) ? response : (response as any).players || response || [];
+    
+    const filteredPlayers = data
+      .filter((player: any) => !EXCLUDED_PLAYERS.includes(player.gamertag))
+      .filter((player: any) => player.majors && Object.keys(player.majors).length > 0)
+      .sort((a: any, b: any) => {
+        const aKD = a.season_kd || 0;
+        const bKD = b.season_kd || 0;
+        return bKD !== aKD ? bKD - aKD : a.gamertag.localeCompare(b.gamertag);
+      });
+    
+    return filteredPlayers;
+  }, [response]);
 
   const getRankColor = (index: number) => {
     if (index === 0) return 'text-yellow-400'; // Gold for #1
@@ -105,20 +63,11 @@ const KDStats: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-none h-12 w-12 border-b-2 border-white"></div>
-      </div>
-    );
+    return <LoadingSkeleton variant="table" count={10} />;
   }
 
   if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-red-500 text-xl mb-4">{error}</div>
-        <button onClick={handleRefresh} className="btn-primary">TRY AGAIN</button>
-      </div>
-    );
+    return <ErrorDisplay message={error} onRetry={handleRefresh} />;
   }
 
   return (
@@ -143,7 +92,7 @@ const KDStats: React.FC = () => {
       {/* Mobile Card View */}
       <div className="block lg:hidden">
         <div className="space-y-3 sm:space-y-4">
-          {players.map((player, index) => (
+          {players.map((player: any, index: number) => (
             <div key={player.player_id} className="card p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
@@ -215,7 +164,7 @@ const KDStats: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {players.map((player, index) => (
+            {players.map((player: any, index: number) => (
               <tr key={player.player_id} className="border-b border-gray-800 hover:bg-gray-900">
                 <td className="py-4 px-6">
                   <div className={`font-bold text-lg ${getRankColor(index)}`}>

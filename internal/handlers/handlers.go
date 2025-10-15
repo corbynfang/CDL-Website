@@ -73,11 +73,26 @@ func GetTeams(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := database.DB.WithContext(ctx).Find(&teams).Error; err != nil {
+	// Fetch teams with their current players
+	if err := database.DB.WithContext(ctx).
+		Preload("Players", "team_rosters.end_date IS NULL").
+		Where("is_active = ?", true).
+		Find(&teams).Error; err != nil {
 		log.Printf("Database Error: %v", err)
 		logSecurityEvent("DB_ERROR", "GetTeams failed", c.ClientIP())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teams"})
 		return
+	}
+
+	// For each team, get their current players manually
+	for i := range teams {
+		var players []database.Player
+		if err := database.DB.WithContext(ctx).
+			Joins("JOIN team_rosters ON players.id = team_rosters.player_id").
+			Where("team_rosters.team_id = ? AND team_rosters.end_date IS NULL", teams[i].ID).
+			Find(&players).Error; err == nil {
+			teams[i].Players = players
+		}
 	}
 
 	c.JSON(http.StatusOK, teams)
@@ -810,12 +825,19 @@ func GetTransfers(c *gin.Context) {
 	// Log request for security monitoring
 	logSecurityEvent("API_ACCESS", "GetTransfers", c.ClientIP())
 
+	// Add cache-busting headers for Railway
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
+	c.Header("X-Railway-Cache", "disabled")
+
 	var transfers []database.PlayerTransfer
 
 	// Sanitize query parameters
 	season := sanitizeQueryParam(c.Query("season"))
 	teamID := sanitizeQueryParam(c.Query("team_id"))
 	transferType := sanitizeQueryParam(c.Query("type"))
+	playerID := sanitizeQueryParam(c.Query("player_id"))
 
 	// Use context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -842,6 +864,16 @@ func GetTransfers(c *gin.Context) {
 		query = query.Where("transfer_type = ?", transferType)
 	}
 
+	if playerID != "" {
+		// Validate playerID is numeric
+		if _, err := validateID(playerID); err != nil {
+			logSecurityEvent("INVALID_INPUT", "Invalid player_id in query: "+playerID, c.ClientIP())
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player_id parameter"})
+			return
+		}
+		query = query.Where("player_id = ?", playerID)
+	}
+
 	// Order by transfer date (most recent first)
 	if err := query.Order("transfer_date DESC").Find(&transfers).Error; err != nil {
 		log.Printf("Database Error: %v", err)
@@ -850,7 +882,14 @@ func GetTransfers(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, transfers)
+	// Add timestamp to response for cache busting
+	response := gin.H{
+		"timestamp": time.Now().Unix(),
+		"transfers": transfers,
+		"count":     len(transfers),
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // Database validation utility
@@ -922,4 +961,144 @@ func GetDatabaseValidation(c *gin.Context) {
 
 	validation := validateDatabaseStats()
 	c.JSON(http.StatusOK, validation)
+}
+
+// GetPlayerMatches returns all matches for a specific player
+func GetPlayerMatches(c *gin.Context) {
+	// Enhanced input validation
+	playerID, err := validateID(c.Param("id"))
+	if err != nil {
+		logSecurityEvent("INVALID_INPUT", "Invalid player ID: "+c.Param("id"), c.ClientIP())
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
+		return
+	}
+
+	logSecurityEvent("API_ACCESS", "GetPlayerMatches for player "+c.Param("id"), c.ClientIP())
+
+	// Get query parameters
+	tournamentID := sanitizeQueryParam(c.Query("tournament_id"))
+	limit := sanitizeQueryParam(c.Query("limit"))
+
+	// Set default limit if not provided
+	if limit == "" {
+		limit = "50"
+	}
+
+	// Validate limit
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil || limitInt < 1 || limitInt > 100 {
+		limitInt = 50
+	}
+
+	// Build the query
+	query := database.DB.Table("player_match_stats").
+		Select(`
+			player_match_stats.*,
+			matches.match_date,
+			matches.team1_score,
+			matches.team2_score,
+			matches.match_type,
+			matches.format,
+			tournaments.name as tournament_name,
+			t1.name as team1_name,
+			t1.abbreviation as team1_abbr,
+			t2.name as team2_name,
+			t2.abbreviation as team2_abbr,
+			players.gamertag,
+			teams.name as player_team_name,
+			teams.abbreviation as player_team_abbr
+		`).
+		Joins("JOIN matches ON player_match_stats.match_id = matches.id").
+		Joins("JOIN tournaments ON matches.tournament_id = tournaments.id").
+		Joins("JOIN teams t1 ON matches.team1_id = t1.id").
+		Joins("JOIN teams t2 ON matches.team2_id = t2.id").
+		Joins("JOIN players ON player_match_stats.player_id = players.id").
+		Joins("JOIN teams ON player_match_stats.team_id = teams.id").
+		Where("player_match_stats.player_id = ?", playerID)
+
+	// Add tournament filter if provided
+	if tournamentID != "" {
+		if _, err := validateID(tournamentID); err != nil {
+			logSecurityEvent("INVALID_INPUT", "Invalid tournament_id in query: "+tournamentID, c.ClientIP())
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament_id parameter"})
+			return
+		}
+		query = query.Where("matches.tournament_id = ?", tournamentID)
+	}
+
+	// Execute query with limit and ordering
+	var matches []gin.H
+	if err := query.Order("matches.match_date DESC").Limit(limitInt).Find(&matches).Error; err != nil {
+		log.Printf("Database Error: %v", err)
+		logSecurityEvent("DB_ERROR", "GetPlayerMatches failed", c.ClientIP())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player matches"})
+		return
+	}
+
+	// Transform the data to include calculated fields
+	var result []gin.H
+	for _, match := range matches {
+		// Determine if player's team won
+		playerTeamID := match["team_id"].(uint)
+		team1ID := match["team1_id"].(uint)
+		team1Score := match["team1_score"].(int)
+		team2Score := match["team2_score"].(int)
+
+		var matchResult string
+		var opponent string
+		var opponentAbbr string
+
+		if playerTeamID == team1ID {
+			if team1Score > team2Score {
+				matchResult = "W"
+			} else {
+				matchResult = "L"
+			}
+			opponent = match["team2_name"].(string)
+			opponentAbbr = match["team2_abbr"].(string)
+		} else {
+			if team2Score > team1Score {
+				matchResult = "W"
+			} else {
+				matchResult = "L"
+			}
+			opponent = match["team1_name"].(string)
+			opponentAbbr = match["team1_abbr"].(string)
+		}
+
+		// Format score
+		score := fmt.Sprintf("%d:%d", team1Score, team2Score)
+
+		// Calculate game mode KDs (placeholder for now)
+		hpKD := 0.0
+		sndKD := 0.0
+		ctlKD := 0.0
+
+		// Add to result
+		result = append(result, gin.H{
+			"match_id":      match["match_id"],
+			"date":          match["match_date"],
+			"tournament":    match["tournament_name"],
+			"opponent":      opponent,
+			"opponent_abbr": opponentAbbr,
+			"result":        matchResult,
+			"score":         score,
+			"kd":            match["kd_ratio"],
+			"kills":         match["total_kills"],
+			"deaths":        match["total_deaths"],
+			"hp_kd":         hpKD,
+			"snd_kd":        sndKD,
+			"ctl_kd":        ctlKD,
+			"slayer_rating": 0.0, // Placeholder
+			"maps_played":   match["maps_played"],
+			"match_type":    match["match_type"],
+			"format":        match["format"],
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"player_id": playerID,
+		"matches":   result,
+		"total":     len(result),
+	})
 }
