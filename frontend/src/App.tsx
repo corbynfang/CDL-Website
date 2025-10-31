@@ -6,6 +6,7 @@ import PlayerDetail from "./components/PlayerDetail";
 import Teams from "./components/Teams";
 import TeamDetail from "./components/TeamDetail";
 import Stats from "./components/Stats";
+import Transfers from "./components/Transfers";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="teams" element={<Teams />} />
           <Route path="teams/:id" element={<TeamDetail />} />
           <Route path="stats" element={<Stats />} />
+          <Route path="transfers" element={<Transfers />} />
         </Route>
       </Routes>
     </Router>
