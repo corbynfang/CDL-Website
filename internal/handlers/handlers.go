@@ -412,6 +412,28 @@ func GetPlayerKDStats(c *gin.Context) {
 		log.Printf("Error fetching player %d: %v", playerID, err)
 	}
 
+	// Aggregate game mode KDs across all tournaments
+	var totalHpKills, totalHpDeaths, totalSndKills, totalSndDeaths, totalCtlKills, totalCtlDeaths int
+	for _, stat := range stats {
+		totalHpKills += stat.HpKills
+		totalHpDeaths += stat.HpDeaths
+		totalSndKills += stat.SndKills
+		totalSndDeaths += stat.SndDeaths
+		totalCtlKills += stat.ControlKills
+		totalCtlDeaths += stat.ControlDeaths
+	}
+
+	var hpKDRatio, sndKDRatio, ctlKDRatio float64
+	if totalHpDeaths > 0 {
+		hpKDRatio = float64(totalHpKills) / float64(totalHpDeaths)
+	}
+	if totalSndDeaths > 0 {
+		sndKDRatio = float64(totalSndKills) / float64(totalSndDeaths)
+	}
+	if totalCtlDeaths > 0 {
+		ctlKDRatio = float64(totalCtlKills) / float64(totalCtlDeaths)
+	}
+
 	// Get EWC2025 detailed stats if available
 	var ewcStats database.PlayerTournamentStats
 	var ewcDetailed gin.H
@@ -442,19 +464,25 @@ func GetPlayerKDStats(c *gin.Context) {
 	}
 
 	response := gin.H{
-		"player_id":        playerID,
-		"gamertag":         player.Gamertag,
-		"avatar_url":       player.AvatarURL,
-		"total_matches":    len(stats),
-		"total_maps":       totalMaps,
-		"total_kills":      totalKills,
-		"total_deaths":     totalDeaths,
-		"total_assists":    totalAssists,
-		"avg_kd":           avgKD,
-		"avg_kda":          avgKDA,
-		"avg_adr":          avgADR,
-		"tournament_stats": tournamentStatsList,
-		"match_stats":      matchStats,
+		"player_id":            playerID,
+		"gamertag":             player.Gamertag,
+		"avatar_url":           player.AvatarURL,
+		"total_matches":        len(stats),
+		"total_maps":           totalMaps,
+		"total_kills":          totalKills,
+		"total_deaths":         totalDeaths,
+		"total_assists":        totalAssists,
+		"avg_kd":               avgKD,
+		"avg_kda":              avgKDA,
+		"avg_adr":              avgADR,
+		"hp_kd_ratio":          hpKDRatio,
+		"snd_kd_ratio":         sndKDRatio,
+		"control_kd_ratio":     ctlKDRatio,
+		"ewc_hp_kd_ratio":      hpKDRatio,  // Use aggregated for display
+		"ewc_snd_kd_ratio":     sndKDRatio, // Use aggregated for display
+		"ewc_control_kd_ratio": ctlKDRatio, // Use aggregated for display
+		"tournament_stats":     tournamentStatsList,
+		"match_stats":          matchStats,
 	}
 
 	// Add EWC2025 detailed stats if available
@@ -974,6 +1002,10 @@ func GetPlayerMatches(c *gin.Context) {
 		limitInt = 50
 	}
 
+	// Use context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	// Build raw SQL query
 	sqlQuery := `
 		SELECT
@@ -989,9 +1021,11 @@ func GetPlayerMatches(c *gin.Context) {
 			m.team2_score,
 			m.team1_id,
 			m.team2_id,
+			m.tournament_id,
 			m.match_type,
 			m.format,
 			t.name as tournament_name,
+			t.start_date as tournament_start_date,
 			t1.name as team1_name,
 			t1.abbreviation as team1_abbr,
 			t2.name as team2_name,
@@ -1042,16 +1076,17 @@ func GetPlayerMatches(c *gin.Context) {
 
 	// Scan rows into matches slice
 	for rows.Next() {
-		var matchID, teamID, totalKills, totalDeaths, totalAssists, mapsPlayed int
+		var matchID, teamID, totalKills, totalDeaths, totalAssists, mapsPlayed, tournamentID int
 		var kdRatio float64
 		var matchDate, tournamentName, team1Name, team1Abbr, team2Name, team2Abbr, gamertag, playerTeamName, playerTeamAbbr string
 		var matchType, format sql.NullString
 		var team1Score, team2Score, team1ID, team2ID int
+		var tournamentStartDate time.Time
 
 		err := rows.Scan(
 			&matchID, &teamID, &totalKills, &totalDeaths, &totalAssists, &kdRatio, &mapsPlayed,
-			&matchDate, &team1Score, &team2Score, &team1ID, &team2ID, &matchType, &format,
-			&tournamentName, &team1Name, &team1Abbr, &team2Name, &team2Abbr, &gamertag,
+			&matchDate, &team1Score, &team2Score, &team1ID, &team2ID, &tournamentID, &matchType, &format,
+			&tournamentName, &tournamentStartDate, &team1Name, &team1Abbr, &team2Name, &team2Abbr, &gamertag,
 			&playerTeamName, &playerTeamAbbr,
 		)
 		if err != nil {
@@ -1081,9 +1116,11 @@ func GetPlayerMatches(c *gin.Context) {
 			"team2_score":      team2Score,
 			"team1_id":         team1ID,
 			"team2_id":         team2ID,
+			"tournament_id":    tournamentID,
+			"tournament_name":  tournamentName,
+			"tournament_year":  tournamentStartDate.Year(),
 			"match_type":       matchTypeStr,
 			"format":           formatStr,
-			"tournament_name":  tournamentName,
 			"team1_name":       team1Name,
 			"team1_abbr":       team1Abbr,
 			"team2_name":       team2Name,
@@ -1094,9 +1131,33 @@ func GetPlayerMatches(c *gin.Context) {
 		})
 	}
 
-	// Transform the data to include calculated fields
-	var result []gin.H
+	// Get tournament stats for game mode KDs
+	tournamentStatsMap := make(map[uint]database.PlayerTournamentStats)
+	var tournamentStats []database.PlayerTournamentStats
+	database.DB.WithContext(ctx).Where("player_id = ?", playerID).Find(&tournamentStats)
+	for _, ts := range tournamentStats {
+		tournamentStatsMap[ts.TournamentID] = ts
+	}
+
+	// Group matches by tournament/event
+	eventsMap := make(map[int]gin.H)
+	tournamentYears := make(map[int]int)
+
 	for _, match := range matches {
+		// Get tournament ID and year from match
+		tournamentID := match["tournament_id"].(int)
+		tournamentYear := match["tournament_year"].(int)
+
+		// Initialize event if not exists
+		if eventsMap[tournamentID] == nil {
+			tournamentYears[tournamentID] = tournamentYear
+			eventsMap[tournamentID] = gin.H{
+				"event":   match["tournament_name"].(string),
+				"year":    tournamentYear,
+				"matches": []gin.H{},
+			}
+		}
+
 		// Determine if player's team won
 		playerTeamID := match["team_id"].(int)
 		team1ID := match["team1_id"].(int)
@@ -1125,39 +1186,86 @@ func GetPlayerMatches(c *gin.Context) {
 			opponentAbbr = match["team1_abbr"].(string)
 		}
 
-		// Format score
+		// Format score and result
 		score := fmt.Sprintf("%d:%d", team1Score, team2Score)
+		resultScore := fmt.Sprintf("%s %s", matchResult, score)
 
-		// Calculate game mode KDs (placeholder for now)
+		// Get game mode KDs from tournament stats if available
 		hpKD := 0.0
 		sndKD := 0.0
 		ctlKD := 0.0
+		if ts, ok := tournamentStatsMap[uint(tournamentID)]; ok {
+			hpKD = ts.HpKDRatio
+			sndKD = ts.SndKDRatio
+			ctlKD = ts.ControlKDRatio
+		}
 
-		// Add to result
-		result = append(result, gin.H{
-			"match_id":      match["match_id"],
-			"date":          match["match_date"],
-			"tournament":    match["tournament_name"],
+		// Calculate slayer rating (simplified: kills per map)
+		slayerRating := 0.0
+		if mapsPlayed, ok := match["maps_played"].(int); ok && mapsPlayed > 0 {
+			slayerRating = float64(match["total_kills"].(int)) / float64(mapsPlayed)
+		}
+
+		// Calculate rating (simplified: KD * 10)
+		rating := match["kd_ratio"].(float64) * 10.0
+
+		// Parse match date
+		matchDateStr := match["match_date"].(string)
+		matchDate, _ := time.Parse("2006-01-02 15:04:05", matchDateStr)
+
+		// Add match to event
+		event := eventsMap[tournamentID]
+		matchesList := event["matches"].([]gin.H)
+		matchesList = append(matchesList, gin.H{
+			"date":          matchDate.Format("2006-01-02"),
 			"opponent":      opponent,
 			"opponent_abbr": opponentAbbr,
-			"result":        matchResult,
-			"score":         score,
+			"result":        resultScore,
 			"kd":            match["kd_ratio"],
 			"kills":         match["total_kills"],
 			"deaths":        match["total_deaths"],
 			"hp_kd":         hpKD,
 			"snd_kd":        sndKD,
 			"ctl_kd":        ctlKD,
-			"slayer_rating": 0.0, // Placeholder
-			"maps_played":   match["maps_played"],
-			"match_type":    match["match_type"],
-			"format":        match["format"],
+			"slayer_rating": slayerRating,
+			"rating":        rating,
 		})
+		event["matches"] = matchesList
+	}
+
+	// Convert map to slice and sort by year/tournament ID (most recent first)
+	var events []gin.H
+	for tournamentID, event := range eventsMap {
+		event["tournament_id"] = tournamentID
+		events = append(events, event)
+	}
+
+	// Sort events by year (descending)
+	for i := 0; i < len(events); i++ {
+		for j := i + 1; j < len(events); j++ {
+			yearI := events[i]["year"].(int)
+			yearJ := events[j]["year"].(int)
+			if yearJ > yearI || (yearJ == yearI && events[j]["tournament_id"].(int) > events[i]["tournament_id"].(int)) {
+				events[i], events[j] = events[j], events[i]
+			}
+		}
+	}
+
+	// Sort matches within each event by date (descending)
+	for _, event := range events {
+		matchesList := event["matches"].([]gin.H)
+		for i := 0; i < len(matchesList); i++ {
+			for j := i + 1; j < len(matchesList); j++ {
+				if matchesList[j]["date"].(string) > matchesList[i]["date"].(string) {
+					matchesList[i], matchesList[j] = matchesList[j], matchesList[i]
+				}
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"player_id": playerID,
-		"matches":   result,
-		"total":     len(result),
+		"events":    events,
+		"total":     len(matches),
 	})
 }

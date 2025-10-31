@@ -18,7 +18,7 @@ const PlayerDetail = () => {
   );
 
   const { data: matchesData, loading: matchesLoading } = useApi<any>(
-    `/api/v1/players/${id}/matches?limit=10`,
+    `/api/v1/players/${id}/matches`,
   );
 
   const loading = playerLoading || statsLoading || matchesLoading;
@@ -56,9 +56,17 @@ const PlayerDetail = () => {
     );
   }
 
-  const matches = matchesData?.matches || [];
-  const last5Matches = matches.slice(0, 5);
+  const events = matchesData?.events || [];
+  // Get all matches from events for "Last 5" tab
+  const allMatches = events.flatMap((event: any) => event.matches || []);
+  const last5Matches = allMatches.slice(0, 5);
   const tournamentStats = stats?.tournament_stats || [];
+  
+  // Get overall KD stats for display
+  const overallKD = stats?.avg_kd || 0;
+  const hpKD = stats?.hp_kd_ratio || stats?.ewc_hp_kd_ratio || 0;
+  const sndKD = stats?.snd_kd_ratio || stats?.ewc_snd_kd_ratio || 0;
+  const ctlKD = stats?.control_kd_ratio || stats?.ewc_control_kd_ratio || 0;
 
   // Format birthdate for display
   const formatBirthdate = (dateString?: string) => {
@@ -169,14 +177,14 @@ const PlayerDetail = () => {
                     Overall K/D
                   </p>
                   <p className="text-lg font-bold text-black">
-                    {stats?.avg_kd?.toFixed(2) || "0.00"}
+                    {overallKD.toFixed(2)}
                   </p>
                 </div>
                 <div className="w-full bg-gray-200 h-3 overflow-hidden">
                   <div
                     className="bg-black/80 h-full transition-all duration-500"
                     style={{
-                      width: `${getKDProgress(stats?.avg_kd || 0)}%`,
+                      width: `${getKDProgress(overallKD)}%`,
                     }}
                   />
                 </div>
@@ -189,14 +197,14 @@ const PlayerDetail = () => {
                     Hardpoint K/D
                   </p>
                   <p className="text-lg font-bold text-black">
-                    {stats?.hp_kd_ratio?.toFixed(2) || "0.00"}
+                    {hpKD.toFixed(2)}
                   </p>
                 </div>
                 <div className="w-full bg-gray-200 h-3 overflow-hidden">
                   <div
                     className="bg-black/80 h-full transition-all duration-500"
                     style={{
-                      width: `${getKDProgress(stats?.hp_kd_ratio || 0)}%`,
+                      width: `${getKDProgress(hpKD)}%`,
                     }}
                   />
                 </div>
@@ -209,14 +217,14 @@ const PlayerDetail = () => {
                     S&D K/D
                   </p>
                   <p className="text-lg font-bold text-black">
-                    {stats?.snd_kd_ratio?.toFixed(2) || "0.00"}
+                    {sndKD.toFixed(2)}
                   </p>
                 </div>
                 <div className="w-full bg-gray-200 h-3 overflow-hidden">
                   <div
                     className="bg-black/80 h-full transition-all duration-500"
                     style={{
-                      width: `${getKDProgress(stats?.snd_kd_ratio || 0)}%`,
+                      width: `${getKDProgress(sndKD)}%`,
                     }}
                   />
                 </div>
@@ -229,14 +237,14 @@ const PlayerDetail = () => {
                     Control K/D
                   </p>
                   <p className="text-lg font-bold text-black">
-                    {stats?.control_kd_ratio?.toFixed(2) || "0.00"}
+                    {ctlKD.toFixed(2)}
                   </p>
                 </div>
                 <div className="w-full bg-gray-200 h-3 overflow-hidden">
                   <div
                     className="bg-black/80 h-full transition-all duration-500"
                     style={{
-                      width: `${getKDProgress(stats?.control_kd_ratio || 0)}%`,
+                      width: `${getKDProgress(ctlKD)}%`,
                     }}
                   />
                 </div>
@@ -340,10 +348,9 @@ const PlayerDetail = () => {
                             </span>
                             <div>
                               <p className="font-semibold text-black">
-                                vs {match.opponent || "Unknown"}
+                                vs {match.opponent_abbr || match.opponent || "Unknown"}
                               </p>
                               <p className="text-sm text-[#6B7280]">
-                                {match.tournament || "Tournament"} •{" "}
                                 {match.date
                                   ? new Date(match.date).toLocaleDateString()
                                   : "—"}
@@ -353,10 +360,18 @@ const PlayerDetail = () => {
                           <div className="flex space-x-6 text-right">
                             <div>
                               <p className="text-xs text-[#6B7280] uppercase">
+                                Result
+                              </p>
+                              <p className="text-lg font-bold text-black">
+                                {match.result || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-[#6B7280] uppercase">
                                 K/D
                               </p>
                               <p className="text-lg font-bold text-black">
-                                {match.kd?.toFixed(2) || "0.00"}
+                                {typeof match.kd === 'number' ? match.kd.toFixed(2) : "0.00"}
                               </p>
                             </div>
                             <div>
@@ -388,71 +403,80 @@ const PlayerDetail = () => {
 
             {activeTab === "matches" && (
               <div>
-                <h3 className="text-xl font-bold text-black mb-6">
-                  All Matches
-                </h3>
-                {matches.length > 0 ? (
-                  <div className="space-y-4">
-                    {matches.map((match: any, index: number) => (
-                      <div
-                        key={index}
-                        className="bg-white p-6"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center space-x-4">
-                            <span
-                              className={`text-sm font-bold w-8 text-center ${
-                                match.result === "W"
-                                  ? "text-black"
-                                  : "text-[#6B7280]"
-                              }`}
-                            >
-                              {match.result || "—"}
-                            </span>
-                            <div>
-                              <p className="font-semibold text-black">
-                                vs {match.opponent || "Unknown"}
-                              </p>
-                              <p className="text-sm text-[#6B7280]">
-                                {match.tournament || "Tournament"} •{" "}
-                                {match.date
-                                  ? new Date(match.date).toLocaleDateString()
-                                  : "—"}
-                              </p>
-                            </div>
+                {events.length > 0 ? (
+                  <div className="space-y-8">
+                    {events.map((event: any, eventIndex: number) => (
+                      <div key={eventIndex}>
+                        <h3 className="text-xl font-bold text-black mb-4">
+                          {event.event} {event.year}
+                        </h3>
+                        {event.matches && event.matches.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b border-gray-300">
+                                  <th className="text-left py-3 text-[#6B7280] text-xs uppercase tracking-wider">Date</th>
+                                  <th className="text-left py-3 text-[#6B7280] text-xs uppercase tracking-wider">Opponent</th>
+                                  <th className="text-left py-3 text-[#6B7280] text-xs uppercase tracking-wider">Result</th>
+                                  <th className="text-right py-3 text-[#6B7280] text-xs uppercase tracking-wider">KD</th>
+                                  <th className="text-right py-3 text-[#6B7280] text-xs uppercase tracking-wider">K</th>
+                                  <th className="text-right py-3 text-[#6B7280] text-xs uppercase tracking-wider">D</th>
+                                  <th className="text-right py-3 text-[#6B7280] text-xs uppercase tracking-wider">HP KD</th>
+                                  <th className="text-right py-3 text-[#6B7280] text-xs uppercase tracking-wider">SND KD</th>
+                                  <th className="text-right py-3 text-[#6B7280] text-xs uppercase tracking-wider">CTL KD</th>
+                                  <th className="text-right py-3 text-[#6B7280] text-xs uppercase tracking-wider">Slayer Rating</th>
+                                  <th className="text-right py-3 text-[#6B7280] text-xs uppercase tracking-wider">Rating</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {event.matches.map((match: any, matchIndex: number) => (
+                                  <tr key={matchIndex} className="border-b border-gray-300">
+                                    <td className="py-3 text-[#6B7280] text-sm">
+                                      {match.date ? new Date(match.date).toLocaleDateString() : "—"}
+                                    </td>
+                                    <td className="py-3 text-black text-sm font-medium">
+                                      {match.opponent_abbr || match.opponent || "—"}
+                                    </td>
+                                    <td className="py-3 text-black text-sm font-medium">
+                                      {match.result || "—"}
+                                    </td>
+                                    <td className="py-3 text-right text-black text-sm font-bold">
+                                      {typeof match.kd === 'number' ? match.kd.toFixed(2) : "0.00"}
+                                    </td>
+                                    <td className="py-3 text-right text-[#6B7280] text-sm">
+                                      {match.kills || "0"}
+                                    </td>
+                                    <td className="py-3 text-right text-[#6B7280] text-sm">
+                                      {match.deaths || "0"}
+                                    </td>
+                                    <td className="py-3 text-right text-[#6B7280] text-sm">
+                                      {typeof match.hp_kd === 'number' ? match.hp_kd.toFixed(2) : "—"}
+                                    </td>
+                                    <td className="py-3 text-right text-[#6B7280] text-sm">
+                                      {typeof match.snd_kd === 'number' ? match.snd_kd.toFixed(2) : "—"}
+                                    </td>
+                                    <td className="py-3 text-right text-[#6B7280] text-sm">
+                                      {typeof match.ctl_kd === 'number' ? match.ctl_kd.toFixed(2) : "—"}
+                                    </td>
+                                    <td className="py-3 text-right text-[#6B7280] text-sm">
+                                      {typeof match.slayer_rating === 'number' ? match.slayer_rating.toFixed(2) : "—"}
+                                    </td>
+                                    <td className="py-3 text-right text-[#6B7280] text-sm">
+                                      {typeof match.rating === 'number' ? match.rating.toFixed(1) : "—"}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
-                          <div className="flex space-x-6 text-right">
-                            <div>
-                              <p className="text-xs text-[#6B7280] uppercase">
-                                K/D
-                              </p>
-                              <p className="text-lg font-bold text-black">
-                                {match.kd?.toFixed(2) || "0.00"}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-[#6B7280] uppercase">
-                                Kills
-                              </p>
-                              <p className="text-lg font-bold text-black">
-                                {match.kills || "0"}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-[#6B7280] uppercase">
-                                Deaths
-                              </p>
-                              <p className="text-lg font-bold text-black">
-                                {match.deaths || "0"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                        ) : (
+                          <p className="text-[#6B7280]">No matches available for this event</p>
+                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[#6B7280]">No matches available</p>
+                  <p className="text-[#6B7280]">No match data available for this season</p>
                 )}
               </div>
             )}
