@@ -1,5 +1,5 @@
 // Service Worker for CDL Analytics
-const CACHE_NAME = 'cdl-analytics-v1';
+const CACHE_NAME = 'cdl-analytics-v2';
 
 // Install event - clear old caches
 self.addEventListener('install', (event) => {
@@ -33,11 +33,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For other resources, use cache-first strategy
+  // For other resources, use network-first strategy to avoid stale cache
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    fetch(event.request)
+      .then((response) => {
+        // Cache the response for future use
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+        return response;
+      })
+      .catch(() => {
+        // If network fails, try cache as fallback
+        return caches.match(event.request);
+      })
   );
 });
 

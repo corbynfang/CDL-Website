@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
@@ -149,6 +150,16 @@ func main() {
 	r.Use(rateLimit())
 	r.Use(validateInput())
 
+	// Add cache-control headers to prevent caching of HTML (must be before routes)
+	r.Use(func(c *gin.Context) {
+		if c.Request.URL.Path == "/" || (!strings.HasPrefix(c.Request.URL.Path, "/api") && !strings.HasPrefix(c.Request.URL.Path, "/assets")) {
+			c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+			c.Header("Pragma", "no-cache")
+			c.Header("Expires", "0")
+		}
+		c.Next()
+	})
+
 	// API routes
 	api := r.Group("/api/v1")
 	{
@@ -180,7 +191,7 @@ func main() {
 		api.GET("/debug/validation", handlers.GetDatabaseValidation)
 	}
 
-	// Serve static files from frontend/dist/assets
+	// Serve static files from frontend/dist/assets with cache-busting headers
 	r.Static("/assets", "./frontend/dist/assets")
 	r.StaticFile("/favicon.ico", "./frontend/dist/favicon.ico")
 
