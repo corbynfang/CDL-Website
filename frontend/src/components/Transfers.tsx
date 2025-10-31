@@ -73,7 +73,7 @@ const Transfers = () => {
             transfers.map((transfer) => (
               <div
                 key={transfer.id}
-                className="bg-[#F4F4F5] rounded-2xl p-6 shadow-md shadow-[rgba(0,0,0,0.1)] hover:shadow-lg transition-all hover:scale-[1.01]"
+                className="bg-[#F4F4F5] p-6 shadow-md shadow-[rgba(0,0,0,0.1)]"
               >
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   {/* Left: Player Info */}
@@ -82,19 +82,19 @@ const Transfers = () => {
                       <img
                         src={transfer.player.avatar_url}
                         alt={transfer.player.gamertag}
-                        className="w-16 h-16 rounded-xl object-cover shadow-sm"
+                        className="w-16 h-16 object-cover shadow-sm"
                       />
                     )}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <Link
                           to={`/players/${transfer.player_id}`}
-                          className="text-xl font-bold text-black hover:text-[#555555] transition-colors"
+                          className="text-xl font-bold text-black"
                         >
                           {transfer.player?.gamertag || "Unknown Player"}
                         </Link>
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getTransferTypeColor(
+                          className={`px-3 py-1 text-xs font-medium ${getTransferTypeColor(
                             transfer.transfer_type
                           )}`}
                         >
@@ -146,7 +146,7 @@ const Transfers = () => {
               </div>
             ))
           ) : (
-            <div className="bg-[#F4F4F5] rounded-2xl p-8 text-center">
+            <div className="bg-[#F4F4F5] p-8 text-center">
               <p className="text-[#6B7280]">No transfers available</p>
             </div>
           )}

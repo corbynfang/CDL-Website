@@ -14,7 +14,7 @@ const Home = () => {
         <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           <Link
             to="/players"
-            className="p-8 bg-[#F4F4F5] hover:bg-gray-200 hover:border-gray-400 border border-transparent rounded-2xl shadow-md shadow-[rgba(0,0,0,0.1)] transition-all hover:scale-[1.02]"
+            className="p-8 bg-[#F4F4F5] border border-transparent shadow-md shadow-[rgba(0,0,0,0.1)]"
           >
             <h2 className="text-2xl font-bold mb-2 text-black">PLAYERS</h2>
             <p className="text-[#6B7280]">
@@ -24,7 +24,7 @@ const Home = () => {
 
           <Link
             to="/teams"
-            className="p-8 bg-[#F4F4F5] hover:bg-gray-200 hover:border-gray-400 border border-transparent rounded-2xl shadow-md shadow-[rgba(0,0,0,0.1)] transition-all hover:scale-[1.02]"
+            className="p-8 bg-[#F4F4F5] border border-transparent shadow-md shadow-[rgba(0,0,0,0.1)]"
           >
             <h2 className="text-2xl font-bold mb-2 text-black">TEAMS</h2>
             <p className="text-[#6B7280]">Browse teams and roster information</p>
@@ -32,7 +32,7 @@ const Home = () => {
 
           <Link
             to="/stats"
-            className="p-8 bg-[#F4F4F5] hover:bg-gray-200 hover:border-gray-400 border border-transparent rounded-2xl shadow-md shadow-[rgba(0,0,0,0.1)] transition-all hover:scale-[1.02]"
+            className="p-8 bg-[#F4F4F5] border border-transparent shadow-md shadow-[rgba(0,0,0,0.1)]"
           >
             <h2 className="text-2xl font-bold mb-2 text-black">STATS</h2>
             <p className="text-[#6B7280]">K/D leaderboards and rankings</p>

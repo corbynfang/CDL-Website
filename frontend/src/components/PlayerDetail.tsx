@@ -94,12 +94,12 @@ const PlayerDetail = () => {
               <img
                 src={player.avatar_url}
                 alt={player.gamertag}
-                className="w-48 h-48 rounded-2xl object-cover shadow-md shadow-[rgba(0,0,0,0.1)] mb-6 transition-transform hover:scale-[1.02]"
+                className="w-48 h-48 object-cover shadow-md shadow-[rgba(0,0,0,0.1)] mb-6"
               />
             )}
 
             {/* Player Info Card */}
-            <div className="w-full bg-[#F4F4F5] rounded-2xl p-6 shadow-md shadow-[rgba(0,0,0,0.1)]">
+            <div className="w-full bg-[#F4F4F5] p-6 shadow-md shadow-[rgba(0,0,0,0.1)]">
               <div className="space-y-4">
                 <div>
                   <p className="text-xs uppercase tracking-wider text-[#6B7280] mb-1">
@@ -156,7 +156,7 @@ const PlayerDetail = () => {
           </div>
 
           {/* Right: KD Stats Box with Progress Bars */}
-          <div className="bg-[#F4F4F5] rounded-2xl p-8 shadow-md shadow-[rgba(0,0,0,0.1)]">
+          <div className="bg-[#F4F4F5] p-8 shadow-md shadow-[rgba(0,0,0,0.1)]">
             <h2 className="text-2xl font-bold text-black mb-6">
               K/D STATISTICS
             </h2>
@@ -172,9 +172,9 @@ const PlayerDetail = () => {
                     {stats?.avg_kd?.toFixed(2) || "0.00"}
                   </p>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-gray-200 h-3 overflow-hidden">
                   <div
-                    className="bg-black/80 h-full rounded-full transition-all duration-500"
+                    className="bg-black/80 h-full transition-all duration-500"
                     style={{
                       width: `${getKDProgress(stats?.avg_kd || 0)}%`,
                     }}
@@ -192,9 +192,9 @@ const PlayerDetail = () => {
                     {stats?.hp_kd_ratio?.toFixed(2) || "0.00"}
                   </p>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-gray-200 h-3 overflow-hidden">
                   <div
-                    className="bg-black/80 h-full rounded-full transition-all duration-500"
+                    className="bg-black/80 h-full transition-all duration-500"
                     style={{
                       width: `${getKDProgress(stats?.hp_kd_ratio || 0)}%`,
                     }}
@@ -212,9 +212,9 @@ const PlayerDetail = () => {
                     {stats?.snd_kd_ratio?.toFixed(2) || "0.00"}
                   </p>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-gray-200 h-3 overflow-hidden">
                   <div
-                    className="bg-black/80 h-full rounded-full transition-all duration-500"
+                    className="bg-black/80 h-full transition-all duration-500"
                     style={{
                       width: `${getKDProgress(stats?.snd_kd_ratio || 0)}%`,
                     }}
@@ -232,9 +232,9 @@ const PlayerDetail = () => {
                     {stats?.control_kd_ratio?.toFixed(2) || "0.00"}
                   </p>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-gray-200 h-3 overflow-hidden">
                   <div
-                    className="bg-black/80 h-full rounded-full transition-all duration-500"
+                    className="bg-black/80 h-full transition-all duration-500"
                     style={{
                       width: `${getKDProgress(stats?.control_kd_ratio || 0)}%`,
                     }}
@@ -273,10 +273,10 @@ const PlayerDetail = () => {
           <div className="flex space-x-1 border-b border-gray-300 mb-8">
             <button
               onClick={() => setActiveTab("last5")}
-              className={`px-6 py-3 text-sm font-medium transition-all ${
+              className={`px-6 py-3 text-sm font-medium ${
                 activeTab === "last5"
                   ? "text-black border-b-2 border-black"
-                  : "text-[#6B7280] hover:text-black"
+                  : "text-[#6B7280]"
               }`}
             >
               Last 5 Matches
@@ -286,7 +286,7 @@ const PlayerDetail = () => {
               className={`px-6 py-3 text-sm font-medium transition-all ${
                 activeTab === "matches"
                   ? "text-black border-b-2 border-black"
-                  : "text-[#6B7280] hover:text-black"
+                  : "text-[#6B7280]"
               }`}
             >
               Matches
@@ -296,7 +296,7 @@ const PlayerDetail = () => {
               className={`px-6 py-3 text-sm font-medium transition-all ${
                 activeTab === "eventStats"
                   ? "text-black border-b-2 border-black"
-                  : "text-[#6B7280] hover:text-black"
+                  : "text-[#6B7280]"
               }`}
             >
               Event Stats
@@ -306,7 +306,7 @@ const PlayerDetail = () => {
               className={`px-6 py-3 text-sm font-medium transition-all ${
                 activeTab === "events"
                   ? "text-black border-b-2 border-black"
-                  : "text-[#6B7280] hover:text-black"
+                  : "text-[#6B7280]"
               }`}
             >
               Events
@@ -314,7 +314,7 @@ const PlayerDetail = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-[#F4F4F5] rounded-2xl p-8 shadow-md shadow-[rgba(0,0,0,0.1)]">
+          <div className="bg-[#F4F4F5] p-8 shadow-md shadow-[rgba(0,0,0,0.1)]">
             {activeTab === "last5" && (
               <div>
                 <h3 className="text-xl font-bold text-black mb-6">
@@ -325,7 +325,7 @@ const PlayerDetail = () => {
                     {last5Matches.map((match: any, index: number) => (
                       <div
                         key={index}
-                        className="bg-white rounded-xl p-6 hover:shadow-lg transition-all hover:scale-[1.01]"
+                        className="bg-white p-6"
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center space-x-4">
@@ -396,7 +396,7 @@ const PlayerDetail = () => {
                     {matches.map((match: any, index: number) => (
                       <div
                         key={index}
-                        className="bg-white rounded-xl p-6 hover:shadow-lg transition-all hover:scale-[1.01]"
+                        className="bg-white p-6"
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center space-x-4">
@@ -467,7 +467,7 @@ const PlayerDetail = () => {
                     {tournamentStats.map((tournament: any, index: number) => (
                       <div
                         key={index}
-                        className="bg-white rounded-xl p-6 hover:shadow-lg transition-all hover:scale-[1.01]"
+                        className="bg-white p-6"
                       >
                         <div className="flex justify-between items-start mb-4">
                           <div>
@@ -533,7 +533,7 @@ const PlayerDetail = () => {
                     {tournamentStats.map((tournament: any, index: number) => (
                       <div
                         key={index}
-                        className="bg-white rounded-xl p-6 hover:shadow-lg transition-all hover:scale-[1.01]"
+                        className="bg-white p-6"
                       >
                         <div className="flex justify-between items-center">
                           <div>
