@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -479,9 +480,9 @@ func GetTopKDPlayers(c *gin.Context) {
 
 	// Use tournament stats for consistent KD calculation
 	rows, err := database.DB.WithContext(ctx).Raw(`
-		SELECT 
-			pts.player_id, 
-			pts.team_id, 
+		SELECT
+			pts.player_id,
+			pts.team_id,
 			pts.total_kills,
 			pts.total_deaths,
 			pts.total_assists,
@@ -493,9 +494,9 @@ func GetTopKDPlayers(c *gin.Context) {
 		FROM player_tournament_stats pts
 		JOIN players p ON pts.player_id = p.id
 		JOIN teams t ON pts.team_id = t.id
-		WHERE pts.tournament_id IN (1,2,3,4,5,7) 
+		WHERE pts.tournament_id IN (1,2,3,4,5,7)
 		AND pts.total_deaths > 0
-		ORDER BY pts.kd_ratio DESC 
+		ORDER BY pts.kd_ratio DESC
 		LIMIT 20
 	`).Rows()
 
@@ -562,8 +563,8 @@ func GetTopKDPlayersNew(c *gin.Context) {
 
 	// Aggregate stats across all tournaments for each player
 	rows, err := database.DB.WithContext(ctx).Raw(`
-		SELECT 
-			pts.player_id, 
+		SELECT
+			pts.player_id,
 			SUM(pts.total_kills) as total_kills,
 			SUM(pts.total_deaths) as total_deaths,
 			SUM(pts.total_assists) as total_assists,
@@ -577,7 +578,7 @@ func GetTopKDPlayersNew(c *gin.Context) {
 		WHERE pts.tournament_id IN (1,2,3,4,5,7)
 		GROUP BY pts.player_id, p.gamertag, t.name, t.abbreviation
 		HAVING SUM(pts.total_deaths) > 0
-		ORDER BY (SUM(pts.total_kills) * 1.0 / SUM(pts.total_deaths)) DESC 
+		ORDER BY (SUM(pts.total_kills) * 1.0 / SUM(pts.total_deaths)) DESC
 		LIMIT 10
 	`).Rows()
 
@@ -662,17 +663,17 @@ func GetAllPlayersKDStats(c *gin.Context) {
 
 	var kdRows []KDRow
 	if err := database.DB.WithContext(ctx).Raw(`
-		SELECT 
-			pts.player_id, 
-			pts.team_id, 
-			pts.tournament_id, 
-			pts.total_kills, 
-			pts.total_deaths, 
+		SELECT
+			pts.player_id,
+			pts.team_id,
+			pts.tournament_id,
+			pts.total_kills,
+			pts.total_deaths,
 			pts.total_assists,
 			pts.kd_ratio,
 			pts.kda_ratio,
-			p.gamertag, 
-			COALESCE(t.abbreviation, 'N/A') as team_abbr, 
+			p.gamertag,
+			COALESCE(t.abbreviation, 'N/A') as team_abbr,
 			p.avatar_url
 		FROM player_tournament_stats pts
 		JOIN players p ON pts.player_id = p.id
@@ -883,7 +884,7 @@ func validateDatabaseStats() gin.H {
 	var zeroDeathPlayers []gin.H
 	database.DB.Raw(`
 		SELECT player_id, total_kills, total_deaths, total_assists
-		FROM player_tournament_stats 
+		FROM player_tournament_stats
 		WHERE total_deaths = 0 AND total_kills > 0
 		LIMIT 10
 	`).Scan(&zeroDeathPlayers)
@@ -896,7 +897,7 @@ func validateDatabaseStats() gin.H {
 	var negativeStats []gin.H
 	database.DB.Raw(`
 		SELECT player_id, total_kills, total_deaths, total_assists
-		FROM player_tournament_stats 
+		FROM player_tournament_stats
 		WHERE total_kills < 0 OR total_deaths < 0 OR total_assists < 0
 		LIMIT 10
 	`).Scan(&negativeStats)
@@ -909,12 +910,12 @@ func validateDatabaseStats() gin.H {
 	var kdInconsistencies []gin.H
 	database.DB.Raw(`
 		SELECT player_id, total_kills, total_deaths, kd_ratio,
-		       CASE 
+		       CASE
 		           WHEN total_deaths > 0 THEN ROUND((total_kills * 1.0 / total_deaths)::numeric, 2)
-		           ELSE 0 
+		           ELSE 0
 		       END as calculated_kd
-		FROM player_tournament_stats 
-		WHERE total_deaths > 0 
+		FROM player_tournament_stats
+		WHERE total_deaths > 0
 		AND ABS(kd_ratio - (total_kills * 1.0 / total_deaths)) > 0.01
 		LIMIT 10
 	`).Scan(&kdInconsistencies)
@@ -973,31 +974,42 @@ func GetPlayerMatches(c *gin.Context) {
 		limitInt = 50
 	}
 
-	// Build the query
-	query := database.DB.Table("player_match_stats").
-		Select(`
-			player_match_stats.*,
-			matches.match_date,
-			matches.team1_score,
-			matches.team2_score,
-			matches.match_type,
-			matches.format,
-			tournaments.name as tournament_name,
+	// Build raw SQL query
+	sqlQuery := `
+		SELECT
+			pms.match_id,
+			pms.team_id,
+			pms.total_kills,
+			pms.total_deaths,
+			pms.total_assists,
+			pms.kd_ratio,
+			pms.maps_played,
+			m.match_date,
+			m.team1_score,
+			m.team2_score,
+			m.team1_id,
+			m.team2_id,
+			m.match_type,
+			m.format,
+			t.name as tournament_name,
 			t1.name as team1_name,
 			t1.abbreviation as team1_abbr,
 			t2.name as team2_name,
 			t2.abbreviation as team2_abbr,
-			players.gamertag,
-			teams.name as player_team_name,
-			teams.abbreviation as player_team_abbr
-		`).
-		Joins("JOIN matches ON player_match_stats.match_id = matches.id").
-		Joins("JOIN tournaments ON matches.tournament_id = tournaments.id").
-		Joins("JOIN teams t1 ON matches.team1_id = t1.id").
-		Joins("JOIN teams t2 ON matches.team2_id = t2.id").
-		Joins("JOIN players ON player_match_stats.player_id = players.id").
-		Joins("JOIN teams ON player_match_stats.team_id = teams.id").
-		Where("player_match_stats.player_id = ?", playerID)
+			p.gamertag,
+			t3.name as player_team_name,
+			t3.abbreviation as player_team_abbr
+		FROM player_match_stats pms
+		JOIN matches m ON pms.match_id = m.id
+		JOIN tournaments t ON m.tournament_id = t.id
+		JOIN teams t1 ON m.team1_id = t1.id
+		JOIN teams t2 ON m.team2_id = t2.id
+		JOIN players p ON pms.player_id = p.id
+		JOIN teams t3 ON pms.team_id = t3.id
+		WHERE pms.player_id = ?
+	`
+
+	args := []interface{}{playerID}
 
 	// Add tournament filter if provided
 	if tournamentID != "" {
@@ -1006,24 +1018,88 @@ func GetPlayerMatches(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament_id parameter"})
 			return
 		}
-		query = query.Where("matches.tournament_id = ?", tournamentID)
+		sqlQuery += " AND m.tournament_id = ?"
+		args = append(args, tournamentID)
 	}
 
-	// Execute query with limit and ordering
-	var matches []gin.H
-	if err := query.Order("matches.match_date DESC").Limit(limitInt).Find(&matches).Error; err != nil {
+	sqlQuery += " ORDER BY m.match_date DESC LIMIT ?"
+	args = append(args, limitInt)
+
+	log.Printf("Executing Raw SQL query for player %d with limit %d", playerID, limitInt)
+	log.Printf("SQL: %s", sqlQuery)
+
+	// Execute query
+	rows, err := database.DB.Raw(sqlQuery, args...).Rows()
+	if err != nil {
 		log.Printf("Database Error: %v", err)
 		logSecurityEvent("DB_ERROR", "GetPlayerMatches failed", c.ClientIP())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player matches"})
 		return
+	}
+	defer rows.Close()
+
+	var matches []map[string]interface{}
+
+	// Scan rows into matches slice
+	for rows.Next() {
+		var matchID, teamID, totalKills, totalDeaths, totalAssists, mapsPlayed int
+		var kdRatio float64
+		var matchDate, tournamentName, team1Name, team1Abbr, team2Name, team2Abbr, gamertag, playerTeamName, playerTeamAbbr string
+		var matchType, format sql.NullString
+		var team1Score, team2Score, team1ID, team2ID int
+
+		err := rows.Scan(
+			&matchID, &teamID, &totalKills, &totalDeaths, &totalAssists, &kdRatio, &mapsPlayed,
+			&matchDate, &team1Score, &team2Score, &team1ID, &team2ID, &matchType, &format,
+			&tournamentName, &team1Name, &team1Abbr, &team2Name, &team2Abbr, &gamertag,
+			&playerTeamName, &playerTeamAbbr,
+		)
+		if err != nil {
+			log.Printf("Error scanning row: %v", err)
+			continue
+		}
+
+		matchTypeStr := ""
+		if matchType.Valid {
+			matchTypeStr = matchType.String
+		}
+		formatStr := ""
+		if format.Valid {
+			formatStr = format.String
+		}
+
+		matches = append(matches, map[string]interface{}{
+			"match_id":         matchID,
+			"team_id":          teamID,
+			"total_kills":      totalKills,
+			"total_deaths":     totalDeaths,
+			"total_assists":    totalAssists,
+			"kd_ratio":         kdRatio,
+			"maps_played":      mapsPlayed,
+			"match_date":       matchDate,
+			"team1_score":      team1Score,
+			"team2_score":      team2Score,
+			"team1_id":         team1ID,
+			"team2_id":         team2ID,
+			"match_type":       matchTypeStr,
+			"format":           formatStr,
+			"tournament_name":  tournamentName,
+			"team1_name":       team1Name,
+			"team1_abbr":       team1Abbr,
+			"team2_name":       team2Name,
+			"team2_abbr":       team2Abbr,
+			"gamertag":         gamertag,
+			"player_team_name": playerTeamName,
+			"player_team_abbr": playerTeamAbbr,
+		})
 	}
 
 	// Transform the data to include calculated fields
 	var result []gin.H
 	for _, match := range matches {
 		// Determine if player's team won
-		playerTeamID := match["team_id"].(uint)
-		team1ID := match["team1_id"].(uint)
+		playerTeamID := match["team_id"].(int)
+		team1ID := match["team1_id"].(int)
 		team1Score := match["team1_score"].(int)
 		team2Score := match["team2_score"].(int)
 
