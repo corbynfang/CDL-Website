@@ -17,8 +17,10 @@ import (
 )
 
 // Rate limiting map
-var requestCounts = make(map[string]int)
-var lastReset = time.Now()
+var (
+	requestCounts = make(map[string]int)
+	lastReset     = time.Now()
+)
 
 // Rate limiting middleware
 func rateLimit() gin.HandlerFunc {

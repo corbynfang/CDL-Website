@@ -1,4 +1,4 @@
-# 🎮 CDL Stats - Competitive Call of Duty League Statistics Platform
+# CDL Stats - Competitive Call of Duty League Statistics Platform
 
 [![Go](https://img.shields.io/badge/Go-1.24.5-blue.svg)](https://golang.org/)
 [![React](https://img.shields.io/badge/React-19.1.0-61dafb.svg)](https://reactjs.org/)
@@ -8,207 +8,206 @@
 
 A comprehensive full-stack web application for exploring and analyzing Call of Duty League (CDL) player and team statistics. Built with modern technologies to provide esports fans, analysts, and gaming enthusiasts with detailed insights into competitive Call of Duty performance data.
 
-**🌐 Live Demo: [https://cdlytics.me](https://cdlytics.me)**
+**Live Demo: [https://cdlytics.me](https://cdlytics.me)**
 
-## ✨ Features
+## Features
 
-### 🏆 **Team Analytics**
+### Team Analytics
 - Complete team rosters and player details
 - Team performance statistics and rankings
 - Historical team data across multiple majors
 - Interactive team logos and branding
 
-### 👤 **Player Statistics**
+### Player Statistics
 - Individual player performance metrics
 - Kill/Death ratios and detailed stats
 - Player avatars and profile information
 - Career statistics and trends
+- Tournament-specific KD statistics
+- Player match history
 
-### 📊 **Data Visualization**
+### Data Visualization
 - Interactive KD statistics dashboard
 - Player comparison tools
 - Performance tracking across events
-- Real-time data updates
+- Tournament-based statistics
+- Top KD players rankings
 
-### 🎨 **Modern UI/UX**
+### Modern UI/UX
 - Responsive design for all devices
 - Dark mode support
 - Smooth animations and transitions
 - Intuitive navigation and search
 
-### 🔄 **Transfer Tracking**
+### Transfer Tracking
 - Player transfer history
 - Team roster changes
 - Transfer window analytics
 - Historical movement data
 
-## 🛠 Tech Stack
+### Security Features
+- Rate limiting to prevent abuse
+- Input validation and sanitization
+- Enhanced security headers
+- HTTPS redirect middleware
+- Request logging for security monitoring
+- SQL injection prevention via prepared statements
 
-### **Frontend**
+## Tech Stack
+
+### Frontend
 - **React 19** - Modern UI framework with hooks
 - **TypeScript** - Type-safe development
-- **Vite** - Lightning-fast build tool
+- **Vite 7** - Lightning-fast build tool
 - **Tailwind CSS** - Utility-first styling
-- **React Router** - Client-side routing
+- **React Router v7** - Client-side routing
 - **Axios** - HTTP client for API calls
 
-### **Backend**
-- **Go 1.24** - High-performance server
+### Backend
+- **Go 1.24.5** - High-performance server
 - **Gin** - Fast HTTP web framework
 - **GORM** - Database ORM
 - **PostgreSQL** - Reliable data storage
 - **RESTful API** - Clean API design
 
-### **Development Tools**
+### Development Tools
 - **ESLint** - Code quality and consistency
 - **PostCSS** - CSS processing
 - **Docker** - Containerization support
+- **Railway** - Deployment platform
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 cdl-website/
-├── 📂 frontend/                 # React + Vite frontend
-│   ├── 📂 src/
-│   │   ├── 📂 components/      # UI components
+├── frontend/                 # React + Vite frontend
+│   ├── src/
+│   │   ├── components/      # UI components
 │   │   │   ├── Home.tsx        # Landing page
 │   │   │   ├── Teams.tsx       # Team listings
 │   │   │   ├── Players.tsx     # Player listings
-│   │   │   ├── PlayerDetails.tsx # Player profiles
-│   │   │   ├── TeamDetails.tsx # Team profiles
-│   │   │   ├── KDStats.tsx     # Statistics dashboard
+│   │   │   ├── PlayerDetail.tsx # Player profiles
+│   │   │   ├── TeamDetail.tsx # Team profiles
+│   │   │   ├── Stats.tsx     # Statistics dashboard
 │   │   │   ├── Transfers.tsx   # Transfer tracking
 │   │   │   └── Layout.tsx      # App layout
-│   │   ├── 📂 services/        # API integration
-│   │   ├── 📂 types/           # TypeScript definitions
-│   │   └── 📂 assets/          # Images and static files
+│   │   ├── services/        # API integration
+│   │   ├── hooks/           # Custom React hooks
+│   │   ├── types/           # TypeScript definitions
+│   │   ├── config/          # Configuration files
+│   │   └── assets/          # Images and static files
 │   └── package.json
-├── 📂 internal/                 # Go backend
-│   ├── 📂 handlers/            # API route handlers
-│   └── 📂 database/            # Database models & config
-├── 📂 database/                # Database migrations
-├── 📂 datacsv/                 # CSV data files
-│   ├── Major-1-players-stats.csv
-│   ├── CDL_Major2_All_48_Player_Stats.csv
-│   ├── CDL_Major3_All_48_Players.csv
-│   ├── Major4data.csv
-│   ├── CodChamps2025.csv
-│   └── 2025_Team_stats.csv
-├── 📂 cmd/                     # Go application entry point
-├── Dockerfile                  # Container configuration
-└── go.mod                      # Go dependencies
+├── internal/                 # Go backend
+│   ├── handlers/            # API route handlers
+│   └── database/            # Database models & config
+├── cmd/                     # Go application entry point
+│   └── main.go             # Server setup and routing
+├── database/                # Database files
+│   └── season_stats.csv    # CSV data files
+├── Dockerfile              # Container configuration
+├── railway.json           # Railway deployment config
+└── go.mod                 # Go dependencies
 ```
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Node.js** 18+ and npm
-- **Go** 1.24+
-- **PostgreSQL** 15+
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/corbynfang/CDL-Website
-cd cdl-website
-```
-
-### 2. Backend Setup
-
-```bash
-# Install Go dependencies
-go mod tidy
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your database credentials
-
-# Run database migrations
-# (See database/ directory for schema)
-
-# Start the Go server
-go run cmd/main.go
-```
-
-### 3. Frontend Setup
-
-```bash
-# Navigate to frontend directory
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-Visit [http://localhost:3000](http://localhost:3000) to view the application.
-
-## 🌐 API Endpoints
+## API Endpoints
 
 ### Teams
-- `GET /api/v1/teams` - List all teams
-- `GET /api/v1/teams/:id` - Get team details
-- `GET /api/v1/teams/:id/players` - Get team players
+- `GET /api/v1/teams` - List all active teams
+- `GET /api/v1/teams/:id` - Get team details by ID
+- `GET /api/v1/teams/:id/players` - Get players for a specific team
+- `GET /api/v1/teams/:id/stats` - Get team statistics
 
 ### Players
 - `GET /api/v1/players` - List all players
-- `GET /api/v1/players/:id` - Get player details
+- `GET /api/v1/players/:id` - Get player details by ID
 - `GET /api/v1/players/:id/stats` - Get player statistics
+- `GET /api/v1/players/:id/kd` - Get player KD statistics across tournaments
+- `GET /api/v1/players/:id/matches` - Get player match history
+- `GET /api/v1/players/top-kd` - Get top KD players
+- `GET /api/v1/players/top-kd-new` - Get top KD players (new format)
+- `GET /api/v1/players/all-kd-stats-tournament` - Get all players KD stats by tournament
+
+### Tournaments
+- `GET /api/v1/tournaments` - List all tournaments
+- `GET /api/v1/tournaments/:id` - Get tournament details by ID
 
 ### Statistics
-- `GET /api/v1/stats/kd` - KD statistics
-- `GET /api/v1/stats/majors` - Major event statistics
+- `GET /api/v1/stats/all-kd-by-tournament` - Get all players KD statistics by tournament
 
-## 📊 Data Sources
+### Transfers
+- `GET /api/v1/transfers` - Get all player transfers
+
+## Database Models
+
+The application uses the following main database models:
+
+- **Season** - CDL seasons and game titles
+- **Team** - Team information, logos, colors
+- **Player** - Player profiles, gamertags, avatars
+- **TeamRoster** - Many-to-many relationship between teams and players
+- **Tournament** - Tournament information and details
+- **Match** - Match results and scores
+- **PlayerMatchStats** - Individual player performance per match
+- **PlayerTournamentStats** - Aggregated player stats per tournament
+- **TeamTournamentStats** - Team performance per tournament
+- **PlayerTransfer** - Player transfer history
+- **Coach** - Team coaching staff
+
+## Security Features
+
+The application implements multiple layers of security:
+
+### Rate Limiting
+- Request rate limiting per IP address
+- Automatic reset intervals
+
+### Input Validation
+- ID parameter validation
+- Query parameter sanitization
+- SQL injection prevention via prepared statements
+
+### Security Headers
+- Content Security Policy
+- Frame protection
+- XSS protection
+- Content type protection
+- HSTS for secure connections
+- Referrer and permissions policies
+
+### CORS
+- Restricted to allowed origins only
+- Configured for production and development environments
+
+### HTTPS
+- Automatic HTTPS redirect in production
+- Modern TLS configuration
+- Secure cipher suites
+
+## Data Sources
 
 The application includes comprehensive CDL data from:
-- **Major 1** - Player statistics and team performance
-- **Major 2** - All 48 player stats
-- **Major 3** - Complete player roster
-- **Major 4** - Latest event data
-- **Call of Duty Champs 2025** - Championship statistics
-- **2025 Team Stats** - Current season team data
+- Major 1 - Player statistics and team performance
+- Major 2 - All 48 player stats
+- Major 3 - Complete player roster
+- Major 4 - Latest event data
+- Call of Duty Champs 2025 - Championship statistics
+- 2025 Team Stats - Current season team data
 
-## 🐳 Docker Deployment
+Data is stored in PostgreSQL and can be imported from CSV files in the `database/` directory.
 
-```bash
-# Build and run with Docker
-docker build -t cdl-website .
-docker run -p 8080:8080 cdl-website
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! This is a learning project, so feel free to:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-- Follow TypeScript best practices
-- Add proper error handling
-- Include TypeScript types for new features
-- Test your changes locally before submitting
-
-## 📝 License
+## License
 
 This project is open source and part of the Call of Duty League application ecosystem. Feel free to use and modify for educational purposes.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Call of Duty League for the competitive gaming platform
+- Breakingpoint.gg for most of the data that I scraped
 - The CDL community for inspiration and feedback
 - Open source contributors and the gaming community
 
 ---
 
-**Built with ❤️ for the Call of Duty League community**
+**Built for the Call of Duty League community**
 
-*For questions or support, please open an issue on GitHub.* # Updated Tue Aug  5 00:02:04 CDT 2025
-# Updated Wed Aug  6 17:32:55 CDT 2025
+*For questions or support, please open an issue on GitHub.*
