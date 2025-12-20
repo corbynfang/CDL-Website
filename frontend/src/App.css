@@ -1,1 +1,49 @@
-/* Minimal styles - everything else handled by Tailwind */
+@import "tailwindcss";
+
+/* Dark mode custom properties */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f4f4f5;
+  --text-primary: #000000;
+  --text-secondary: #6b7280;
+  --border-color: #d1d5db;
+  --accent: #000000;
+}
+
+:root.dark {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #171717;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --border-color: #27272a;
+  --accent: #ffffff;
+}
+
+/* Apply theme variables */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom utility classes using theme */
+.bg-theme-primary {
+  background-color: var(--bg-primary);
+}
+
+.bg-theme-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.text-theme-primary {
+  color: var(--text-primary);
+}
+
+.text-theme-secondary {
+  color: var(--text-secondary);
+}
+
+.border-theme {
+  border-color: var(--border-color);
+}
+

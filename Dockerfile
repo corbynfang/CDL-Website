@@ -15,13 +15,13 @@ RUN apk add --no-cache git ca-certificates wget && \
     npm --version && \
     go version
 
-# Copy frontend files and build
+# Copy frontend files and build (SvelteKit)
 COPY frontend/ ./frontend/
 WORKDIR /app/frontend
 RUN npm install --production=false
 RUN npm rebuild
 RUN npm install @rollup/rollup-linux-x64-musl
-RUN ls -la && echo "Starting build..." && npm run build
+RUN ls -la && echo "Starting SvelteKit build..." && npm run build
 
 # Back to app root and build backend
 WORKDIR /app
@@ -34,8 +34,8 @@ COPY railway.json ./
 
 RUN go mod download
 
-# Verify assets are copied correctly
-RUN ls -la frontend/dist/assets/ && echo "Assets copied successfully"
+# Verify SvelteKit build output exists
+RUN ls -la frontend/dist/ && echo "SvelteKit build successful"
 
 # Build Go binary
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o main ./cmd/main.go

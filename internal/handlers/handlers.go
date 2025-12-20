@@ -281,12 +281,10 @@ func GetTeamStats(c *gin.Context) {
 
 // Tournament handlers
 func GetTournaments(c *gin.Context) {
-	// Log request for security monitoring
 	logSecurityEvent("API_ACCESS", "GetTournaments", c.ClientIP())
 
 	var tournaments []database.Tournament
 
-	// Use context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -1309,5 +1307,212 @@ func GetPlayerMatches(c *gin.Context) {
 		"player_id": playerID,
 		"events":    events,
 		"total":     len(matches),
+	})
+}
+
+// GetTournamentBracket returns bracket data for a tournament
+func GetTournamentBracket(c *gin.Context) {
+	// Enhanced input validation
+	tournamentID, err := validateID(c.Param("id"))
+	if err != nil {
+		logSecurityEvent("INVALID_INPUT", "Invalid tournament ID: "+c.Param("id"), c.ClientIP())
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
+		return
+	}
+
+	logSecurityEvent("API_ACCESS", "GetTournamentBracket for tournament "+c.Param("id"), c.ClientIP())
+
+	// Use context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	// Get tournament info
+	var tournament database.Tournament
+	if err := database.DB.WithContext(ctx).First(&tournament, tournamentID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Tournament not found"})
+		return
+	}
+
+	// Get all matches for this tournament with bracket info
+	var matches []database.Match
+	if err := database.DB.WithContext(ctx).
+		Where("tournament_id = ?", tournamentID).
+		Preload("Team1").
+		Preload("Team2").
+		Preload("Winner").
+		Order("bracket_round, bracket_position").
+		Find(&matches).Error; err != nil {
+		logSecurityEvent("DB_ERROR", "GetTournamentBracket failed", c.ClientIP())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bracket data"})
+		return
+	}
+
+	// Organize matches by bracket round
+	bracketRounds := map[string][]gin.H{
+		"winners_r1":     {},
+		"winners_r2":     {},
+		"winners_finals": {},
+		"elim_r1":        {},
+		"elim_r2":        {},
+		"elim_r3":        {},
+		"elim_finals":    {},
+		"grand_finals":   {},
+	}
+
+	for _, match := range matches {
+		matchData := gin.H{
+			"id":               match.ID,
+			"team1_id":         match.Team1ID,
+			"team2_id":         match.Team2ID,
+			"team1_name":       match.Team1.Name,
+			"team1_abbr":       match.Team1.Abbreviation,
+			"team1_logo":       match.Team1.LogoURL,
+			"team2_name":       match.Team2.Name,
+			"team2_abbr":       match.Team2.Abbreviation,
+			"team2_logo":       match.Team2.LogoURL,
+			"team1_score":      match.Team1Score,
+			"team2_score":      match.Team2Score,
+			"winner_id":        match.WinnerID,
+			"bracket_position": match.BracketPosition,
+			"match_date":       match.MatchDate,
+		}
+
+		if round, exists := bracketRounds[match.BracketRound]; exists {
+			bracketRounds[match.BracketRound] = append(round, matchData)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"tournament_id":   tournamentID,
+		"tournament_name": tournament.Name,
+		"bracket":         bracketRounds,
+		"total_matches":   len(matches),
+	})
+}
+
+// PopulateLeagueChampionshipBracket populates bracket data for the CDL League Championship 2025
+// This is a one-time setup endpoint
+func PopulateLeagueChampionshipBracket(c *gin.Context) {
+	logSecurityEvent("API_ACCESS", "PopulateLeagueChampionshipBracket", c.ClientIP())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// First, ensure the bracket columns exist (migration)
+	database.DB.WithContext(ctx).Exec("ALTER TABLE matches ADD COLUMN IF NOT EXISTS bracket_round VARCHAR(50)")
+	database.DB.WithContext(ctx).Exec("ALTER TABLE matches ADD COLUMN IF NOT EXISTS bracket_position INTEGER DEFAULT 0")
+
+	// Tournament ID 8 = League Championship
+	tournamentID := uint(8)
+
+	// Team IDs from the database (exact names)
+	teamIDs := map[string]uint{
+		"OpTic Texas":           1,
+		"Toronto KOI":           2,
+		"Boston Breach":         3,
+		"Carolina Royal Ravens": 4,
+		"Los Angeles Thieves":   5,
+		"FaZe Vegas":            6,
+		"Vancouver Surge":       7,
+		"Miami Heretics":        8,
+	}
+
+	// CDL League Championship 2025 bracket matches from Breaking Point data
+	bracketMatches := []struct {
+		Team1        string
+		Team2        string
+		Team1Score   int
+		Team2Score   int
+		WinnerTeam   string
+		BracketRound string
+		BracketPos   int
+		MatchDate    string
+	}{
+		// Winners Round 1 (June 26)
+		{"Los Angeles Thieves", "Boston Breach", 2, 3, "Boston Breach", "winners_r1", 1, "2025-06-26T15:30:00Z"},
+		{"Vancouver Surge", "Miami Heretics", 1, 3, "Miami Heretics", "winners_r1", 2, "2025-06-26T14:00:00Z"},
+		{"FaZe Vegas", "OpTic Texas", 0, 3, "OpTic Texas", "winners_r1", 3, "2025-06-26T18:30:00Z"},
+		{"Toronto KOI", "Carolina Royal Ravens", 3, 1, "Toronto KOI", "winners_r1", 4, "2025-06-26T17:00:00Z"},
+
+		// Winners Round 2 (June 27)
+		{"Miami Heretics", "Boston Breach", 2, 3, "Boston Breach", "winners_r2", 1, "2025-06-27T17:00:00Z"},
+		{"OpTic Texas", "Toronto KOI", 3, 0, "OpTic Texas", "winners_r2", 2, "2025-06-27T18:30:00Z"},
+
+		// Winners Finals (June 28)
+		{"Boston Breach", "OpTic Texas", 0, 3, "OpTic Texas", "winners_finals", 1, "2025-06-28T17:00:00Z"},
+
+		// Elimination Round 1 (June 27) - losers from Winners R1
+		{"Vancouver Surge", "Los Angeles Thieves", 3, 0, "Vancouver Surge", "elim_r1", 1, "2025-06-27T14:00:00Z"},
+		{"FaZe Vegas", "Carolina Royal Ravens", 3, 0, "FaZe Vegas", "elim_r1", 2, "2025-06-27T15:30:00Z"},
+
+		// Elimination Round 2 (June 28) - losers from Winners R2 vs winners from Elim R1
+		{"Miami Heretics", "FaZe Vegas", 3, 0, "Miami Heretics", "elim_r2", 1, "2025-06-28T14:00:00Z"},
+		{"Toronto KOI", "Vancouver Surge", 0, 3, "Vancouver Surge", "elim_r2", 2, "2025-06-28T15:30:00Z"},
+
+		// Elimination Round 3 (June 28)
+		{"Miami Heretics", "Vancouver Surge", 2, 3, "Vancouver Surge", "elim_r3", 1, "2025-06-28T18:30:00Z"},
+
+		// Elimination Finals (June 28) - loser from Winners Finals vs winner from Elim R3
+		{"Boston Breach", "Vancouver Surge", 2, 3, "Vancouver Surge", "elim_finals", 1, "2025-06-28T20:00:00Z"},
+
+		// Grand Finals (June 29)
+		{"OpTic Texas", "Vancouver Surge", 5, 3, "OpTic Texas", "grand_finals", 1, "2025-06-29T14:00:00Z"},
+	}
+
+	// First, delete any existing matches for this tournament to avoid duplicates
+	if err := database.DB.WithContext(ctx).Where("tournament_id = ?", tournamentID).Delete(&database.Match{}).Error; err != nil {
+		log.Printf("Error deleting existing matches: %v", err)
+	}
+
+	// Insert new matches
+	insertedCount := 0
+	for _, m := range bracketMatches {
+		team1ID := teamIDs[m.Team1]
+		team2ID := teamIDs[m.Team2]
+		winnerID := teamIDs[m.WinnerTeam]
+
+		if team1ID == 0 || team2ID == 0 {
+			log.Printf("Unknown team: %s or %s", m.Team1, m.Team2)
+			continue
+		}
+
+		matchDate, _ := time.Parse(time.RFC3339, m.MatchDate)
+
+		match := database.Match{
+			TournamentID:    tournamentID,
+			Team1ID:         team1ID,
+			Team2ID:         team2ID,
+			Team1Score:      m.Team1Score,
+			Team2Score:      m.Team2Score,
+			WinnerID:        &winnerID,
+			BracketRound:    m.BracketRound,
+			BracketPosition: m.BracketPos,
+			MatchDate:       matchDate,
+			MatchType:       "Bracket",
+			Format:          "BO5",
+		}
+
+		if m.BracketRound == "grand_finals" {
+			match.Format = "BO9"
+		}
+
+		if err := database.DB.WithContext(ctx).Create(&match).Error; err != nil {
+			log.Printf("Error inserting match: %v", err)
+			continue
+		}
+		insertedCount++
+	}
+
+	// Update tournament details
+	database.DB.WithContext(ctx).Model(&database.Tournament{}).Where("id = ?", tournamentID).Updates(map[string]interface{}{
+		"location":          "Kitchener, Canada",
+		"prize_pool":        2000000.00,
+		"tournament_format": "Double Elimination",
+	})
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "League Championship bracket populated successfully",
+		"matches_added": insertedCount,
+		"tournament_id": tournamentID,
 	})
 }

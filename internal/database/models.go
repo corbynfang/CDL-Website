@@ -117,6 +117,11 @@ type Match struct {
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 
+	// Bracket fields for tournament visualization
+	// BracketRound: "winners_r1", "winners_r2", "winners_finals", "elim_r1", "elim_r2", "elim_r3", "elim_finals", "grand_finals"
+	BracketRound    string `json:"bracket_round" gorm:"size:50"`
+	BracketPosition int    `json:"bracket_position" gorm:"default:0"` // Position within the round (1, 2, 3...)
+
 	// Relationships
 	Tournament Tournament `json:"tournament" gorm:"foreignKey:TournamentID"`
 	Team1      Team       `json:"team1" gorm:"foreignKey:Team1ID"`

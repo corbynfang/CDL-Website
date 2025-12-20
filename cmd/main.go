@@ -95,7 +95,7 @@ func securityMiddleware() gin.HandlerFunc {
 
 		// CORS - restrict to your domain only
 		origin := c.Request.Header.Get("Origin")
-		allowedOrigins := []string{"https://cdlytics.me", "http://localhost:3000", "http://localhost:5173"}
+		allowedOrigins := []string{"https://cdlytics.me", "http://localhost:3000", "http://localhost:5173", "http://localhost:5174"}
 
 		for _, allowed := range allowedOrigins {
 			if origin == allowed {
@@ -105,7 +105,7 @@ func securityMiddleware() gin.HandlerFunc {
 		}
 
 		c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Cache-Control")
 		c.Header("Access-Control-Max-Age", "86400")
 
 		if c.Request.Method == "OPTIONS" {
@@ -185,6 +185,8 @@ func main() {
 		// Tournament routes
 		api.GET("/tournaments", handlers.GetTournaments)
 		api.GET("/tournaments/:id", handlers.GetTournament)
+		api.GET("/tournaments/:id/bracket", handlers.GetTournamentBracket)
+		api.POST("/tournaments/populate-championship-bracket", handlers.PopulateLeagueChampionshipBracket)
 
 		// Transfers routes
 		api.GET("/transfers", handlers.GetTransfers)
