@@ -2,133 +2,56 @@ package handlers
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
 	"github.com/gin-gonic/gin"
 )
 
-// Security logging function
-func logSecurityEvent(event, details, clientIP string) {
-	log.Printf("[SECURITY] %s | %s | %s | %s",
-		time.Now().Format("2006-01-02 15:04:05"),
-		event,
-		details,
-		clientIP)
-}
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
 
-// Enhanced input validation
+// validateID validates and converts string ID to int
 func validateID(id string) (int, error) {
-	// Check if ID is numeric and within reasonable bounds
-	if id == "" {
-		return 0, fmt.Errorf("empty ID")
-	}
-
-	// Use regex to ensure only digits
-	matched, _ := regexp.MatchString(`^\d+$`, id)
-	if !matched {
-		return 0, fmt.Errorf("non-numeric ID")
-	}
-
-	// Convert to int
-	num, err := strconv.Atoi(id)
-	if err != nil {
-		return 0, fmt.Errorf("invalid ID format")
-	}
-
-	// Check reasonable bounds (1 to 1 million)
-	if num < 1 || num > 1000000 {
-		return 0, fmt.Errorf("ID out of bounds")
-	}
-
-	return num, nil
+	return strconv.Atoi(id)
 }
 
-// Sanitize query parameters
-func sanitizeQueryParam(param string) string {
-	// Remove potentially dangerous characters
-	param = strings.TrimSpace(param)
-	param = strings.ReplaceAll(param, ";", "")
-	param = strings.ReplaceAll(param, "--", "")
-	param = strings.ReplaceAll(param, "/*", "")
-	param = strings.ReplaceAll(param, "*/", "")
-	param = strings.ReplaceAll(param, "xp_", "")
-	param = strings.ReplaceAll(param, "sp_", "")
-	return param
+// getContext creates a context with timeout for database operations
+func getContext(seconds int) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), time.Duration(seconds)*time.Second)
 }
 
-func parsePaginationParams(c *gin.Context, defaultLimit, maxLimit int) (int, int) {
-	limit := defaultLimit
-	offset := 0
+// noCacheHeaders adds cache-busting headers to response
+func noCacheHeaders(c *gin.Context) {
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
+}
 
-	if rawLimit := sanitizeQueryParam(c.Query("limit")); rawLimit != "" {
-		if parsedLimit, err := strconv.Atoi(rawLimit); err == nil && parsedLimit > 0 {
-			limit = parsedLimit
-		}
+// calculateKD safely calculates K/D ratio
+func calculateKD(kills, deaths int) float64 {
+	if deaths == 0 {
+		return 0
 	}
-
-	if limit > maxLimit {
-		limit = maxLimit
-	}
-
-	if rawOffset := sanitizeQueryParam(c.Query("offset")); rawOffset != "" {
-		if parsedOffset, err := strconv.Atoi(rawOffset); err == nil && parsedOffset >= 0 {
-			offset = parsedOffset
-		}
-	}
-
-	return limit, offset
+	return float64(kills) / float64(deaths)
 }
 
-func parseBoolQuery(c *gin.Context, key string) bool {
-	value := strings.ToLower(sanitizeQueryParam(c.Query(key)))
-	switch value {
-	case "1", "true", "yes", "on":
-		return true
-	default:
-		return false
-	}
-}
+// =============================================================================
+// TEAM HANDLERS
+// =============================================================================
 
-type majorStat struct {
-	KDRatio float64 `json:"kd_ratio"`
-	Kills   int     `json:"kills"`
-	Deaths  int     `json:"deaths"`
-	Assists int     `json:"assists"`
-}
-
-type playerKDResponse struct {
-	PlayerID          uint               `json:"player_id"`
-	Gamertag          string             `json:"gamertag"`
-	AvatarURL         string             `json:"avatar_url,omitempty"`
-	TeamAbbr          string             `json:"team_abbr"`
-	SeasonKills       int                `json:"season_kills"`
-	SeasonDeaths      int                `json:"season_deaths"`
-	SeasonAssists     int                `json:"season_assists"`
-	SeasonKD          float64            `json:"season_kd"`
-	SeasonKDA         float64            `json:"season_kda"`
-	SeasonKDPlusMinus float64            `json:"season_kd_plus_minus"`
-	Majors            map[uint]majorStat `json:"majors,omitempty"`
-}
-
+// GetTeams returns all active teams
 func GetTeams(c *gin.Context) {
-	logSecurityEvent("API_ACCESS", "GetTeams", c.ClientIP())
-
-	var teams []database.Team
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := getContext(10)
 	defer cancel()
 
+	var teams []database.Team
 	if err := database.DB.WithContext(ctx).Where("is_active = ?", true).Find(&teams).Error; err != nil {
-		log.Printf("Database Error: %v", err)
-		logSecurityEvent("DB_ERROR", "GetTeams failed", c.ClientIP())
+		log.Printf("GetTeams error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teams"})
 		return
 	}
@@ -136,47 +59,42 @@ func GetTeams(c *gin.Context) {
 	c.JSON(http.StatusOK, teams)
 }
 
+// GetTeam returns a single team by ID
 func GetTeam(c *gin.Context) {
-	// Enhanced input validation
 	id, err := validateID(c.Param("id"))
 	if err != nil {
-		logSecurityEvent("INVALID_INPUT", "Invalid team ID: "+c.Param("id"), c.ClientIP())
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
 		return
 	}
 
-	var team database.Team
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := getContext(10)
 	defer cancel()
 
+	var team database.Team
 	if err := database.DB.WithContext(ctx).First(&team, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Team not found"})
 		return
 	}
+
 	c.JSON(http.StatusOK, team)
 }
 
+// GetTeamPlayers returns all players for a team
 func GetTeamPlayers(c *gin.Context) {
-	// Enhanced input validation
 	teamID, err := validateID(c.Param("id"))
 	if err != nil {
-		logSecurityEvent("INVALID_INPUT", "Invalid team ID: "+c.Param("id"), c.ClientIP())
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
 		return
 	}
 
-	var players []database.Player
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := getContext(10)
 	defer cancel()
 
-	if err := database.DB.WithContext(ctx).Joins("JOIN team_rosters ON players.id = team_rosters.player_id").
+	var players []database.Player
+	if err := database.DB.WithContext(ctx).
+		Joins("JOIN team_rosters ON players.id = team_rosters.player_id").
 		Where("team_rosters.team_id = ? AND team_rosters.end_date IS NULL", teamID).
 		Find(&players).Error; err != nil {
-		logSecurityEvent("DB_ERROR", "GetTeamPlayers failed", c.ClientIP())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch team players"})
 		return
 	}
@@ -184,40 +102,60 @@ func GetTeamPlayers(c *gin.Context) {
 	c.JSON(http.StatusOK, players)
 }
 
-func GetPlayers(c *gin.Context) {
-	// Log request for security monitoring
-	logSecurityEvent("API_ACCESS", "GetPlayers", c.ClientIP())
+// GetTeamStats returns tournament stats for a team
+func GetTeamStats(c *gin.Context) {
+	id, err := validateID(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
+		return
+	}
 
-	var players []database.Player
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := getContext(10)
 	defer cancel()
 
+	var stats []database.TeamTournamentStats
+	if err := database.DB.WithContext(ctx).
+		Where("team_id = ?", id).
+		Preload("Tournament").
+		Find(&stats).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch team stats"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// =============================================================================
+// PLAYER HANDLERS
+// =============================================================================
+
+// GetPlayers returns all players
+func GetPlayers(c *gin.Context) {
+	ctx, cancel := getContext(10)
+	defer cancel()
+
+	var players []database.Player
 	if err := database.DB.WithContext(ctx).Find(&players).Error; err != nil {
-		log.Printf("Database Error: %v", err)
-		logSecurityEvent("DB_ERROR", "GetPlayers failed", c.ClientIP())
+		log.Printf("GetPlayers error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch players"})
 		return
 	}
+
 	c.JSON(http.StatusOK, players)
 }
 
+// GetPlayer returns a single player by ID
 func GetPlayer(c *gin.Context) {
-	// Enhanced input validation
 	id, err := validateID(c.Param("id"))
 	if err != nil {
-		logSecurityEvent("INVALID_INPUT", "Invalid player ID: "+c.Param("id"), c.ClientIP())
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
 		return
 	}
 
-	var player database.Player
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := getContext(10)
 	defer cancel()
 
+	var player database.Player
 	if err := database.DB.WithContext(ctx).First(&player, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
 		return
@@ -226,26 +164,23 @@ func GetPlayer(c *gin.Context) {
 	c.JSON(http.StatusOK, player)
 }
 
+// GetPlayerStats returns match stats for a player
 func GetPlayerStats(c *gin.Context) {
-	// Enhanced input validation
 	id, err := validateID(c.Param("id"))
 	if err != nil {
-		logSecurityEvent("INVALID_INPUT", "Invalid player ID: "+c.Param("id"), c.ClientIP())
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
 		return
 	}
 
-	var stats []database.PlayerMatchStats
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := getContext(10)
 	defer cancel()
 
-	if err := database.DB.WithContext(ctx).Where("player_id = ?", id).
+	var stats []database.PlayerMatchStats
+	if err := database.DB.WithContext(ctx).
+		Where("player_id = ?", id).
 		Preload("Match").
 		Preload("Team").
 		Find(&stats).Error; err != nil {
-		logSecurityEvent("DB_ERROR", "GetPlayerStats failed", c.ClientIP())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
 		return
 	}
@@ -253,483 +188,194 @@ func GetPlayerStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
-func GetTeamStats(c *gin.Context) {
-	// Enhanced input validation
-	id, err := validateID(c.Param("id"))
-	if err != nil {
-		logSecurityEvent("INVALID_INPUT", "Invalid team ID: "+c.Param("id"), c.ClientIP())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
-		return
-	}
-
-	var stats []database.TeamTournamentStats
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if err := database.DB.WithContext(ctx).Where("team_id = ?", id).
-		Preload("Tournament").
-		Find(&stats).Error; err != nil {
-		logSecurityEvent("DB_ERROR", "GetTeamStats failed", c.ClientIP())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch team stats"})
-		return
-	}
-
-	c.JSON(http.StatusOK, stats)
-}
-
-// Tournament handlers
-func GetTournaments(c *gin.Context) {
-	logSecurityEvent("API_ACCESS", "GetTournaments", c.ClientIP())
-
-	var tournaments []database.Tournament
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if err := database.DB.WithContext(ctx).Preload("Season").Find(&tournaments).Error; err != nil {
-		log.Printf("Database Error: %v", err)
-		logSecurityEvent("DB_ERROR", "GetTournaments failed", c.ClientIP())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tournaments"})
-		return
-	}
-	c.JSON(http.StatusOK, tournaments)
-}
-
-func GetTournament(c *gin.Context) {
-	// Enhanced input validation
-	id, err := validateID(c.Param("id"))
-	if err != nil {
-		logSecurityEvent("INVALID_INPUT", "Invalid tournament ID: "+c.Param("id"), c.ClientIP())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
-		return
-	}
-
-	var tournament database.Tournament
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if err := database.DB.WithContext(ctx).First(&tournament, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Tournament not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, tournament)
-}
-
-// GetPlayerKDStats returns K/D statistics for a specific player
+// GetPlayerKDStats returns K/D statistics for a player across tournaments
 func GetPlayerKDStats(c *gin.Context) {
-	// Enhanced input validation
 	playerID, err := validateID(c.Param("id"))
 	if err != nil {
-		logSecurityEvent("INVALID_INPUT", "Invalid player ID: "+c.Param("id"), c.ClientIP())
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
 		return
 	}
 
-	var stats []database.PlayerTournamentStats
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := getContext(15)
 	defer cancel()
 
-	if err := database.DB.WithContext(ctx).Where("player_id = ?", playerID).
-		Preload("Tournament").
-		Preload("Team").
-		Order("tournament_id DESC").
-		Find(&stats).Error; err != nil {
-		logSecurityEvent("DB_ERROR", "GetPlayerKDStats failed", c.ClientIP())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player K/D stats"})
+	// Get player info
+	var player database.Player
+	if err := database.DB.WithContext(ctx).First(&player, playerID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
 		return
 	}
 
-	// Log raw stats for debugging
-	log.Printf("Raw stats for player %d: %+v", playerID, stats)
+	// Get tournament stats for this player
+	var tournamentStats []database.PlayerTournamentStats
+	if err := database.DB.WithContext(ctx).
+		Where("player_id = ?", playerID).
+		Preload("Tournament").
+		Order("tournament_id DESC").
+		Find(&tournamentStats).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
+		return
+	}
 
-	// Group stats by tournament
-	tournamentStats := make(map[int]gin.H)
+	// Aggregate stats
 	var totalKills, totalDeaths, totalAssists int
-	var totalMaps int
+	var totalHpKills, totalHpDeaths, totalSndKills, totalSndDeaths, totalCtlKills, totalCtlDeaths int
 
-	for _, stat := range stats {
-		tournamentID := int(stat.TournamentID)
+	tournamentList := make([]gin.H, 0, len(tournamentStats))
 
-		if tournamentStats[tournamentID] == nil {
-			// Get tournament name
-			var tournament database.Tournament
-			if err := database.DB.WithContext(ctx).First(&tournament, tournamentID).Error; err != nil {
-				log.Printf("Error fetching tournament %d: %v", tournamentID, err)
-				tournamentStats[tournamentID] = gin.H{
-					"tournament_id":   tournamentID,
-					"tournament_name": "Unknown Tournament",
-					"kills":           0,
-					"deaths":          0,
-					"assists":         0,
-					"maps_played":     0,
-					"matches":         0,
-				}
-			} else {
-				tournamentStats[tournamentID] = gin.H{
-					"tournament_id":   tournamentID,
-					"tournament_name": tournament.Name,
-					"kills":           0,
-					"deaths":          0,
-					"assists":         0,
-					"maps_played":     0,
-					"matches":         0,
-				}
-			}
-		}
-
-		tournament := tournamentStats[tournamentID]
-		tournament["kills"] = tournament["kills"].(int) + stat.TotalKills
-		tournament["deaths"] = tournament["deaths"].(int) + stat.TotalDeaths
-		tournament["assists"] = tournament["assists"].(int) + stat.TotalAssists
-		tournament["maps_played"] = tournament["maps_played"].(int) + 1 // Each tournament stat represents one tournament
-		tournament["matches"] = tournament["matches"].(int) + 1
-
+	for _, stat := range tournamentStats {
 		totalKills += stat.TotalKills
 		totalDeaths += stat.TotalDeaths
 		totalAssists += stat.TotalAssists
-		totalMaps += 1
-	}
-
-	// Calculate KD ratios for each tournament ** VERY IMPORTANT **
-	var tournamentStatsList []gin.H
-	for tournamentID, stats := range tournamentStats {
-		tournament := stats
-		kills := tournament["kills"].(int)
-		deaths := tournament["deaths"].(int)
-		assists := tournament["assists"].(int)
-
-		var kdRatio, kdaRatio float64
-		if deaths > 0 {
-			kdRatio = float64(kills) / float64(deaths)
-			kdaRatio = float64(kills+assists) / float64(deaths)
-		}
-
-		tournament["kd_ratio"] = kdRatio
-		tournament["kda_ratio"] = kdaRatio
-		tournament["tournament_id"] = tournamentID
-		tournamentStatsList = append(tournamentStatsList, tournament)
-	}
-
-	// Calculate overall statistics
-	var avgKD, avgKDA, avgADR float64
-	if totalDeaths > 0 {
-		avgKD = float64(totalKills) / float64(totalDeaths)
-		avgKDA = float64(totalKills+totalAssists) / float64(totalDeaths)
-	}
-
-	if totalMaps > 0 {
-		avgADR = float64(totalKills*100) / float64(totalMaps) // Simplified ADR calculation
-	}
-
-	log.Printf("Calculated stats for player %d: Kills=%d, Deaths=%d, KD=%.2f, KDA=%.2f",
-		playerID, totalKills, totalDeaths, avgKD, avgKDA)
-
-	// Create mock match stats from tournament stats for compatibility
-	var matchStats []gin.H
-	for _, stat := range stats {
-		// Recalculate KD for each stat to ensure accuracy
-		var calculatedKD, calculatedKDA float64
-		if stat.TotalDeaths > 0 {
-			calculatedKD = float64(stat.TotalKills) / float64(stat.TotalDeaths)
-			calculatedKDA = float64(stat.TotalKills+stat.TotalAssists) / float64(stat.TotalDeaths)
-		}
-
-		matchStats = append(matchStats, gin.H{
-			"id":            stat.ID,
-			"match_id":      stat.TournamentID,
-			"player_id":     stat.PlayerID,
-			"team_id":       stat.TeamID,
-			"maps_played":   1,
-			"total_kills":   stat.TotalKills,
-			"total_deaths":  stat.TotalDeaths,
-			"total_assists": stat.TotalAssists,
-			"kd_ratio":      calculatedKD,
-			"kda_ratio":     calculatedKDA,
-			"db_kd_ratio":   stat.KDRatio, // Keep original for comparison
-			"db_kda_ratio":  stat.KDARatio,
-		})
-	}
-
-	// Get player info for response
-	var player database.Player
-	if err := database.DB.WithContext(ctx).First(&player, playerID).Error; err != nil {
-		log.Printf("Error fetching player %d: %v", playerID, err)
-	}
-
-	var totalHpKills, totalHpDeaths, totalSndKills, totalSndDeaths, totalCtlKills, totalCtlDeaths int
-	for _, stat := range stats {
 		totalHpKills += stat.HpKills
 		totalHpDeaths += stat.HpDeaths
 		totalSndKills += stat.SndKills
 		totalSndDeaths += stat.SndDeaths
 		totalCtlKills += stat.ControlKills
 		totalCtlDeaths += stat.ControlDeaths
+
+		tournamentList = append(tournamentList, gin.H{
+			"tournament_id":   stat.TournamentID,
+			"tournament_name": stat.Tournament.Name,
+			"kills":           stat.TotalKills,
+			"deaths":          stat.TotalDeaths,
+			"assists":         stat.TotalAssists,
+			"kd_ratio":        calculateKD(stat.TotalKills, stat.TotalDeaths),
+			"maps_played":     stat.OverallMaps,
+		})
 	}
 
-	var hpKDRatio, sndKDRatio, ctlKDRatio float64
-	if totalHpDeaths > 0 {
-		hpKDRatio = float64(totalHpKills) / float64(totalHpDeaths)
-	}
-	if totalSndDeaths > 0 {
-		sndKDRatio = float64(totalSndKills) / float64(totalSndDeaths)
-	}
-	if totalCtlDeaths > 0 {
-		ctlKDRatio = float64(totalCtlKills) / float64(totalCtlDeaths)
-	}
-
-	// Get EWC2025 detailed stats if available
-	var ewcStats database.PlayerTournamentStats
-	var ewcDetailed gin.H
-	if err := database.DB.WithContext(ctx).Where("player_id = ? AND tournament_id = 7", playerID).First(&ewcStats).Error; err == nil {
-		ewcDetailed = gin.H{
-			"ewc_snd_kills":            ewcStats.SndKills,
-			"ewc_snd_deaths":           ewcStats.SndDeaths,
-			"ewc_snd_kd_ratio":         ewcStats.SndKDRatio,
-			"ewc_snd_plus_minus":       ewcStats.SndPlusMinus,
-			"ewc_snd_k_per_map":        ewcStats.SndKPerMap,
-			"ewc_snd_first_kills":      ewcStats.SndFirstKills,
-			"ewc_snd_maps":             ewcStats.SndMaps,
-			"ewc_hp_kills":             ewcStats.HpKills,
-			"ewc_hp_deaths":            ewcStats.HpDeaths,
-			"ewc_hp_kd_ratio":          ewcStats.HpKDRatio,
-			"ewc_hp_plus_minus":        ewcStats.HpPlusMinus,
-			"ewc_hp_k_per_map":         ewcStats.HpKPerMap,
-			"ewc_hp_time_milliseconds": ewcStats.HpTimeMilliseconds,
-			"ewc_hp_maps":              ewcStats.HpMaps,
-			"ewc_control_kills":        ewcStats.ControlKills,
-			"ewc_control_deaths":       ewcStats.ControlDeaths,
-			"ewc_control_kd_ratio":     ewcStats.ControlKDRatio,
-			"ewc_control_plus_minus":   ewcStats.ControlPlusMinus,
-			"ewc_control_k_per_map":    ewcStats.ControlKPerMap,
-			"ewc_control_captures":     ewcStats.ControlCaptures,
-			"ewc_control_maps":         ewcStats.ControlMaps,
-		}
-	}
-
-	response := gin.H{
-		"player_id":            playerID,
-		"gamertag":             player.Gamertag,
-		"avatar_url":           player.AvatarURL,
-		"total_matches":        len(stats),
-		"total_maps":           totalMaps,
-		"total_kills":          totalKills,
-		"total_deaths":         totalDeaths,
-		"total_assists":        totalAssists,
-		"avg_kd":               avgKD,
-		"avg_kda":              avgKDA,
-		"avg_adr":              avgADR,
-		"hp_kd_ratio":          hpKDRatio,
-		"snd_kd_ratio":         sndKDRatio,
-		"control_kd_ratio":     ctlKDRatio,
-		"ewc_hp_kd_ratio":      hpKDRatio,  // Use aggregated for display
-		"ewc_snd_kd_ratio":     sndKDRatio, // Use aggregated for display
-		"ewc_control_kd_ratio": ctlKDRatio, // Use aggregated for display
-		"tournament_stats":     tournamentStatsList,
-		"match_stats":          matchStats,
-	}
-
-	// Add EWC2025 detailed stats if available
-	for key, value := range ewcDetailed {
-		response[key] = value
-	}
-
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, gin.H{
+		"player_id":        playerID,
+		"gamertag":         player.Gamertag,
+		"avatar_url":       player.AvatarURL,
+		"total_kills":      totalKills,
+		"total_deaths":     totalDeaths,
+		"total_assists":    totalAssists,
+		"avg_kd":           calculateKD(totalKills, totalDeaths),
+		"hp_kd_ratio":      calculateKD(totalHpKills, totalHpDeaths),
+		"snd_kd_ratio":     calculateKD(totalSndKills, totalSndDeaths),
+		"control_kd_ratio": calculateKD(totalCtlKills, totalCtlDeaths),
+		"tournament_stats": tournamentList,
+	})
 }
 
-// GetTopKDPlayers returns the top K/D players for 2025
+// GetPlayerMatches returns match history for a player grouped by event
+func GetPlayerMatches(c *gin.Context) {
+	playerID, err := validateID(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
+		return
+	}
+
+	ctx, cancel := getContext(15)
+	defer cancel()
+
+	// Get player match stats with all related data
+	var matchStats []database.PlayerMatchStats
+	if err := database.DB.WithContext(ctx).
+		Where("player_id = ?", playerID).
+		Preload("Match").
+		Preload("Match.Tournament").
+		Preload("Match.Team1").
+		Preload("Match.Team2").
+		Preload("Team").
+		Order("match_id DESC").
+		Limit(100).
+		Find(&matchStats).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player matches"})
+		return
+	}
+
+	// Group matches by tournament (event)
+	eventsMap := make(map[uint]gin.H)
+
+	for _, stat := range matchStats {
+		match := stat.Match
+		tournamentID := match.TournamentID
+
+		// Initialize event if not exists
+		if eventsMap[tournamentID] == nil {
+			eventsMap[tournamentID] = gin.H{
+				"event":         match.Tournament.Name,
+				"year":          match.Tournament.StartDate.Year(),
+				"tournament_id": tournamentID,
+				"matches":       []gin.H{},
+			}
+		}
+
+		// Determine opponent and result
+		var opponent, opponentAbbr, result string
+		playerTeamID := stat.TeamID
+
+		if playerTeamID == match.Team1ID {
+			opponent = match.Team2.Name
+			opponentAbbr = match.Team2.Abbreviation
+			if match.Team1Score > match.Team2Score {
+				result = "W"
+			} else {
+				result = "L"
+			}
+		} else {
+			opponent = match.Team1.Name
+			opponentAbbr = match.Team1.Abbreviation
+			if match.Team2Score > match.Team1Score {
+				result = "W"
+			} else {
+				result = "L"
+			}
+		}
+
+		resultScore := result + " " + strconv.Itoa(match.Team1Score) + ":" + strconv.Itoa(match.Team2Score)
+
+		matchData := gin.H{
+			"date":          match.MatchDate.Format(time.RFC3339),
+			"opponent":      opponent,
+			"opponent_abbr": opponentAbbr,
+			"result":        resultScore,
+			"kd":            stat.KDRatio,
+			"kills":         stat.TotalKills,
+			"deaths":        stat.TotalDeaths,
+		}
+
+		event := eventsMap[tournamentID]
+		matchesList := event["matches"].([]gin.H)
+		event["matches"] = append(matchesList, matchData)
+	}
+
+	// Convert map to sorted slice
+	events := make([]gin.H, 0, len(eventsMap))
+	for _, event := range eventsMap {
+		events = append(events, event)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"player_id": playerID,
+		"events":    events,
+		"total":     len(matchStats),
+	})
+}
+
+// =============================================================================
+// STATS HANDLERS
+// =============================================================================
+
+// GetTopKDPlayers returns top players by K/D ratio
 func GetTopKDPlayers(c *gin.Context) {
-	// Log request for security monitoring
-	logSecurityEvent("API_ACCESS", "GetTopKDPlayers", c.ClientIP())
+	noCacheHeaders(c)
 
-	limit, offset := parsePaginationParams(c, 25, 100)
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := getContext(15)
 	defer cancel()
 
-	type topKDRow struct {
-		PlayerID      uint
-		Gamertag      string
-		TeamAbbr      string
-		SeasonKills   int
-		SeasonDeaths  int
-		SeasonAssists int
-	}
-
-	query := `
-		SELECT
-			pts.player_id,
-			MAX(p.gamertag) AS gamertag,
-			COALESCE(MAX(t.abbreviation), '') AS team_abbr,
-			SUM(pts.total_kills) AS season_kills,
-			SUM(pts.total_deaths) AS season_deaths,
-			SUM(pts.total_assists) AS season_assists
-		FROM player_tournament_stats pts
-		JOIN players p ON pts.player_id = p.id
-		LEFT JOIN teams t ON pts.team_id = t.id
-		WHERE pts.tournament_id IN (1,2,3,4,5,7)
-		GROUP BY pts.player_id
-		HAVING SUM(pts.total_deaths) > 0
-		ORDER BY (SUM(pts.total_kills)::decimal / NULLIF(SUM(pts.total_deaths), 0)) DESC,
-			MAX(p.gamertag)
-		LIMIT ? OFFSET ?
-	`
-
-	var rows []topKDRow
-	if err := database.DB.WithContext(ctx).Raw(query, limit, offset).Scan(&rows).Error; err != nil {
-		log.Printf("Error executing query: %v", err)
-		logSecurityEvent("DB_ERROR", "GetTopKDPlayers failed", c.ClientIP())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch top K/D players"})
-		return
-	}
-
-	players := make([]gin.H, 0, len(rows))
-	for _, row := range rows {
-		seasonKD := 0.0
-		seasonKDA := 0.0
-		if row.SeasonDeaths > 0 {
-			seasonKD = float64(row.SeasonKills) / float64(row.SeasonDeaths)
-			seasonKDA = float64(row.SeasonKills+row.SeasonAssists) / float64(row.SeasonDeaths)
+	limit := 25
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
 		}
-
-		players = append(players, gin.H{
-			"player_id":            row.PlayerID,
-			"gamertag":             row.Gamertag,
-			"team_abbr":            row.TeamAbbr,
-			"season_kills":         row.SeasonKills,
-			"season_deaths":        row.SeasonDeaths,
-			"season_assists":       row.SeasonAssists,
-			"season_kd":            seasonKD,
-			"season_kda":           seasonKDA,
-			"season_kd_plus_minus": seasonKD - 1.0,
-		})
 	}
 
-	response := gin.H{
-		"timestamp": time.Now().Unix(),
-		"players":   players,
-		"count":     len(players),
-		"limit":     limit,
-		"offset":    offset,
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
-// GetTopKDPlayersNew is a new version of the top KD players handler with aggregated stats
-func GetTopKDPlayersNew(c *gin.Context) {
-	logSecurityEvent("API_ACCESS", "GetTopKDPlayersNew", c.ClientIP())
-
-	limit, offset := parsePaginationParams(c, 50, 200)
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	type aggregatedKDRow struct {
-		PlayerID          uint
-		Gamertag          string
-		TeamName          string
-		TeamAbbr          string
-		SeasonKills       int
-		SeasonDeaths      int
-		SeasonAssists     int
-		TournamentsPlayed int
-	}
-
-	query := `
-		SELECT
-			pts.player_id,
-			MAX(p.gamertag) AS gamertag,
-			COALESCE(MAX(t.name), '') AS team_name,
-			COALESCE(MAX(t.abbreviation), '') AS team_abbr,
-			SUM(pts.total_kills) AS season_kills,
-			SUM(pts.total_deaths) AS season_deaths,
-			SUM(pts.total_assists) AS season_assists,
-			COUNT(DISTINCT pts.tournament_id) AS tournaments_played
-		FROM player_tournament_stats pts
-		JOIN players p ON pts.player_id = p.id
-		LEFT JOIN teams t ON pts.team_id = t.id
-		WHERE pts.tournament_id IN (1,2,3,4,5,7)
-		GROUP BY pts.player_id
-		HAVING SUM(pts.total_deaths) > 0
-		ORDER BY (SUM(pts.total_kills)::decimal / NULLIF(SUM(pts.total_deaths), 0)) DESC,
-			MAX(p.gamertag)
-		LIMIT ? OFFSET ?
-	`
-
-	var rows []aggregatedKDRow
-	if err := database.DB.WithContext(ctx).Raw(query, limit, offset).Scan(&rows).Error; err != nil {
-		log.Printf("Error executing query: %v", err)
-		logSecurityEvent("DB_ERROR", "GetTopKDPlayersNew failed", c.ClientIP())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch top K/D players"})
-		return
-	}
-
-	players := make([]gin.H, 0, len(rows))
-	for _, row := range rows {
-		seasonKD := 0.0
-		seasonKDA := 0.0
-		if row.SeasonDeaths > 0 {
-			seasonKD = float64(row.SeasonKills) / float64(row.SeasonDeaths)
-			seasonKDA = float64(row.SeasonKills+row.SeasonAssists) / float64(row.SeasonDeaths)
-		}
-
-		players = append(players, gin.H{
-			"player_id":            row.PlayerID,
-			"gamertag":             row.Gamertag,
-			"team_name":            row.TeamName,
-			"team_abbr":            row.TeamAbbr,
-			"season_kills":         row.SeasonKills,
-			"season_deaths":        row.SeasonDeaths,
-			"season_assists":       row.SeasonAssists,
-			"season_kd":            seasonKD,
-			"season_kda":           seasonKDA,
-			"season_kd_plus_minus": seasonKD - 1.0,
-			"tournaments_played":   row.TournamentsPlayed,
-		})
-	}
-
-	response := gin.H{
-		"timestamp": time.Now().Unix(),
-		"players":   players,
-		"count":     len(players),
-		"limit":     limit,
-		"offset":    offset,
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
-// GetAllPlayersKDStats returns KD and KD+/- for all players for the season, and KD for each major tournament
-func GetAllPlayersKDStats(c *gin.Context) {
-	// Log request for security monitoring
-	logSecurityEvent("API_ACCESS", "GetAllPlayersKDStats", c.ClientIP())
-
-	// Add cache-busting headers for Railway
-	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
-	c.Header("Pragma", "no-cache")
-	c.Header("Expires", "0")
-	c.Header("X-Railway-Cache", "disabled")
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	limit, offset := parsePaginationParams(c, 100, 500)
-	includeMajors := parseBoolQuery(c, "include_majors")
-
-	excludedGametags := []string{"Accuracy", "Crimsix"}
-	tournamentFilter := []int{1, 2, 3, 4, 5, 7}
-
-	type playerSeasonRow struct {
+	// Get aggregated stats from player_tournament_stats
+	type PlayerAggregated struct {
 		PlayerID      uint
 		Gamertag      string
 		AvatarURL     string
@@ -739,591 +385,180 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		SeasonAssists int
 	}
 
-	var seasonRows []playerSeasonRow
-	seasonQuery := `
-		SELECT
+	var rows []PlayerAggregated
+	if err := database.DB.WithContext(ctx).
+		Table("player_tournament_stats pts").
+		Select(`
 			pts.player_id,
-			MAX(p.gamertag) AS gamertag,
-			COALESCE(MAX(p.avatar_url), '') AS avatar_url,
-		COALESCE(MAX(t.abbreviation), '') AS team_abbr,
-			SUM(pts.total_kills) AS season_kills,
-			SUM(pts.total_deaths) AS season_deaths,
-			SUM(pts.total_assists) AS season_assists
-		FROM player_tournament_stats pts
-		JOIN players p ON pts.player_id = p.id
-		LEFT JOIN teams t ON pts.team_id = t.id
-		WHERE pts.tournament_id IN (1,2,3,4,5,7)
-		  AND COALESCE(p.gamertag, '') NOT IN (?, ?)
-		GROUP BY pts.player_id
-		HAVING SUM(pts.total_kills) > 0 OR SUM(pts.total_deaths) > 0
-		ORDER BY
-			CASE WHEN SUM(pts.total_deaths) > 0
-				THEN SUM(pts.total_kills)::decimal / SUM(pts.total_deaths)
-				ELSE 0
-			END DESC,
-			MAX(p.gamertag)
-		LIMIT ? OFFSET ?
-	`
+			MAX(p.gamertag) as gamertag,
+			COALESCE(MAX(p.avatar_url), '') as avatar_url,
+			COALESCE(MAX(t.abbreviation), '') as team_abbr,
+			SUM(pts.total_kills) as season_kills,
+			SUM(pts.total_deaths) as season_deaths,
+			SUM(pts.total_assists) as season_assists
+		`).
+		Joins("JOIN players p ON pts.player_id = p.id").
+		Joins("LEFT JOIN teams t ON pts.team_id = t.id").
+		Group("pts.player_id").
+		Having("SUM(pts.total_deaths) > 0").
+		Order("(SUM(pts.total_kills)::decimal / NULLIF(SUM(pts.total_deaths), 0)) DESC").
+		Limit(limit).
+		Scan(&rows).Error; err != nil {
+		log.Printf("GetTopKDPlayers error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch top K/D players"})
+		return
+	}
 
-	if err := database.DB.WithContext(ctx).Raw(seasonQuery, excludedGametags[0], excludedGametags[1], limit, offset).Scan(&seasonRows).Error; err != nil {
-		logSecurityEvent("DB_ERROR", "GetAllPlayersKDStats failed (season query)", c.ClientIP())
+	players := make([]gin.H, 0, len(rows))
+	for _, row := range rows {
+		players = append(players, gin.H{
+			"player_id":      row.PlayerID,
+			"gamertag":       row.Gamertag,
+			"avatar_url":     row.AvatarURL,
+			"team_abbr":      row.TeamAbbr,
+			"season_kills":   row.SeasonKills,
+			"season_deaths":  row.SeasonDeaths,
+			"season_assists": row.SeasonAssists,
+			"season_kd":      calculateKD(row.SeasonKills, row.SeasonDeaths),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"timestamp": time.Now().Unix(),
+		"players":   players,
+		"count":     len(players),
+	})
+}
+
+// GetTopKDPlayersNew is an alias for GetTopKDPlayers
+func GetTopKDPlayersNew(c *gin.Context) {
+	GetTopKDPlayers(c)
+}
+
+// GetAllPlayersKDStats returns K/D stats for all players
+func GetAllPlayersKDStats(c *gin.Context) {
+	noCacheHeaders(c)
+
+	ctx, cancel := getContext(30)
+	defer cancel()
+
+	limit := 100
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 500 {
+			limit = parsed
+		}
+	}
+
+	type PlayerAggregated struct {
+		PlayerID      uint
+		Gamertag      string
+		AvatarURL     string
+		TeamAbbr      string
+		SeasonKills   int
+		SeasonDeaths  int
+		SeasonAssists int
+	}
+
+	var rows []PlayerAggregated
+	if err := database.DB.WithContext(ctx).
+		Table("player_tournament_stats pts").
+		Select(`
+			pts.player_id,
+			MAX(p.gamertag) as gamertag,
+			COALESCE(MAX(p.avatar_url), '') as avatar_url,
+			COALESCE(MAX(t.abbreviation), '') as team_abbr,
+			SUM(pts.total_kills) as season_kills,
+			SUM(pts.total_deaths) as season_deaths,
+			SUM(pts.total_assists) as season_assists
+		`).
+		Joins("JOIN players p ON pts.player_id = p.id").
+		Joins("LEFT JOIN teams t ON pts.team_id = t.id").
+		Group("pts.player_id").
+		Having("SUM(pts.total_kills) > 0 OR SUM(pts.total_deaths) > 0").
+		Order("(CASE WHEN SUM(pts.total_deaths) > 0 THEN SUM(pts.total_kills)::decimal / SUM(pts.total_deaths) ELSE 0 END) DESC").
+		Limit(limit).
+		Scan(&rows).Error; err != nil {
+		log.Printf("GetAllPlayersKDStats error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
 		return
 	}
 
-	var totalPlayers int64
-	if err := database.DB.WithContext(ctx).
-		Table("player_tournament_stats AS pts").
-		Joins("JOIN players p ON pts.player_id = p.id").
-		Where("pts.tournament_id IN ?", tournamentFilter).
-		Where("COALESCE(p.gamertag, '') NOT IN ?", excludedGametags).
-		Distinct("pts.player_id").
-		Count(&totalPlayers).Error; err != nil {
-		logSecurityEvent("DB_ERROR", "GetAllPlayersKDStats failed (count)", c.ClientIP())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats count"})
-		return
-	}
-
-	playerIDs := make([]uint, 0, len(seasonRows))
-	for _, row := range seasonRows {
-		playerIDs = append(playerIDs, row.PlayerID)
-	}
-
-	majorsByPlayer := make(map[uint]map[uint]majorStat)
-	if includeMajors && len(playerIDs) > 0 {
-		type majorRow struct {
-			PlayerID     uint
-			TournamentID uint
-			TotalKills   int
-			TotalDeaths  int
-			TotalAssists int
-		}
-
-		var majorRows []majorRow
-		if err := database.DB.WithContext(ctx).
-			Table("player_tournament_stats").
-			Select("player_id, tournament_id, total_kills, total_deaths, total_assists").
-			Where("player_id IN ?", playerIDs).
-			Where("tournament_id IN ?", tournamentFilter).
-			Find(&majorRows).Error; err != nil {
-			logSecurityEvent("DB_ERROR", "GetAllPlayersKDStats failed (major breakdown)", c.ClientIP())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player tournament stats"})
-			return
-		}
-
-		for _, row := range majorRows {
-			if majorsByPlayer[row.PlayerID] == nil {
-				majorsByPlayer[row.PlayerID] = make(map[uint]majorStat)
-			}
-
-			kd := 0.0
-			if row.TotalDeaths > 0 {
-				kd = float64(row.TotalKills) / float64(row.TotalDeaths)
-			}
-
-			majorsByPlayer[row.PlayerID][row.TournamentID] = majorStat{
-				KDRatio: kd,
-				Kills:   row.TotalKills,
-				Deaths:  row.TotalDeaths,
-				Assists: row.TotalAssists,
-			}
-		}
-	}
-
-	players := make([]playerKDResponse, 0, len(seasonRows))
-	for _, row := range seasonRows {
-		seasonKD := 0.0
-		seasonKDA := 0.0
-		if row.SeasonDeaths > 0 {
-			seasonKD = float64(row.SeasonKills) / float64(row.SeasonDeaths)
-			seasonKDA = float64(row.SeasonKills+row.SeasonAssists) / float64(row.SeasonDeaths)
-		}
-
-		player := playerKDResponse{
-			PlayerID:          row.PlayerID,
-			Gamertag:          row.Gamertag,
-			AvatarURL:         row.AvatarURL,
-			TeamAbbr:          row.TeamAbbr,
-			SeasonKills:       row.SeasonKills,
-			SeasonDeaths:      row.SeasonDeaths,
-			SeasonAssists:     row.SeasonAssists,
-			SeasonKD:          seasonKD,
-			SeasonKDA:         seasonKDA,
-			SeasonKDPlusMinus: seasonKD - 1.0,
-		}
-
-		if includeMajors {
-			player.Majors = majorsByPlayer[row.PlayerID]
-		}
-
-		players = append(players, player)
-	}
-
-	response := gin.H{
-		"timestamp": time.Now().Unix(),
-		"players":   players,
-		"count":     len(players),
-		"total":     totalPlayers,
-		"limit":     limit,
-		"offset":    offset,
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
-func GetTransfers(c *gin.Context) {
-	// Log request for security monitoring
-	logSecurityEvent("API_ACCESS", "GetTransfers", c.ClientIP())
-
-	// Add cache-busting headers for Railway
-	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
-	c.Header("Pragma", "no-cache")
-	c.Header("Expires", "0")
-	c.Header("X-Railway-Cache", "disabled")
-
-	var transfers []database.PlayerTransfer
-
-	// Sanitize query parameters
-	season := sanitizeQueryParam(c.Query("season"))
-	teamID := sanitizeQueryParam(c.Query("team_id"))
-	transferType := sanitizeQueryParam(c.Query("type"))
-	playerID := sanitizeQueryParam(c.Query("player_id"))
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	query := database.DB.WithContext(ctx).Preload("Player").Preload("FromTeam").Preload("ToTeam")
-
-	// Add filters if provided
-	if season != "" {
-		query = query.Where("season = ?", season)
-	}
-
-	if teamID != "" {
-		// Validate teamID is numeric
-		if _, err := validateID(teamID); err != nil {
-			logSecurityEvent("INVALID_INPUT", "Invalid team_id in query: "+teamID, c.ClientIP())
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team_id parameter"})
-			return
-		}
-		query = query.Where("from_team_id = ? OR to_team_id = ?", teamID, teamID)
-	}
-
-	if transferType != "" {
-		query = query.Where("transfer_type = ?", transferType)
-	}
-
-	if playerID != "" {
-		// Validate playerID is numeric
-		if _, err := validateID(playerID); err != nil {
-			logSecurityEvent("INVALID_INPUT", "Invalid player_id in query: "+playerID, c.ClientIP())
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player_id parameter"})
-			return
-		}
-		query = query.Where("player_id = ?", playerID)
-	}
-
-	// Order by transfer date (most recent first)
-	if err := query.Order("transfer_date DESC").Find(&transfers).Error; err != nil {
-		log.Printf("Database Error: %v", err)
-		logSecurityEvent("DB_ERROR", "GetTransfers failed", c.ClientIP())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transfers"})
-		return
-	}
-
-	// Add timestamp to response for cache busting
-	response := gin.H{
-		"timestamp": time.Now().Unix(),
-		"transfers": transfers,
-		"count":     len(transfers),
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
-// Database validation utility
-func validateDatabaseStats() gin.H {
-	var issues []string
-
-	// Check for players with zero deaths but non-zero kills (shouldn't happen)
-	var zeroDeathPlayers []gin.H
-	database.DB.Raw(`
-		SELECT player_id, total_kills, total_deaths, total_assists
-		FROM player_tournament_stats
-		WHERE total_deaths = 0 AND total_kills > 0
-		LIMIT 10
-	`).Scan(&zeroDeathPlayers)
-
-	if len(zeroDeathPlayers) > 0 {
-		issues = append(issues, fmt.Sprintf("Found %d players with zero deaths but non-zero kills", len(zeroDeathPlayers)))
-	}
-
-	// Check for players with negative stats
-	var negativeStats []gin.H
-	database.DB.Raw(`
-		SELECT player_id, total_kills, total_deaths, total_assists
-		FROM player_tournament_stats
-		WHERE total_kills < 0 OR total_deaths < 0 OR total_assists < 0
-		LIMIT 10
-	`).Scan(&negativeStats)
-
-	if len(negativeStats) > 0 {
-		issues = append(issues, fmt.Sprintf("Found %d records with negative stats", len(negativeStats)))
-	}
-
-	// Check for KD ratio inconsistencies
-	var kdInconsistencies []gin.H
-	database.DB.Raw(`
-		SELECT player_id, total_kills, total_deaths, kd_ratio,
-		       CASE
-		           WHEN total_deaths > 0 THEN ROUND((total_kills * 1.0 / total_deaths)::numeric, 2)
-		           ELSE 0
-		       END as calculated_kd
-		FROM player_tournament_stats
-		WHERE total_deaths > 0
-		AND ABS(kd_ratio - (total_kills * 1.0 / total_deaths)) > 0.01
-		LIMIT 10
-	`).Scan(&kdInconsistencies)
-
-	if len(kdInconsistencies) > 0 {
-		issues = append(issues, fmt.Sprintf("Found %d records with KD ratio inconsistencies", len(kdInconsistencies)))
-	}
-
-	return gin.H{
-		"issues":             issues,
-		"zero_death_players": zeroDeathPlayers,
-		"negative_stats":     negativeStats,
-		"kd_inconsistencies": kdInconsistencies,
-		"timestamp":          time.Now().Unix(),
-	}
-}
-
-// GetDatabaseValidation returns database validation results
-func GetDatabaseValidation(c *gin.Context) {
-	logSecurityEvent("API_ACCESS", "GetDatabaseValidation", c.ClientIP())
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Use context for database operations
-	database.DB.WithContext(ctx)
-
-	validation := validateDatabaseStats()
-	c.JSON(http.StatusOK, validation)
-}
-
-// GetPlayerMatches returns all matches for a specific player
-func GetPlayerMatches(c *gin.Context) {
-	// Enhanced input validation
-	playerID, err := validateID(c.Param("id"))
-	if err != nil {
-		logSecurityEvent("INVALID_INPUT", "Invalid player ID: "+c.Param("id"), c.ClientIP())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
-		return
-	}
-
-	logSecurityEvent("API_ACCESS", "GetPlayerMatches for player "+c.Param("id"), c.ClientIP())
-
-	// Get query parameters
-	tournamentID := sanitizeQueryParam(c.Query("tournament_id"))
-	limitInt, _ := parsePaginationParams(c, 50, 100)
-
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	// Build raw SQL query
-	sqlQuery := `
-		SELECT
-			pms.match_id,
-			pms.team_id,
-			pms.total_kills,
-			pms.total_deaths,
-			pms.total_assists,
-			pms.kd_ratio,
-			pms.maps_played,
-			m.match_date,
-			m.team1_score,
-			m.team2_score,
-			m.team1_id,
-			m.team2_id,
-			m.tournament_id,
-			m.match_type,
-			m.format,
-			t.name as tournament_name,
-			t.start_date as tournament_start_date,
-			t1.name as team1_name,
-			t1.abbreviation as team1_abbr,
-			t2.name as team2_name,
-			t2.abbreviation as team2_abbr,
-			p.gamertag,
-			t3.name as player_team_name,
-			t3.abbreviation as player_team_abbr
-		FROM player_match_stats pms
-		JOIN matches m ON pms.match_id = m.id
-		JOIN tournaments t ON m.tournament_id = t.id
-		JOIN teams t1 ON m.team1_id = t1.id
-		JOIN teams t2 ON m.team2_id = t2.id
-		JOIN players p ON pms.player_id = p.id
-		JOIN teams t3 ON pms.team_id = t3.id
-		WHERE pms.player_id = ?
-	`
-
-	args := []interface{}{playerID}
-
-	// Add tournament filter if provided
-	if tournamentID != "" {
-		if _, err := validateID(tournamentID); err != nil {
-			logSecurityEvent("INVALID_INPUT", "Invalid tournament_id in query: "+tournamentID, c.ClientIP())
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament_id parameter"})
-			return
-		}
-		sqlQuery += " AND m.tournament_id = ?"
-		args = append(args, tournamentID)
-	}
-
-	sqlQuery += " ORDER BY m.match_date DESC LIMIT ?"
-	args = append(args, limitInt)
-
-	log.Printf("Executing Raw SQL query for player %d with limit %d", playerID, limitInt)
-	log.Printf("SQL: %s", sqlQuery)
-
-	// Execute query
-	rows, err := database.DB.Raw(sqlQuery, args...).Rows()
-	if err != nil {
-		log.Printf("Database Error: %v", err)
-		logSecurityEvent("DB_ERROR", "GetPlayerMatches failed", c.ClientIP())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player matches"})
-		return
-	}
-	defer rows.Close()
-
-	var matches []map[string]interface{}
-
-	// Scan rows into matches slice
-	for rows.Next() {
-		var matchID, teamID, totalKills, totalDeaths, totalAssists, mapsPlayed, tournamentID int
-		var kdRatio float64
-		var tournamentName, team1Name, team1Abbr, team2Name, team2Abbr, gamertag, playerTeamName, playerTeamAbbr string
-		var matchType, format sql.NullString
-		var team1Score, team2Score, team1ID, team2ID int
-		var matchDate time.Time
-		var tournamentStartDate time.Time
-
-		err := rows.Scan(
-			&matchID, &teamID, &totalKills, &totalDeaths, &totalAssists, &kdRatio, &mapsPlayed,
-			&matchDate, &team1Score, &team2Score, &team1ID, &team2ID, &tournamentID, &matchType, &format,
-			&tournamentName, &tournamentStartDate, &team1Name, &team1Abbr, &team2Name, &team2Abbr, &gamertag,
-			&playerTeamName, &playerTeamAbbr,
-		)
-		if err != nil {
-			log.Printf("Error scanning row: %v", err)
-			continue
-		}
-
-		matchTypeStr := ""
-		if matchType.Valid {
-			matchTypeStr = matchType.String
-		}
-		formatStr := ""
-		if format.Valid {
-			formatStr = format.String
-		}
-
-		matches = append(matches, map[string]interface{}{
-			"match_id":         matchID,
-			"team_id":          teamID,
-			"total_kills":      totalKills,
-			"total_deaths":     totalDeaths,
-			"total_assists":    totalAssists,
-			"kd_ratio":         kdRatio,
-			"maps_played":      mapsPlayed,
-			"match_date":       matchDate,
-			"team1_score":      team1Score,
-			"team2_score":      team2Score,
-			"team1_id":         team1ID,
-			"team2_id":         team2ID,
-			"tournament_id":    tournamentID,
-			"tournament_name":  tournamentName,
-			"tournament_year":  tournamentStartDate.Year(),
-			"match_type":       matchTypeStr,
-			"format":           formatStr,
-			"team1_name":       team1Name,
-			"team1_abbr":       team1Abbr,
-			"team2_name":       team2Name,
-			"team2_abbr":       team2Abbr,
-			"gamertag":         gamertag,
-			"player_team_name": playerTeamName,
-			"player_team_abbr": playerTeamAbbr,
+	players := make([]gin.H, 0, len(rows))
+	for _, row := range rows {
+		seasonKD := calculateKD(row.SeasonKills, row.SeasonDeaths)
+		players = append(players, gin.H{
+			"player_id":            row.PlayerID,
+			"gamertag":             row.Gamertag,
+			"avatar_url":           row.AvatarURL,
+			"team_abbr":            row.TeamAbbr,
+			"season_kills":         row.SeasonKills,
+			"season_deaths":        row.SeasonDeaths,
+			"season_assists":       row.SeasonAssists,
+			"season_kd":            seasonKD,
+			"season_kd_plus_minus": seasonKD - 1.0,
 		})
-	}
-
-	tournamentStatsMap := make(map[uint]database.PlayerTournamentStats)
-	var tournamentStats []database.PlayerTournamentStats
-	database.DB.WithContext(ctx).Where("player_id = ?", playerID).Find(&tournamentStats)
-	for _, ts := range tournamentStats {
-		tournamentStatsMap[ts.TournamentID] = ts
-	}
-
-	eventsMap := make(map[int]gin.H)
-	tournamentYears := make(map[int]int)
-
-	for _, match := range matches {
-		tournamentID := match["tournament_id"].(int)
-		tournamentYear := match["tournament_year"].(int)
-
-		if eventsMap[tournamentID] == nil {
-			tournamentYears[tournamentID] = tournamentYear
-			eventsMap[tournamentID] = gin.H{
-				"event":   match["tournament_name"].(string),
-				"year":    tournamentYear,
-				"matches": []gin.H{},
-			}
-		}
-
-		// Determine if the player's team won
-		playerTeamID := match["team_id"].(int)
-		team1ID := match["team1_id"].(int)
-		team1Score := match["team1_score"].(int)
-		team2Score := match["team2_score"].(int)
-
-		var matchResult string
-		var opponent string
-		var opponentAbbr string
-
-		if playerTeamID == team1ID {
-			if team1Score > team2Score {
-				matchResult = "W"
-			} else {
-				matchResult = "L"
-			}
-			opponent = match["team2_name"].(string)
-			opponentAbbr = match["team2_abbr"].(string)
-		} else {
-			if team2Score > team1Score {
-				matchResult = "W"
-			} else {
-				matchResult = "L"
-			}
-			opponent = match["team1_name"].(string)
-			opponentAbbr = match["team1_abbr"].(string)
-		}
-
-		// Format score and result
-		score := fmt.Sprintf("%d:%d", team1Score, team2Score)
-		resultScore := fmt.Sprintf("%s %s", matchResult, score)
-
-		matchKills := match["total_kills"].(int)
-		matchDeaths := match["total_deaths"].(int)
-		matchKD := match["kd_ratio"].(float64)
-
-		// Calculate slayer rating (simplified: kills per map)
-		slayerRating := 0.0
-		if mapsPlayed, ok := match["maps_played"].(int); ok && mapsPlayed > 0 {
-			slayerRating = float64(matchKills) / float64(mapsPlayed)
-		}
-
-		// Calculate rating (simplified: KD * 10)
-		rating := matchKD * 10.0
-
-		// Parse match date
-		matchDateTime := match["match_date"].(time.Time)
-		matchDate := matchDateTime.In(time.UTC)
-		matchDateFormatted := ""
-		if !matchDate.IsZero() {
-			matchDateFormatted = matchDate.Format(time.RFC3339)
-		}
-
-		// Add match to event
-		event := eventsMap[tournamentID]
-		matchesList := event["matches"].([]gin.H)
-
-		var hpKD *float64
-		var sndKD *float64
-		var ctlKD *float64
-		if ts, ok := tournamentStatsMap[uint(tournamentID)]; ok {
-			if ts.HpKDRatio > 0 {
-				value := ts.HpKDRatio
-				hpKD = &value
-			}
-			if ts.SndKDRatio > 0 {
-				value := ts.SndKDRatio
-				sndKD = &value
-			}
-			if ts.ControlKDRatio > 0 {
-				value := ts.ControlKDRatio
-				ctlKD = &value
-			}
-		}
-		matchesList = append(matchesList, gin.H{
-			"date":          matchDateFormatted,
-			"opponent":      opponent,
-			"opponent_abbr": opponentAbbr,
-			"result":        resultScore,
-			"kd":            matchKD,
-			"kills":         matchKills,
-			"deaths":        matchDeaths,
-			"hp_kd":         hpKD,
-			"snd_kd":        sndKD,
-			"ctl_kd":        ctlKD,
-			"slayer_rating": slayerRating,
-			"rating":        rating,
-		})
-		event["matches"] = matchesList
-	}
-
-	// Convert map to slice and sort by year/tournament ID (most recent first)
-	var events []gin.H
-	for tournamentID, event := range eventsMap {
-		event["tournament_id"] = tournamentID
-		events = append(events, event)
-	}
-
-	// Sort events by year (descending)
-	for i := 0; i < len(events); i++ {
-		for j := i + 1; j < len(events); j++ {
-			yearI := events[i]["year"].(int)
-			yearJ := events[j]["year"].(int)
-			if yearJ > yearI || (yearJ == yearI && events[j]["tournament_id"].(int) > events[i]["tournament_id"].(int)) {
-				events[i], events[j] = events[j], events[i]
-			}
-		}
-	}
-
-	// Sort matches within each event by date (descending)
-	for _, event := range events {
-		matchesList := event["matches"].([]gin.H)
-		for i := 0; i < len(matchesList); i++ {
-			for j := i + 1; j < len(matchesList); j++ {
-				if matchesList[j]["date"].(string) > matchesList[i]["date"].(string) {
-					matchesList[i], matchesList[j] = matchesList[j], matchesList[i]
-				}
-			}
-		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"player_id": playerID,
-		"events":    events,
-		"total":     len(matches),
+		"timestamp": time.Now().Unix(),
+		"players":   players,
+		"count":     len(players),
 	})
 }
 
-// GetTournamentBracket returns bracket data for a tournament
-func GetTournamentBracket(c *gin.Context) {
-	// Enhanced input validation
-	tournamentID, err := validateID(c.Param("id"))
+// =============================================================================
+// TOURNAMENT HANDLERS
+// =============================================================================
+
+// GetTournaments returns all tournaments
+func GetTournaments(c *gin.Context) {
+	ctx, cancel := getContext(10)
+	defer cancel()
+
+	var tournaments []database.Tournament
+	if err := database.DB.WithContext(ctx).
+		Preload("Season").
+		Order("start_date DESC").
+		Find(&tournaments).Error; err != nil {
+		log.Printf("GetTournaments error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tournaments"})
+		return
+	}
+
+	c.JSON(http.StatusOK, tournaments)
+}
+
+// GetTournament returns a single tournament by ID
+func GetTournament(c *gin.Context) {
+	id, err := validateID(c.Param("id"))
 	if err != nil {
-		logSecurityEvent("INVALID_INPUT", "Invalid tournament ID: "+c.Param("id"), c.ClientIP())
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
 		return
 	}
 
-	logSecurityEvent("API_ACCESS", "GetTournamentBracket for tournament "+c.Param("id"), c.ClientIP())
+	ctx, cancel := getContext(10)
+	defer cancel()
 
-	// Use context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	var tournament database.Tournament
+	if err := database.DB.WithContext(ctx).
+		Preload("Season").
+		First(&tournament, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Tournament not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, tournament)
+}
+
+// GetTournamentBracket returns bracket data for a tournament
+func GetTournamentBracket(c *gin.Context) {
+	tournamentID, err := validateID(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
+		return
+	}
+
+	ctx, cancel := getContext(15)
 	defer cancel()
 
 	// Get tournament info
@@ -1333,22 +568,20 @@ func GetTournamentBracket(c *gin.Context) {
 		return
 	}
 
-	// Get all matches for this tournament with bracket info
+	// Get all bracket matches
 	var matches []database.Match
 	if err := database.DB.WithContext(ctx).
-		Where("tournament_id = ?", tournamentID).
+		Where("tournament_id = ? AND bracket_round != ''", tournamentID).
 		Preload("Team1").
 		Preload("Team2").
-		Preload("Winner").
 		Order("bracket_round, bracket_position").
 		Find(&matches).Error; err != nil {
-		logSecurityEvent("DB_ERROR", "GetTournamentBracket failed", c.ClientIP())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bracket data"})
 		return
 	}
 
-	// Organize matches by bracket round
-	bracketRounds := map[string][]gin.H{
+	// Organize by bracket round
+	bracket := map[string][]gin.H{
 		"winners_r1":     {},
 		"winners_r2":     {},
 		"winners_finals": {},
@@ -1377,142 +610,82 @@ func GetTournamentBracket(c *gin.Context) {
 			"match_date":       match.MatchDate,
 		}
 
-		if round, exists := bracketRounds[match.BracketRound]; exists {
-			bracketRounds[match.BracketRound] = append(round, matchData)
+		if _, exists := bracket[match.BracketRound]; exists {
+			bracket[match.BracketRound] = append(bracket[match.BracketRound], matchData)
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"tournament_id":   tournamentID,
 		"tournament_name": tournament.Name,
-		"bracket":         bracketRounds,
+		"bracket":         bracket,
 		"total_matches":   len(matches),
 	})
 }
 
-// PopulateLeagueChampionshipBracket populates bracket data for the CDL League Championship 2025
-// This is a one-time setup endpoint
-func PopulateLeagueChampionshipBracket(c *gin.Context) {
-	logSecurityEvent("API_ACCESS", "PopulateLeagueChampionshipBracket", c.ClientIP())
+// =============================================================================
+// TRANSFER HANDLERS
+// =============================================================================
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+// GetTransfers returns player transfers
+func GetTransfers(c *gin.Context) {
+	noCacheHeaders(c)
+
+	ctx, cancel := getContext(15)
 	defer cancel()
 
-	// First, ensure the bracket columns exist (migration)
-	database.DB.WithContext(ctx).Exec("ALTER TABLE matches ADD COLUMN IF NOT EXISTS bracket_round VARCHAR(50)")
-	database.DB.WithContext(ctx).Exec("ALTER TABLE matches ADD COLUMN IF NOT EXISTS bracket_position INTEGER DEFAULT 0")
+	query := database.DB.WithContext(ctx).
+		Preload("Player").
+		Preload("FromTeam").
+		Preload("ToTeam")
 
-	// Tournament ID 8 = League Championship
-	tournamentID := uint(8)
-
-	// Team IDs from the database (exact names)
-	teamIDs := map[string]uint{
-		"OpTic Texas":           1,
-		"Toronto KOI":           2,
-		"Boston Breach":         3,
-		"Carolina Royal Ravens": 4,
-		"Los Angeles Thieves":   5,
-		"FaZe Vegas":            6,
-		"Vancouver Surge":       7,
-		"Miami Heretics":        8,
+	// Optional filters
+	if season := c.Query("season"); season != "" {
+		query = query.Where("season = ?", season)
+	}
+	if teamID := c.Query("team_id"); teamID != "" {
+		query = query.Where("from_team_id = ? OR to_team_id = ?", teamID, teamID)
+	}
+	if playerID := c.Query("player_id"); playerID != "" {
+		query = query.Where("player_id = ?", playerID)
 	}
 
-	// CDL League Championship 2025 bracket matches from Breaking Point data
-	bracketMatches := []struct {
-		Team1        string
-		Team2        string
-		Team1Score   int
-		Team2Score   int
-		WinnerTeam   string
-		BracketRound string
-		BracketPos   int
-		MatchDate    string
-	}{
-		// Winners Round 1 (June 26)
-		{"Los Angeles Thieves", "Boston Breach", 2, 3, "Boston Breach", "winners_r1", 1, "2025-06-26T15:30:00Z"},
-		{"Vancouver Surge", "Miami Heretics", 1, 3, "Miami Heretics", "winners_r1", 2, "2025-06-26T14:00:00Z"},
-		{"FaZe Vegas", "OpTic Texas", 0, 3, "OpTic Texas", "winners_r1", 3, "2025-06-26T18:30:00Z"},
-		{"Toronto KOI", "Carolina Royal Ravens", 3, 1, "Toronto KOI", "winners_r1", 4, "2025-06-26T17:00:00Z"},
-
-		// Winners Round 2 (June 27)
-		{"Miami Heretics", "Boston Breach", 2, 3, "Boston Breach", "winners_r2", 1, "2025-06-27T17:00:00Z"},
-		{"OpTic Texas", "Toronto KOI", 3, 0, "OpTic Texas", "winners_r2", 2, "2025-06-27T18:30:00Z"},
-
-		// Winners Finals (June 28)
-		{"Boston Breach", "OpTic Texas", 0, 3, "OpTic Texas", "winners_finals", 1, "2025-06-28T17:00:00Z"},
-
-		// Elimination Round 1 (June 27) - losers from Winners R1
-		{"Vancouver Surge", "Los Angeles Thieves", 3, 0, "Vancouver Surge", "elim_r1", 1, "2025-06-27T14:00:00Z"},
-		{"FaZe Vegas", "Carolina Royal Ravens", 3, 0, "FaZe Vegas", "elim_r1", 2, "2025-06-27T15:30:00Z"},
-
-		// Elimination Round 2 (June 28) - losers from Winners R2 vs winners from Elim R1
-		{"Miami Heretics", "FaZe Vegas", 3, 0, "Miami Heretics", "elim_r2", 1, "2025-06-28T14:00:00Z"},
-		{"Toronto KOI", "Vancouver Surge", 0, 3, "Vancouver Surge", "elim_r2", 2, "2025-06-28T15:30:00Z"},
-
-		// Elimination Round 3 (June 28)
-		{"Miami Heretics", "Vancouver Surge", 2, 3, "Vancouver Surge", "elim_r3", 1, "2025-06-28T18:30:00Z"},
-
-		// Elimination Finals (June 28) - loser from Winners Finals vs winner from Elim R3
-		{"Boston Breach", "Vancouver Surge", 2, 3, "Vancouver Surge", "elim_finals", 1, "2025-06-28T20:00:00Z"},
-
-		// Grand Finals (June 29)
-		{"OpTic Texas", "Vancouver Surge", 5, 3, "OpTic Texas", "grand_finals", 1, "2025-06-29T14:00:00Z"},
+	var transfers []database.PlayerTransfer
+	if err := query.Order("transfer_date DESC").Find(&transfers).Error; err != nil {
+		log.Printf("GetTransfers error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transfers"})
+		return
 	}
-
-	// First, delete any existing matches for this tournament to avoid duplicates
-	if err := database.DB.WithContext(ctx).Where("tournament_id = ?", tournamentID).Delete(&database.Match{}).Error; err != nil {
-		log.Printf("Error deleting existing matches: %v", err)
-	}
-
-	// Insert new matches
-	insertedCount := 0
-	for _, m := range bracketMatches {
-		team1ID := teamIDs[m.Team1]
-		team2ID := teamIDs[m.Team2]
-		winnerID := teamIDs[m.WinnerTeam]
-
-		if team1ID == 0 || team2ID == 0 {
-			log.Printf("Unknown team: %s or %s", m.Team1, m.Team2)
-			continue
-		}
-
-		matchDate, _ := time.Parse(time.RFC3339, m.MatchDate)
-
-		match := database.Match{
-			TournamentID:    tournamentID,
-			Team1ID:         team1ID,
-			Team2ID:         team2ID,
-			Team1Score:      m.Team1Score,
-			Team2Score:      m.Team2Score,
-			WinnerID:        &winnerID,
-			BracketRound:    m.BracketRound,
-			BracketPosition: m.BracketPos,
-			MatchDate:       matchDate,
-			MatchType:       "Bracket",
-			Format:          "BO5",
-		}
-
-		if m.BracketRound == "grand_finals" {
-			match.Format = "BO9"
-		}
-
-		if err := database.DB.WithContext(ctx).Create(&match).Error; err != nil {
-			log.Printf("Error inserting match: %v", err)
-			continue
-		}
-		insertedCount++
-	}
-
-	// Update tournament details
-	database.DB.WithContext(ctx).Model(&database.Tournament{}).Where("id = ?", tournamentID).Updates(map[string]interface{}{
-		"location":          "Kitchener, Canada",
-		"prize_pool":        2000000.00,
-		"tournament_format": "Double Elimination",
-	})
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":       "League Championship bracket populated successfully",
-		"matches_added": insertedCount,
-		"tournament_id": tournamentID,
+		"timestamp": time.Now().Unix(),
+		"transfers": transfers,
+		"count":     len(transfers),
+	})
+}
+
+// =============================================================================
+// DEBUG HANDLERS
+// =============================================================================
+
+// GetDatabaseValidation returns database health check
+func GetDatabaseValidation(c *gin.Context) {
+	ctx, cancel := getContext(10)
+	defer cancel()
+
+	var playerCount, teamCount, matchCount, tournamentCount int64
+
+	database.DB.WithContext(ctx).Model(&database.Player{}).Count(&playerCount)
+	database.DB.WithContext(ctx).Model(&database.Team{}).Count(&teamCount)
+	database.DB.WithContext(ctx).Model(&database.Match{}).Count(&matchCount)
+	database.DB.WithContext(ctx).Model(&database.Tournament{}).Count(&tournamentCount)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":      "healthy",
+		"timestamp":   time.Now().Unix(),
+		"players":     playerCount,
+		"teams":       teamCount,
+		"matches":     matchCount,
+		"tournaments": tournamentCount,
 	})
 }
