@@ -44,16 +44,32 @@ func calculateKD(kills, deaths int) float64 {
 // TEAM HANDLERS
 // =============================================================================
 
-// GetTeams returns all active teams
+// GetTeams returns all active teams, optionally filtered by season
 func GetTeams(c *gin.Context) {
 	ctx, cancel := getContext(10)
 	defer cancel()
 
+	seasonID := c.Query("season_id")
+
 	var teams []database.Team
-	if err := database.DB.WithContext(ctx).Where("is_active = ?", true).Find(&teams).Error; err != nil {
-		log.Printf("GetTeams error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teams"})
-		return
+
+	if seasonID != "" {
+		// Get teams that have rosters in the specified season
+		if err := database.DB.WithContext(ctx).
+			Distinct().
+			Joins("JOIN team_rosters ON teams.id = team_rosters.team_id").
+			Where("team_rosters.season_id = ? AND teams.is_active = ?", seasonID, true).
+			Find(&teams).Error; err != nil {
+			log.Printf("GetTeams error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teams"})
+			return
+		}
+	} else {
+		if err := database.DB.WithContext(ctx).Where("is_active = ?", true).Find(&teams).Error; err != nil {
+			log.Printf("GetTeams error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teams"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, teams)
@@ -79,7 +95,7 @@ func GetTeam(c *gin.Context) {
 	c.JSON(http.StatusOK, team)
 }
 
-// GetTeamPlayers returns all players for a team
+// GetTeamPlayers returns all players for a team, optionally filtered by season
 func GetTeamPlayers(c *gin.Context) {
 	teamID, err := validateID(c.Param("id"))
 	if err != nil {
@@ -90,11 +106,20 @@ func GetTeamPlayers(c *gin.Context) {
 	ctx, cancel := getContext(10)
 	defer cancel()
 
+	seasonID := c.Query("season_id")
 	var players []database.Player
-	if err := database.DB.WithContext(ctx).
+
+	query := database.DB.WithContext(ctx).
 		Joins("JOIN team_rosters ON players.id = team_rosters.player_id").
-		Where("team_rosters.team_id = ? AND team_rosters.end_date IS NULL", teamID).
-		Find(&players).Error; err != nil {
+		Where("team_rosters.team_id = ?", teamID)
+
+	if seasonID != "" {
+		query = query.Where("team_rosters.season_id = ?", seasonID)
+	} else {
+		query = query.Where("team_rosters.end_date IS NULL")
+	}
+
+	if err := query.Find(&players).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch team players"})
 		return
 	}
@@ -435,7 +460,7 @@ func GetTopKDPlayersNew(c *gin.Context) {
 	GetTopKDPlayers(c)
 }
 
-// GetAllPlayersKDStats returns K/D stats for all players
+// GetAllPlayersKDStats returns K/D stats for all players, optionally filtered by season
 func GetAllPlayersKDStats(c *gin.Context) {
 	noCacheHeaders(c)
 
@@ -449,6 +474,8 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		}
 	}
 
+	seasonID := c.Query("season_id")
+
 	type PlayerAggregated struct {
 		PlayerID      uint
 		Gamertag      string
@@ -459,8 +486,7 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		SeasonAssists int
 	}
 
-	var rows []PlayerAggregated
-	if err := database.DB.WithContext(ctx).
+	query := database.DB.WithContext(ctx).
 		Table("player_tournament_stats pts").
 		Select(`
 			pts.player_id,
@@ -473,6 +499,14 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		`).
 		Joins("JOIN players p ON pts.player_id = p.id").
 		Joins("LEFT JOIN teams t ON pts.team_id = t.id").
+		Joins("JOIN tournaments tour ON pts.tournament_id = tour.id")
+
+	if seasonID != "" {
+		query = query.Where("tour.season_id = ?", seasonID)
+	}
+
+	var rows []PlayerAggregated
+	if err := query.
 		Group("pts.player_id").
 		Having("SUM(pts.total_kills) > 0 OR SUM(pts.total_deaths) > 0").
 		Order("(CASE WHEN SUM(pts.total_deaths) > 0 THEN SUM(pts.total_kills)::decimal / SUM(pts.total_deaths) ELSE 0 END) DESC").
@@ -510,16 +544,20 @@ func GetAllPlayersKDStats(c *gin.Context) {
 // TOURNAMENT HANDLERS
 // =============================================================================
 
-// GetTournaments returns all tournaments
+// GetTournaments returns all tournaments, optionally filtered by season
 func GetTournaments(c *gin.Context) {
 	ctx, cancel := getContext(10)
 	defer cancel()
 
+	seasonID := c.Query("season_id")
+	query := database.DB.WithContext(ctx).Preload("Season").Order("start_date DESC")
+
+	if seasonID != "" {
+		query = query.Where("season_id = ?", seasonID)
+	}
+
 	var tournaments []database.Tournament
-	if err := database.DB.WithContext(ctx).
-		Preload("Season").
-		Order("start_date DESC").
-		Find(&tournaments).Error; err != nil {
+	if err := query.Find(&tournaments).Error; err != nil {
 		log.Printf("GetTournaments error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tournaments"})
 		return
@@ -662,6 +700,59 @@ func GetTransfers(c *gin.Context) {
 		"transfers": transfers,
 		"count":     len(transfers),
 	})
+}
+
+// =============================================================================
+// SEASON/GAME HANDLERS
+// =============================================================================
+
+// GetSeasons returns all seasons/games
+func GetSeasons(c *gin.Context) {
+	ctx, cancel := getContext(10)
+	defer cancel()
+
+	var seasons []database.Season
+	if err := database.DB.WithContext(ctx).Order("start_date DESC").Find(&seasons).Error; err != nil {
+		log.Printf("GetSeasons error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch seasons"})
+		return
+	}
+
+	c.JSON(http.StatusOK, seasons)
+}
+
+// GetSeason returns a single season by ID
+func GetSeason(c *gin.Context) {
+	id, err := validateID(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid season ID"})
+		return
+	}
+
+	ctx, cancel := getContext(10)
+	defer cancel()
+
+	var season database.Season
+	if err := database.DB.WithContext(ctx).First(&season, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Season not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, season)
+}
+
+// GetActiveSeason returns the currently active season
+func GetActiveSeason(c *gin.Context) {
+	ctx, cancel := getContext(10)
+	defer cancel()
+
+	var season database.Season
+	if err := database.DB.WithContext(ctx).Where("is_active = ?", true).First(&season).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No active season found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, season)
 }
 
 // =============================================================================

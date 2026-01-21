@@ -56,7 +56,12 @@ func main() {
 	// API routes
 	api := r.Group("/api/v1")
 	{
-		// Teams
+		// Seasons/Games
+		api.GET("/seasons", handlers.GetSeasons)
+		api.GET("/seasons/:id", handlers.GetSeason)
+		api.GET("/seasons/active", handlers.GetActiveSeason)
+
+		// Teams (supports ?season_id=X filter)
 		api.GET("/teams", handlers.GetTeams)
 		api.GET("/teams/:id", handlers.GetTeam)
 		api.GET("/teams/:id/players", handlers.GetTeamPlayers)
@@ -71,11 +76,11 @@ func main() {
 		api.GET("/players/top-kd", handlers.GetTopKDPlayers)
 		api.GET("/players/top-kd-new", handlers.GetTopKDPlayersNew)
 
-		// Stats
+		// Stats (supports ?season_id=X filter)
 		api.GET("/stats/all-kd-by-tournament", handlers.GetAllPlayersKDStats)
 		api.GET("/players/all-kd-stats-tournament", handlers.GetAllPlayersKDStats)
 
-		// Tournaments
+		// Tournaments (supports ?season_id=X filter)
 		api.GET("/tournaments", handlers.GetTournaments)
 		api.GET("/tournaments/:id", handlers.GetTournament)
 		api.GET("/tournaments/:id/bracket", handlers.GetTournamentBracket)
