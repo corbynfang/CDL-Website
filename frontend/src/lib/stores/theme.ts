@@ -1,10 +1,6 @@
 import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
 
-// =============================================================================
-// THEME STORE
-// =============================================================================
-
 // Check for saved preference or system preference
 function getInitialTheme(): 'light' | 'dark' {
 	if (!browser) return 'light';
@@ -55,9 +51,6 @@ function createThemeStore() {
 
 export const theme = createThemeStore();
 
-// =============================================================================
-// GAME/SEASON STORE
-// =============================================================================
 
 export interface Season {
 	id: number;
