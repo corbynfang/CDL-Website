@@ -11,10 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
-
 // validateID validates and converts string ID to int
 func validateID(id string) (int, error) {
 	return strconv.Atoi(id)
@@ -40,10 +36,6 @@ func calculateKD(kills, deaths int) float64 {
 	return float64(kills) / float64(deaths)
 }
 
-// =============================================================================
-// TEAM HANDLERS
-// =============================================================================
-
 // GetTeams returns all active teams, optionally filtered by season
 func GetTeams(c *gin.Context) {
 	ctx, cancel := getContext(10)
@@ -54,18 +46,22 @@ func GetTeams(c *gin.Context) {
 	var teams []database.Team
 
 	if seasonID != "" {
-		// Get teams that have rosters in the specified season
+		// Filter through match data — team_rosters is not populated but player_match_stats is.
 		if err := database.DB.WithContext(ctx).
-			Distinct().
-			Joins("JOIN team_rosters ON teams.id = team_rosters.team_id").
-			Where("team_rosters.season_id = ? AND teams.is_active = ?", seasonID, true).
+			Distinct("teams.*").
+			Joins("JOIN player_match_stats pms ON pms.team_id = teams.id").
+			Joins("JOIN matches m ON m.id = pms.match_id").
+			Joins("JOIN tournaments t ON t.id = m.tournament_id").
+			Where("t.season_id = ? AND teams.name != ?", seasonID, "Unaffiliated").
 			Find(&teams).Error; err != nil {
 			log.Printf("GetTeams error: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teams"})
 			return
 		}
 	} else {
-		if err := database.DB.WithContext(ctx).Where("is_active = ?", true).Find(&teams).Error; err != nil {
+		if err := database.DB.WithContext(ctx).
+			Where("is_active = ? AND name != ?", true, "Unaffiliated").
+			Find(&teams).Error; err != nil {
 			log.Printf("GetTeams error: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teams"})
 			return
@@ -149,10 +145,6 @@ func GetTeamStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, stats)
 }
-
-// =============================================================================
-// PLAYER HANDLERS
-// =============================================================================
 
 // GetPlayers returns all players
 func GetPlayers(c *gin.Context) {
@@ -486,35 +478,62 @@ func GetAllPlayersKDStats(c *gin.Context) {
 		SeasonAssists int
 	}
 
-	query := database.DB.WithContext(ctx).
-		Table("player_tournament_stats pts").
-		Select(`
-			pts.player_id,
-			MAX(p.gamertag) as gamertag,
-			COALESCE(MAX(p.avatar_url), '') as avatar_url,
-			COALESCE(MAX(t.abbreviation), '') as team_abbr,
-			SUM(pts.total_kills) as season_kills,
-			SUM(pts.total_deaths) as season_deaths,
-			SUM(pts.total_assists) as season_assists
-		`).
-		Joins("JOIN players p ON pts.player_id = p.id").
-		Joins("LEFT JOIN teams t ON pts.team_id = t.id").
-		Joins("JOIN tournaments tour ON pts.tournament_id = tour.id")
-
-	if seasonID != "" {
-		query = query.Where("tour.season_id = ?", seasonID)
-	}
-
+	// When filtering by season, aggregate from player_match_stats — works for all
+	// seasons including BO6 which has no player_tournament_stats rows.
+	// Without a season filter, use player_tournament_stats for season-wide aggregates.
 	var rows []PlayerAggregated
-	if err := query.
-		Group("pts.player_id").
-		Having("SUM(pts.total_kills) > 0 OR SUM(pts.total_deaths) > 0").
-		Order("(CASE WHEN SUM(pts.total_deaths) > 0 THEN SUM(pts.total_kills)::decimal / SUM(pts.total_deaths) ELSE 0 END) DESC").
-		Limit(limit).
-		Scan(&rows).Error; err != nil {
-		log.Printf("GetAllPlayersKDStats error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
-		return
+	if seasonID != "" {
+		matchQuery := database.DB.WithContext(ctx).
+			Table("player_match_stats pms").
+			Select(`
+				pms.player_id,
+				MAX(p.gamertag) as gamertag,
+				COALESCE(MAX(p.avatar_url), '') as avatar_url,
+				COALESCE(MAX(t.abbreviation), '') as team_abbr,
+				SUM(pms.total_kills) as season_kills,
+				SUM(pms.total_deaths) as season_deaths,
+				0 as season_assists
+			`).
+			Joins("JOIN players p ON pms.player_id = p.id").
+			Joins("LEFT JOIN teams t ON pms.team_id = t.id AND t.name != 'Unaffiliated'").
+			Joins("JOIN matches m ON m.id = pms.match_id").
+			Joins("JOIN tournaments tour ON tour.id = m.tournament_id").
+			Where("tour.season_id = ?", seasonID).
+			Group("pms.player_id").
+			Having("SUM(pms.total_kills) > 0 OR SUM(pms.total_deaths) > 0").
+			Order("(CASE WHEN SUM(pms.total_deaths) > 0 THEN SUM(pms.total_kills)::decimal / SUM(pms.total_deaths) ELSE 0 END) DESC").
+			Limit(limit)
+
+		if err := matchQuery.Scan(&rows).Error; err != nil {
+			log.Printf("GetAllPlayersKDStats error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
+			return
+		}
+	} else {
+		query := database.DB.WithContext(ctx).
+			Table("player_tournament_stats pts").
+			Select(`
+				pts.player_id,
+				MAX(p.gamertag) as gamertag,
+				COALESCE(MAX(p.avatar_url), '') as avatar_url,
+				COALESCE(MAX(t.abbreviation), '') as team_abbr,
+				SUM(pts.total_kills) as season_kills,
+				SUM(pts.total_deaths) as season_deaths,
+				SUM(pts.total_assists) as season_assists
+			`).
+			Joins("JOIN players p ON pts.player_id = p.id").
+			Joins("LEFT JOIN teams t ON pts.team_id = t.id AND t.name != 'Unaffiliated'").
+			Joins("JOIN tournaments tour ON pts.tournament_id = tour.id").
+			Group("pts.player_id").
+			Having("SUM(pts.total_kills) > 0 OR SUM(pts.total_deaths) > 0").
+			Order("(CASE WHEN SUM(pts.total_deaths) > 0 THEN SUM(pts.total_kills)::decimal / SUM(pts.total_deaths) ELSE 0 END) DESC").
+			Limit(limit)
+
+		if err := query.Scan(&rows).Error; err != nil {
+			log.Printf("GetAllPlayersKDStats error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
+			return
+		}
 	}
 
 	players := make([]gin.H, 0, len(rows))

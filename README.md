@@ -1,213 +1,81 @@
-# CDL Stats - Competitive Call of Duty League Statistics Platform
+# CDLytics
 
-[![Go](https://img.shields.io/badge/Go-1.24.5-blue.svg)](https://golang.org/)
-[![React](https://img.shields.io/badge/React-19.1.0-61dafb.svg)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.17-38b2ac.svg)](https://tailwindcss.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791.svg)](https://www.postgresql.org/)
+Call of Duty League statistics and analytics platform covering seasons from Black Ops Cold War through Black Ops 6.
 
-A comprehensive full-stack web application for exploring and analyzing Call of Duty League (CDL) player and team statistics. Built with modern technologies to provide esports fans, analysts, and gaming enthusiasts with detailed insights into competitive Call of Duty performance data.
+## Stack
 
-**Live Demo: [https://cdlytics.me](https://cdlytics.me)**
+**Frontend** — React 19, TypeScript, Vite, Tailwind CSS, React Router
+
+**Backend** — Go (Gin), GORM, PostgreSQL
+
+**Infrastructure** — AWS (ECS Fargate, RDS, CloudFront, S3, ECR, ALB, Secrets Manager), Terraform
 
 ## Features
 
-### Team Analytics
-- Complete team rosters and player details
-- Team performance statistics and rankings
-- Historical team data across multiple majors
-- Interactive team logos and branding
-
-### Player Statistics
-- Individual player performance metrics
-- Kill/Death ratios and detailed stats
-- Player avatars and profile information
-- Career statistics and trends
-- Tournament-specific KD statistics
-- Player match history
-
-### Data Visualization
-- Interactive KD statistics dashboard
-- Player comparison tools
-- Performance tracking across events
-- Tournament-based statistics
-- Top KD players rankings
-
-### Modern UI/UX
-- Responsive design for all devices
-- Dark mode support
-- Smooth animations and transitions
-- Intuitive navigation and search
-
-### Transfer Tracking
-- Player transfer history
-- Team roster changes
-- Transfer window analytics
-- Historical movement data
-
-### Security Features
-- Rate limiting to prevent abuse
-- Input validation and sanitization
-- Enhanced security headers
-- HTTPS redirect middleware
-- Request logging for security monitoring
-- SQL injection prevention via prepared statements
-
-## Tech Stack
-
-### Frontend
-- **React 19** - Modern UI framework with hooks
-- **TypeScript** - Type-safe development
-- **Vite 7** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first styling
-- **React Router v7** - Client-side routing
-- **Axios** - HTTP client for API calls
-
-### Backend
-- **Go 1.24.5** - High-performance server
-- **Gin** - Fast HTTP web framework
-- **GORM** - Database ORM
-- **PostgreSQL** - Reliable data storage
-- **RESTful API** - Clean API design
-
-### Development Tools
-- **ESLint** - Code quality and consistency
-- **PostCSS** - CSS processing
-- **Docker** - Containerization support
-- **Railway** - Deployment platform
+- K/D leaderboards filterable by season (Cold War → BO6)
+- Team rosters and stats per season
+- Player profiles with match history
+- Tournament brackets
+- Transfer history
 
 ## Project Structure
 
 ```
-cdl-website/
-├── frontend/                 # React + Vite frontend
-│   ├── src/
-│   │   ├── components/      # UI components
-│   │   │   ├── Home.tsx        # Landing page
-│   │   │   ├── Teams.tsx       # Team listings
-│   │   │   ├── Players.tsx     # Player listings
-│   │   │   ├── PlayerDetail.tsx # Player profiles
-│   │   │   ├── TeamDetail.tsx # Team profiles
-│   │   │   ├── Stats.tsx     # Statistics dashboard
-│   │   │   ├── Transfers.tsx   # Transfer tracking
-│   │   │   └── Layout.tsx      # App layout
-│   │   ├── services/        # API integration
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── types/           # TypeScript definitions
-│   │   ├── config/          # Configuration files
-│   │   └── assets/          # Images and static files
-│   └── package.json
-├── internal/                 # Go backend
-│   ├── handlers/            # API route handlers
-│   └── database/            # Database models & config
-├── cmd/                     # Go application entry point
-│   └── main.go             # Server setup and routing
-├── database/                # Database files
-│   └── season_stats.csv    # CSV data files
-├── Dockerfile              # Container configuration
-├── railway.json           # Railway deployment config
-└── go.mod                 # Go dependencies
+├── cmd/
+│   ├── main.go          # API server entry point
+│   └── seed/main.go     # One-time database seeder (reads CSV data)
+├── internal/
+│   ├── database/        # GORM models and DB connection
+│   └── handlers/        # Gin route handlers
+├── frontend-react/      # React + TypeScript frontend
+├── infrastructure/      # Terraform modules (AWS)
+│   └── modules/
+│       ├── network/     # VPC, subnets
+│       ├── ecr/         # Docker image registry
+│       ├── database/    # RDS PostgreSQL
+│       ├── alb/         # Application Load Balancer
+│       ├── ecs/         # Fargate cluster + service
+│       └── frontend/    # S3 + CloudFront + ACM + Route53
+├── database/            # CSV source data files
+└── deploy/deploy.sh     # Full deploy script
 ```
 
-## API Endpoints
+## Local Development
 
-### Teams
-- `GET /api/v1/teams` - List all active teams
-- `GET /api/v1/teams/:id` - Get team details by ID
-- `GET /api/v1/teams/:id/players` - Get players for a specific team
-- `GET /api/v1/teams/:id/stats` - Get team statistics
+```bash
+# Backend
+go run cmd/main.go
 
-### Players
-- `GET /api/v1/players` - List all players
-- `GET /api/v1/players/:id` - Get player details by ID
-- `GET /api/v1/players/:id/stats` - Get player statistics
-- `GET /api/v1/players/:id/kd` - Get player KD statistics across tournaments
-- `GET /api/v1/players/:id/matches` - Get player match history
-- `GET /api/v1/players/top-kd` - Get top KD players
-- `GET /api/v1/players/top-kd-new` - Get top KD players (new format)
-- `GET /api/v1/players/all-kd-stats-tournament` - Get all players KD stats by tournament
+# Frontend
+cd frontend-react
+npm install
+npm run dev
+```
 
-### Tournaments
-- `GET /api/v1/tournaments` - List all tournaments
-- `GET /api/v1/tournaments/:id` - Get tournament details by ID
+The frontend dev server proxies `/api/*` to CloudFront by default. To hit a local backend instead, set `VITE_API_URL=http://localhost:8080/api/v1` in a `.env` file.
 
-### Statistics
-- `GET /api/v1/stats/all-kd-by-tournament` - Get all players KD statistics by tournament
+## Deploying
 
-### Transfers
-- `GET /api/v1/transfers` - Get all player transfers
+Prerequisites: AWS CLI configured, Terraform >= 1.9, Docker, jq
 
-## Database Models
+```bash
+# First deploy — seeds database from CSV files
+SEED=true ./deploy/deploy.sh
 
-The application uses the following main database models:
+# All subsequent deploys
+./deploy/deploy.sh
+```
 
-- **Season** - CDL seasons and game titles
-- **Team** - Team information, logos, colors
-- **Player** - Player profiles, gamertags, avatars
-- **TeamRoster** - Many-to-many relationship between teams and players
-- **Tournament** - Tournament information and details
-- **Match** - Match results and scores
-- **PlayerMatchStats** - Individual player performance per match
-- **PlayerTournamentStats** - Aggregated player stats per tournament
-- **TeamTournamentStats** - Team performance per tournament
-- **PlayerTransfer** - Player transfer history
-- **Coach** - Team coaching staff
+The script runs `terraform apply`, builds and pushes the Docker image to ECR, updates the ECS service, builds the React frontend, and syncs it to S3.
 
-## Security Features
+## Data
 
-The application implements multiple layers of security:
+Season data sourced from CDL match records:
 
-### Rate Limiting
-- Request rate limiting per IP address
-- Automatic reset intervals
-
-### Input Validation
-- ID parameter validation
-- Query parameter sanitization
-- SQL injection prevention via prepared statements
-
-### Security Headers
-- Content Security Policy
-- Frame protection
-- XSS protection
-- Content type protection
-- HSTS for secure connections
-- Referrer and permissions policies
-
-### CORS
-- Restricted to allowed origins only
-- Configured for production and development environments
-
-### HTTPS
-- Automatic HTTPS redirect in production
-- Modern TLS configuration
-- Secure cipher suites
-
-## Data Sources
-
-The application includes comprehensive CDL data from:
-- Major 1 - Player statistics and team performance
-- Major 2 - All 48 player stats
-- Major 3 - Complete player roster
-- Major 4 - Latest event data
-- Call of Duty Champs 2025 - Championship statistics
-- 2025 Team Stats - Current season team data
-
-Data is stored in PostgreSQL and can be imported from CSV files in the `database/` directory.
-
-## License
-
-This project is open source and part of the Call of Duty League application ecosystem. Feel free to use and modify for educational purposes.
-
-## Acknowledgments
-
-- Call of Duty League for the competitive gaming platform
-- Breakingpoint.gg for most of the data that I scraped
-- The CDL community for inspiration and feedback
-- Open source contributors and the gaming community
-
----
-
-**Built for the Call of Duty League community**
-
-*For questions or support, please open an issue on GitHub.*
+| Season | Game |
+|--------|------|
+| 2024-25 | Black Ops 6 |
+| 2023-24 | Modern Warfare III |
+| 2022-23 | Modern Warfare II |
+| 2021-22 | Vanguard |
+| 2020-21 | Black Ops Cold War |

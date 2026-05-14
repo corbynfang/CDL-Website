@@ -4,8 +4,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
@@ -14,24 +12,22 @@ import (
 )
 
 func main() {
-	// Set Gin to release mode for production
 	gin.SetMode(gin.ReleaseMode)
 
-	// Connect to database
 	database.ConnectDatabase()
 	defer database.CloseDatabase()
+	database.AutoMigrate()
 
-	// Create Gin router
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 
-	// CORS middleware
+	// CORS middleware — frontend is served from CloudFront/S3, not this server
 	r.Use(func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 		allowedOrigins := []string{
-			"https://cdlytics.me",
-			"http://localhost:3000",
+			"https://cdlytics.com",
+			"https://www.cdlytics.com",
 			"http://localhost:5173",
 			"http://localhost:5174",
 		}
@@ -53,21 +49,17 @@ func main() {
 		c.Next()
 	})
 
-	// API routes
 	api := r.Group("/api/v1")
 	{
-		// Seasons/Games
 		api.GET("/seasons", handlers.GetSeasons)
 		api.GET("/seasons/:id", handlers.GetSeason)
 		api.GET("/seasons/active", handlers.GetActiveSeason)
 
-		// Teams (supports ?season_id=X filter)
 		api.GET("/teams", handlers.GetTeams)
 		api.GET("/teams/:id", handlers.GetTeam)
 		api.GET("/teams/:id/players", handlers.GetTeamPlayers)
 		api.GET("/teams/:id/stats", handlers.GetTeamStats)
 
-		// Players
 		api.GET("/players", handlers.GetPlayers)
 		api.GET("/players/:id", handlers.GetPlayer)
 		api.GET("/players/:id/stats", handlers.GetPlayerStats)
@@ -76,49 +68,28 @@ func main() {
 		api.GET("/players/top-kd", handlers.GetTopKDPlayers)
 		api.GET("/players/top-kd-new", handlers.GetTopKDPlayersNew)
 
-		// Stats (supports ?season_id=X filter)
 		api.GET("/stats/all-kd-by-tournament", handlers.GetAllPlayersKDStats)
 		api.GET("/players/all-kd-stats-tournament", handlers.GetAllPlayersKDStats)
 
-		// Tournaments (supports ?season_id=X filter)
 		api.GET("/tournaments", handlers.GetTournaments)
 		api.GET("/tournaments/:id", handlers.GetTournament)
 		api.GET("/tournaments/:id/bracket", handlers.GetTournamentBracket)
 
-		// Transfers
 		api.GET("/transfers", handlers.GetTransfers)
 
-		// Debug
 		api.GET("/debug/validation", handlers.GetDatabaseValidation)
 	}
 
-	// Serve static files
-	r.Static("/assets", "./frontend/dist/assets")
-	r.StaticFile("/favicon.ico", "./frontend/dist/favicon.ico")
-
-	// SPA catch-all
+	// 404 for unknown API routes — CloudFront handles all non-API routes before they get here
 	r.NoRoute(func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, "/api") {
-			c.JSON(404, gin.H{"error": "API endpoint not found"})
-			return
-		}
-
-		filePath := filepath.Join("./frontend/dist", c.Request.URL.Path)
-		if _, err := os.Stat(filePath); err == nil {
-			c.File(filePath)
-			return
-		}
-
-		c.File("./frontend/dist/index.html")
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 	})
 
-	// Get port
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	// Start server
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      r,

@@ -1,14 +1,4 @@
-# Node.js (frontend)
-frontend/node_modules/
-frontend/dist/
-frontend/.env
-frontend/.DS_Store
-frontend/.svelte-kit/
-
-# React frontend backup (migrated to SvelteKit)
-frontend-react/
-
-# Go
+# ── Go ────────────────────────────────────────────────────────────────────────
 cdl-api/
 *.exe
 *.exe~
@@ -18,80 +8,49 @@ cdl-api/
 *.test
 *.out
 
-# macOS
-.DS_Store
+# ── Node / React frontend ─────────────────────────────────────────────────────
+frontend-react/node_modules/
+frontend-react/dist/
+frontend-react/.env
+frontend-react/.DS_Store
 
-# Logs
-*.log
-logs/
-security.log
-access.log
+# ── Terraform ─────────────────────────────────────────────────────────────────
+infrastructure/.terraform/
+infrastructure/terraform.tfstate
+infrastructure/terraform.tfstate.backup
+infrastructure/.terraform.lock.hcl
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars          # never commit var files — they can contain secrets
 
-# Database dumps/backups
-*.sql
-*.sqlite
-*.db
-database/
-backups/
-
-# System files
-Thumbs.db
-ehthumbs.db
-Icon?
-Desktop.ini
-.env.railway
-
-# Vite/Build
-frontend/.vite/
-
-# IDE/editor settings
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Dependency files (if not needed)
-package-lock.json
-
-# Misc
-.env
-
-# Local environment variables
+# ── Environment / secrets ─────────────────────────────────────────────────────
 .env
 .env.local
 .env.production
 .env.staging
-
-# Security and certificates
+.env.railway
 *.pem
 *.key
 *.crt
 *.p12
 *.pfx
-certificates/
-keys/
 
-# Temporary files
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
 tmp/
 temp/
 *.tmp
-
-# Security scan results
-security-scan-results/
-vulnerability-reports/
-
-# Backup files
 *.bak
 *.backup
 *.old
-
-# Docker
-.dockerignore
-docker-compose.override.yml
-
-# Railway
-.railway/
-railway.toml
-
-# Scraper
+.vscode/
+.idea/
 scraper/
