@@ -14,7 +14,7 @@ import type {
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://cdlytics.me/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || 'https://cdlytics.com/api/v1',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
