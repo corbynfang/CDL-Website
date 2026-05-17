@@ -29,86 +29,79 @@ const Teams = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-black">TEAMS</h1>
-            {selectedSeason && (
-              <p className="text-[#6B7280] mt-1">{selectedSeason.name}</p>
-            )}
-          </div>
-
-          {/* Season selector */}
-          <select
-            value={selectedSeasonId}
-            onChange={(e) => setSelectedSeasonId(e.target.value)}
-            className="border border-gray-300 px-4 py-2 text-sm text-black bg-white focus:outline-none focus:border-black"
-          >
-            <option value="">All Seasons</option>
-            {seasons?.map((s) => (
-              <option key={s.id} value={String(s.id)}>
-                {s.game_title}
-              </option>
-            ))}
-          </select>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">League</p>
+          <h1 className="font-grotesk text-3xl font-bold text-white">TEAMS</h1>
+          {selectedSeason && (
+            <p className="text-[#737373] text-sm mt-1">{selectedSeason.name}</p>
+          )}
         </div>
 
-        {loading && (
-          <p className="text-[#6B7280]">Loading teams...</p>
-        )}
-
-        {error && (
-          <p className="text-[#555555]">Error: {error}</p>
-        )}
-
-        {!loading && !error && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {teams?.map((team) => {
-                const logo = getTeamLogo(team.name);
-                return (
-                  <Link
-                    key={team.id}
-                    to={`/teams/${team.id}`}
-                    className="p-8 bg-[#F4F4F5] shadow-md shadow-[rgba(0,0,0,0.1)] hover:shadow-lg transition-shadow"
-                  >
-                    <div className="flex items-center space-x-4">
-                      {logo ? (
-                        <img
-                          src={logo}
-                          alt={team.name}
-                          className="w-16 h-16 object-contain flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 flex-shrink-0">
-                          {team.abbreviation}
-                        </div>
-                      )}
-                      <div>
-                        <h2 className="text-xl font-bold text-black">
-                          {team.name}
-                        </h2>
-                        <p className="text-[#6B7280]">{team.abbreviation}</p>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {teams?.length === 0 && (
-              <p className="text-center text-[#6B7280] py-12">
-                No teams found for this season.
-              </p>
-            )}
-
-            <p className="mt-8 text-[#6B7280] text-sm">
-              {teams?.length ?? 0} teams
-            </p>
-          </>
-        )}
+        <select
+          value={selectedSeasonId}
+          onChange={(e) => setSelectedSeasonId(e.target.value)}
+          className="bg-[#111111] border border-[#1a1a1a] px-3 py-2 text-xs text-[#a3a3a3] focus:outline-none focus:border-[#2a2a2a] uppercase tracking-wider"
+        >
+          <option value="">All Seasons</option>
+          {seasons?.map((s) => (
+            <option key={s.id} value={String(s.id)}>
+              {s.game_title}
+            </option>
+          ))}
+        </select>
       </div>
+
+      {loading && <p className="text-[#737373] text-sm">Loading teams...</p>}
+      {error && <p className="text-[#737373] text-sm">Error: {error}</p>}
+
+      {!loading && !error && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {teams?.map((team) => {
+              const logo = getTeamLogo(team.name);
+              return (
+                <Link
+                  key={team.id}
+                  to={`/teams/${team.id}`}
+                  className="group flex items-center gap-4 p-5 bg-[#111111] border border-[#1a1a1a] hover:border-[#2a2a2a] hover:bg-[#161616] transition-all"
+                >
+                  {logo ? (
+                    <img
+                      src={logo}
+                      alt={team.name}
+                      className="w-14 h-14 object-contain flex-shrink-0 opacity-90 group-hover:opacity-100 transition-opacity"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 bg-[#1a1a1a] flex items-center justify-center text-xs font-bold text-[#737373] flex-shrink-0 font-mono">
+                      {team.abbreviation}
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-grotesk font-semibold text-white text-sm">
+                      {team.name}
+                    </p>
+                    <p className="text-[#737373] text-xs tracking-wider mt-0.5">
+                      {team.abbreviation}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {teams?.length === 0 && (
+            <p className="text-center text-[#737373] py-16 text-sm">
+              No teams found for this season.
+            </p>
+          )}
+
+          <p className="mt-4 text-[#737373] text-xs">
+            {teams?.length ?? 0} teams
+          </p>
+        </>
+      )}
     </div>
   );
 };

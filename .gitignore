@@ -44,6 +44,17 @@ Thumbs.db
 *.log
 logs/
 
+# ── Compiled binaries (built artifacts, never commit) ─────────────────────────
+/main
+/seeder
+/seed
+/validate
+
+# ── Database CSV files (proprietary data — share privately) ───────────────────
+# This folder contains cleaned match, transfer, and player stat CSVs that were
+# hard to collect. Keep out of the public repo until ready to share.
+/database/
+
 # ── Misc ──────────────────────────────────────────────────────────────────────
 tmp/
 temp/

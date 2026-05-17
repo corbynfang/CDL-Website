@@ -37,14 +37,10 @@ module "database" {
 }
 
 module "db_credentials" {
-  source      = "./modules/db_credentials"
-  prefix      = local.prefix
-  db_host     = module.database.db_endpoint
-  db_port     = module.database.db_port
-  db_name     = var.db_name
-  db_username = var.db_username
-  db_password = module.secrets.db_password
-  tags        = local.tags
+  source            = "./modules/db_credentials"
+  prefix            = local.prefix
+  connection_string = var.database_url
+  tags              = local.tags
 }
 
 module "alb" {

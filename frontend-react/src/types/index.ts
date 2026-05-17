@@ -4,8 +4,18 @@ export interface Season {
   id: number;
   name: string;
   game_title: string;
+  game_code: string; // BO6 | CW | MW2 | MW3 | VG
   start_date: string;
   end_date?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Franchise {
+  id: number;
+  franchise_key: string;
+  name: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -21,6 +31,15 @@ export interface Team {
   secondary_color?: string;
   founded_date?: string;
   is_active: boolean;
+  franchise_id?: number;
+  game_code?: string;
+  is_cdl_franchise: boolean;
+  team_classification?: string;
+  do_not_merge?: boolean;
+  valid_from?: string;
+  valid_to?: string;
+  needs_manual_review?: boolean;
+  franchise?: Franchise;
   created_at: string;
   updated_at: string;
 }
@@ -96,6 +115,7 @@ export interface Tournament {
   id: number;
   season_id: number;
   name: string;
+  slug?: string;
   tournament_type?: string;
   start_date: string;
   end_date?: string;
@@ -103,6 +123,7 @@ export interface Tournament {
   location?: string;
   tournament_format?: string;
   liquipedia_url?: string;
+  breaking_point_url?: string;
   created_at: string;
   updated_at: string;
   season?: Season;
@@ -189,10 +210,49 @@ export interface PlayerTransfer {
   transfer_date: string;
   transfer_type: string;
   role: string;
+  game_code?: string;
   season: string;
   description: string;
+  raw_from_team_name?: string;
+  raw_to_team_name?: string;
   created_at: string;
   player?: Player;
   from_team?: Team;
   to_team?: Team;
+}
+
+export interface MatchMap {
+  id: number;
+  match_id: number;
+  map_number: number;
+  map_name: string;
+  mode: string;
+  score_1: number;
+  score_2: number;
+  winner_id?: number;
+  played: boolean;
+  duration_sec: number;
+  source: string;
+  winner?: Team;
+}
+
+export interface PlayerMapStats {
+  id: number;
+  match_id: number;
+  map_number: number;
+  player_id: number;
+  team_id: number;
+  kills: number;
+  deaths: number;
+  kd_ratio: number;
+  damage: number;
+  assists: number;
+  bp_rating: number;
+  hill_time: number;
+  snd_rounds: number;
+  plant_count: number;
+  defuse_count: number;
+  first_blood_count: number;
+  first_death_count: number;
+  source: string;
 } 

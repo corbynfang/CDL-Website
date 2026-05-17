@@ -14,16 +14,6 @@ interface UseApiResult<T> {
   refetch: () => void;
 }
 
-/**
- * Custom hook for API calls with automatic retry logic and error handling
- * 
- * @param url - API endpoint to fetch
- * @param options - Configuration options
- * @returns Object containing data, loading state, error, and refetch function
- * 
- * @example
- * const { data, loading, error } = useApi<Player>('/api/v1/players/1');
- */
 export function useApi<T>(
   url: string,
   options: UseApiOptions = {}

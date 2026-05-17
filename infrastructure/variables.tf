@@ -21,3 +21,9 @@ variable "db_username" {
   type        = string
   default     = "cdladmin"
 }
+
+variable "database_url" {
+  description = "Full PostgreSQL connection string stored in Secrets Manager and injected into ECS"
+  type        = string
+  sensitive   = true
+}

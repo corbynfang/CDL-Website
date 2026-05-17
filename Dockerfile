@@ -12,8 +12,8 @@ COPY internal/ ./internal/
 # Main API server
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o main ./cmd/main.go
 
-# One-shot database seeder
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o seeder ./cmd/seed/main.go
+# One-shot database seeder (package path, not single file — seeder has multiple .go files)
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o seeder ./cmd/seed/
 
 # Stage 2: minimal runtime image (~15MB)
 FROM alpine:3.20
