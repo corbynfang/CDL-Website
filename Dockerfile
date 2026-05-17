@@ -25,9 +25,6 @@ WORKDIR /app
 COPY --from=builder /app/main .
 COPY --from=builder /app/seeder .
 
-# CSV data files — only used by the seeder, not the API
-COPY database/ ./database/
-
 RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup && \
     chown -R appuser:appgroup /app
