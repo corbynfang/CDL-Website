@@ -1,10 +1,36 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { getPlayerAvatar } from "../utils/assets";
-import type { Player } from "../types";
+import type { Player, PaginatedResponse } from "../types";
+
+const LIMIT = 25;
 
 const Players = () => {
-  const { data: players, loading, error } = useApi<Player[]>("/api/v1/players");
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+
+  // Wait 300ms after the user stops typing before firing a request.
+  // Without this, every keystroke would hit the API — "s", "sc", "scu", "scum", "scump".
+  // With it, we wait until they pause and send one request for "scump".
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
+  if (search) params.set("search", search);
+
+  const { data, loading, error } = useApi<PaginatedResponse<Player>>(
+    `/api/v1/players?${params}`
+  );
+
+  const players = data?.data ?? [];
+  const meta = data?.pagination;
 
   if (loading) {
     return (
@@ -24,9 +50,18 @@ const Players = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">Roster</p>
-        <h1 className="font-grotesk text-3xl font-bold text-white">PLAYERS</h1>
+      <div className="mb-8 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">Roster</p>
+          <h1 className="font-grotesk text-3xl font-bold text-white">PLAYERS</h1>
+        </div>
+        <input
+          type="text"
+          placeholder="Search gamertag..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="bg-transparent border border-[#1a1a1a] text-white text-sm px-3 py-2 placeholder-[#737373] focus:outline-none focus:border-[#333] w-52"
+        />
       </div>
 
       <div className="border border-[#1a1a1a] overflow-hidden">
@@ -51,7 +86,7 @@ const Players = () => {
             </tr>
           </thead>
           <tbody>
-            {players?.map((player) => (
+            {players.map((player) => (
               <tr
                 key={player.id}
                 className="border-b border-[#1a1a1a] hover:bg-[#111111] transition-colors"
@@ -99,9 +134,33 @@ const Players = () => {
         </table>
       </div>
 
-      <p className="mt-4 text-[#737373] text-xs">
-        {players?.length || 0} players
-      </p>
+      {/* Pagination controls */}
+      <div className="mt-4 flex items-center justify-between">
+        <p className="text-[#737373] text-xs">
+          {meta
+            ? `${meta.total} players — page ${meta.page} of ${meta.total_pages}`
+            : `${players.length} players`}
+        </p>
+
+        {meta && meta.total_pages > 1 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page === 1}
+              className="px-3 py-1 text-xs text-[#737373] border border-[#1a1a1a] hover:text-white hover:border-[#333] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= meta.total_pages}
+              className="px-3 py-1 text-xs text-[#737373] border border-[#1a1a1a] hover:text-white hover:border-[#333] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

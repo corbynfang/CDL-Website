@@ -56,13 +56,16 @@ describe('teamApi', () => {
 })
 
 describe('playerApi', () => {
-  it('getPlayers returns the data array', async () => {
-    const players = [{ id: 1, gamertag: 'Scump' }]
-    mockGet.mockResolvedValue({ data: players })
+  it('getPlayers returns the paginated response envelope', async () => {
+    const envelope = {
+      data: [{ id: 1, gamertag: 'Scump' }],
+      pagination: { page: 1, limit: 25, total: 1, total_pages: 1 },
+    }
+    mockGet.mockResolvedValue({ data: envelope })
 
     const result = await playerApi.getPlayers()
-    expect(result).toEqual(players)
-    expect(mockGet).toHaveBeenCalledWith('/players')
+    expect(result).toEqual(envelope)
+    expect(mockGet).toHaveBeenCalledWith('/players', { params: { page: 1, limit: 25 } })
   })
 
   it('getPlayer calls the correct endpoint', async () => {

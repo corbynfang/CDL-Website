@@ -50,6 +50,7 @@ func main() {
 	})
 
 	api := r.Group("/api/v1")
+	api.Use(handlers.RateLimit())
 	{
 		api.GET("/seasons", handlers.GetSeasons)
 		api.GET("/seasons/:id", handlers.GetSeason)

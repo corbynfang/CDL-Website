@@ -116,7 +116,7 @@ if [ "$SEED" = "true" ]; then
 fi
 
 # ── Step 4: Build and upload frontend ────────────────────────────────────────
-echo "==> Building Svelte frontend..."
+echo "==> Building React frontend..."
 cd "$FRONTEND_DIR"
 npm ci
 npm run build

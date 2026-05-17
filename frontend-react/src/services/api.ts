@@ -1,14 +1,15 @@
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
-import type { 
-  Team, 
-  Player, 
-  PlayerMatchStats, 
+import type {
+  Team,
+  Player,
+  PlayerMatchStats,
   TeamTournamentStats,
   PlayerKDStatsData,
   TopKDPlayer,
   PlayerTransfer,
-  ApiResponse 
+  PaginatedResponse,
+  ApiResponse
 } from '../types';
 
 // Create axios instance with base configuration
@@ -108,9 +109,9 @@ export const teamApi = {
 
 // Player API functions
 export const playerApi = {
-  // Get all players
-  getPlayers: async (): Promise<Player[]> => {
-    const response: AxiosResponse<Player[]> = await api.get('/players');
+  // Get a page of players (?page=1&limit=25 by default)
+  getPlayers: async (page = 1, limit = 25): Promise<PaginatedResponse<Player>> => {
+    const response: AxiosResponse<PaginatedResponse<Player>> = await api.get('/players', { params: { page, limit } });
     return response.data;
   },
 

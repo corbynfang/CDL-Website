@@ -19,13 +19,33 @@ func GetPlayers(c *gin.Context) {
 	ctx, cancel := getContext(10)
 	defer cancel()
 
+	page, limit, offset := parsePagination(c)
+	search := c.Query("search")
+
+	base := database.DB.WithContext(ctx).Model(&database.Player{})
+	if search != "" {
+		base = base.Where("gamertag ILIKE ?", "%"+search+"%")
+	}
+
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		log.Printf("GetPlayers count error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch players"})
+		return
+	}
+
 	var players []database.Player
-	if err := database.DB.WithContext(ctx).Find(&players).Error; err != nil {
+	if err := applyPagination(base.Order("gamertag ASC"), limit, offset).
+		Find(&players).Error; err != nil {
 		log.Printf("GetPlayers error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch players"})
 		return
 	}
-	c.JSON(http.StatusOK, players)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":       players,
+		"pagination": buildMeta(page, limit, int(total)),
+	})
 }
 
 func GetPlayer(c *gin.Context) {
