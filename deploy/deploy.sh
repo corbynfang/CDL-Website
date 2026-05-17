@@ -3,8 +3,9 @@ set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
 REGION="us-east-1"
-INFRA_DIR="$(cd "$(dirname "$0")/../infrastructure" && pwd)"
-FRONTEND_DIR="$(cd "$(dirname "$0")/../frontend-react" && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+INFRA_DIR="$PROJECT_ROOT/infrastructure"
+FRONTEND_DIR="$PROJECT_ROOT/frontend-react"
 GIT_SHA=$(git rev-parse --short HEAD)
 SEED="${SEED:-false}" # set SEED=true on first deploy to load CSV data into RDS
 
@@ -36,7 +37,7 @@ aws ecr get-login-password --region "$REGION" | \
   docker login --username AWS --password-stdin "$ECR_URL"
 
 echo "==> Building Docker image..."
-cd "$(dirname "$0")/.."
+cd "$PROJECT_ROOT"
 docker build --platform linux/amd64 -t "${ECR_URL}:${GIT_SHA}" -t "${ECR_URL}:latest" .
 
 echo "==> Pushing image to ECR..."
