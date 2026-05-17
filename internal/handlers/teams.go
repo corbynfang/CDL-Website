@@ -89,12 +89,26 @@ func GetTeams(c *gin.Context) {
 				Order("name ASC").
 				Find(&teams).Error
 		} else {
+			// Default: CDL teams that played in the active season's CDL events.
+			// Same logic as season filter — driven by match stats, not branding.
+			// Dallas Empire won't show because it has no active-season matches.
 			err = database.DB.WithContext(ctx).Raw(`
-				SELECT DISTINCT ON (franchise_id) *
-				FROM teams
-				WHERE is_cdl_franchise = true
-				  AND franchise_id IS NOT NULL
-				ORDER BY franchise_id, valid_from DESC
+				SELECT DISTINCT t.*
+				FROM teams t
+				WHERE t.is_cdl_franchise = true
+				  AND t.id IN (
+				    SELECT DISTINCT pms.team_id
+				    FROM player_match_stats pms
+				    JOIN matches m ON m.id = pms.match_id
+				    JOIN tournaments trn ON trn.id = m.tournament_id
+				    JOIN seasons s ON s.id = trn.season_id
+				    WHERE s.is_active = true
+				      AND trn.tournament_type IN (
+				        'major_tournament','qualifier','championship',
+				        'kickoff','minor_tournament'
+				      )
+				  )
+				ORDER BY t.name ASC
 			`).Scan(&teams).Error
 		}
 	}
