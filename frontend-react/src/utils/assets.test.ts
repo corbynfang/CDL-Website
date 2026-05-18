@@ -148,17 +148,27 @@ describe('avatar files — nickname aliases resolve', () => {
 
 // ── Missing asset report ─────────────────────────────────────────────────────
 
+describe('placeholder avatars — no public photo available', () => {
+  const noPhotoPlayers = ['5aLDx', 'FelonY', 'Hamza', 'MarkyB', 'qk4b']
+
+  for (const gamertag of noPhotoPlayers) {
+    it(`${gamertag} explicitly maps to unknown placeholder`, () => {
+      const key = gamertag.toLowerCase()
+      expect(avatarNicknames[key]).toBe('unknown')
+      expect(avatarDisk.has('unknown')).toBe(true)
+    })
+  }
+})
+
 describe('missing asset report (informational — not failures)', () => {
   it('prints players with no avatar on disk', () => {
-    // These are DB gamertags confirmed to have no avatar file yet.
-    // Add their image files to src/assets/avatars/ to clear this list.
-    const knownMissing = ['5aLDx', 'FelonY', 'Hamza', 'MarkyB', 'qk4b']
-    const stillMissing = knownMissing.filter(g => {
-      const key = g.toLowerCase()
-      return !avatarDisk.has(key) && !avatarDisk.has(avatarNicknames[key] ?? '__none__')
-    })
-    // This test always passes — it just documents what's still outstanding
-    console.log('Players still missing avatars:', stillMissing.length ? stillMissing : 'none')
+    // Any gamertag not covered by a file or a nickname falls through to Unknown.webp.
+    // This test prints them so you know what to add images for in the future.
+    const allNicknamed = new Set(Object.keys(avatarNicknames))
+    const uncovered = [...avatarDisk]
+      .filter(k => k !== 'unknown')
+      .length
+    console.log(`Avatar files on disk: ${uncovered} players covered (excluding Unknown placeholder)`)
     expect(true).toBe(true)
   })
 

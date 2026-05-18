@@ -164,6 +164,13 @@ export const avatarNicknames: Record<string, string> = {
   // Note: '04' avatar — 04.webp (old) and New04.webp (current) both exist.
   // Delete src/assets/avatars/04.webp to make this nickname active.
   '04':       'new04',
+
+  // No public photo available — explicitly use the placeholder.
+  '5aldx':    'unknown',
+  'felony':   'unknown',
+  'hamza':    'unknown',
+  'markyb':   'unknown',
+  'qk4b':     'unknown',
 };
 
 /**
