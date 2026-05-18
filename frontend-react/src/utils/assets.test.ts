@@ -24,8 +24,6 @@ function diskKeys(dir: string): Set<string> {
 const avatarDisk = diskKeys(AVATAR_DIR)
 const logoDisk   = diskKeys(LOGO_DIR)
 
-// ── Logo mapping consistency ─────────────────────────────────────────────────
-
 describe('teamLogoKeys — every mapped key has a file on disk', () => {
   const broken: string[] = []
 

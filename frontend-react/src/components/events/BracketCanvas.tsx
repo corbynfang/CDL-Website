@@ -5,24 +5,27 @@ import BracketMatchCard from './BracketMatchCard'
 interface Props {
   data: BracketData
   activeRound: string | null
+  zoom?: number
 }
 
-export default function BracketCanvas({ data, activeRound }: Props) {
+export default function BracketCanvas({ data, activeRound, zoom = 1 }: Props) {
   const allRounds = sortedRounds(Object.keys(data.bracket))
-  const rounds = activeRound ? [activeRound] : allRounds
+  const rounds    = activeRound ? [activeRound] : allRounds
 
-  const winnersRounds   = rounds.filter(r => bracketSection(r) === 'winners')
-  const elimRounds      = rounds.filter(r => bracketSection(r) === 'elimination')
+  const winnersRounds    = rounds.filter(r => bracketSection(r) === 'winners')
+  const elimRounds       = rounds.filter(r => bracketSection(r) === 'elimination')
   const grandFinalsRound = rounds.filter(r => bracketSection(r) === 'grand_finals')
 
   function RoundColumn({ round }: { round: string }) {
     const matches = data.bracket[round] ?? []
     return (
-      <div className="flex flex-col gap-3 min-w-[180px]">
-        <p className="text-[10px] uppercase tracking-widest text-zinc-600 text-center">
+      <div className="flex flex-col gap-2.5 flex-shrink-0">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600 text-center pb-1.5 border-b border-[#1e1e1e]">
           {formatRound(round)}
         </p>
-        {matches.map(m => <BracketMatchCard key={m.id} match={m} />)}
+        <div className="flex flex-col gap-2.5">
+          {matches.map(m => <BracketMatchCard key={m.id} match={m} />)}
+        </div>
       </div>
     )
   }
@@ -31,8 +34,8 @@ export default function BracketCanvas({ data, activeRound }: Props) {
     if (sectionRounds.length === 0) return null
     return (
       <div className="space-y-3">
-        <p className="text-xs uppercase tracking-widest text-zinc-700">{label}</p>
-        <div className="flex gap-4 overflow-x-auto pb-2">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-700">{label}</p>
+        <div className="flex gap-5">
           {sectionRounds.map(r => <RoundColumn key={r} round={r} />)}
         </div>
       </div>
@@ -40,10 +43,12 @@ export default function BracketCanvas({ data, activeRound }: Props) {
   }
 
   return (
-    <div className="space-y-8">
-      <Section label="Winners Bracket" rounds={winnersRounds} />
-      <Section label="Elimination Bracket" rounds={elimRounds} />
-      <Section label="Grand Finals" rounds={grandFinalsRound} />
+    <div className="overflow-auto pb-4">
+      <div style={{ zoom }} className="space-y-10 min-w-max">
+        <Section label="Winners Bracket" rounds={winnersRounds} />
+        <Section label="Elimination Bracket" rounds={elimRounds} />
+        <Section label="Grand Finals" rounds={grandFinalsRound} />
+      </div>
     </div>
   )
 }

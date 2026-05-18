@@ -58,9 +58,9 @@ describe('BracketMatchCard', () => {
     expect(screen.getByRole('link')).toBeInTheDocument()
   })
 
-  it('renders 0-0 scores for an unplayed match', () => {
+  it('renders em-dash scores for an unplayed match', () => {
     wrap(<BracketMatchCard match={bracketMatchNoWinner} />)
-    const zeros = screen.getAllByText('0')
-    expect(zeros).toHaveLength(2)
+    const dashes = screen.getAllByText('–')
+    expect(dashes).toHaveLength(2)
   })
 })

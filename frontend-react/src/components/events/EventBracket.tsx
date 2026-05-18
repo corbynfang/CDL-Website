@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { BracketData } from '../../services/api'
 import BracketSkeleton from '../loaders/BracketSkeleton'
 import BracketControls from './BracketControls'
@@ -11,7 +11,24 @@ interface Props {
 }
 
 export default function EventBracket({ data, loading, error }: Props) {
-  const [activeRound, setActiveRound] = useState<string | null>(null)
+  const [activeRound,  setActiveRound]  = useState<string | null>(null)
+  const [zoom,         setZoom]         = useState(1.0)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
+  }, [])
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen()
+    } else {
+      document.exitFullscreen()
+    }
+  }
 
   if (loading) return <BracketSkeleton />
 
@@ -34,11 +51,22 @@ export default function EventBracket({ data, loading, error }: Props) {
   const rounds = Object.keys(data.bracket)
 
   return (
-    <div className="space-y-6">
+    <div
+      ref={containerRef}
+      className={`space-y-6 ${isFullscreen ? 'bg-[#09090b] p-6 h-full overflow-auto' : ''}`}
+    >
       {rounds.length > 1 && (
-        <BracketControls rounds={rounds} active={activeRound} onSelect={setActiveRound} />
+        <BracketControls
+          rounds={rounds}
+          active={activeRound}
+          onSelect={setActiveRound}
+          zoom={zoom}
+          onZoom={setZoom}
+          isFullscreen={isFullscreen}
+          onFullscreen={toggleFullscreen}
+        />
       )}
-      <BracketCanvas data={data} activeRound={activeRound} />
+      <BracketCanvas data={data} activeRound={activeRound} zoom={zoom} />
     </div>
   )
 }

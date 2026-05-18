@@ -286,15 +286,22 @@ func GetTournamentBracket(c *gin.Context) {
 		Order("bracket_round, bracket_position").
 		Find(&matches)
 
-	bracket := map[string][]gin.H{
-		"winners_r1":     {},
-		"winners_r2":     {},
-		"winners_finals": {},
-		"elim_r1":        {},
-		"elim_r2":        {},
-		"elim_r3":        {},
-		"elim_finals":    {},
-		"grand_finals":   {},
+	format := detectBracketFormat(tournament.TournamentFormat, tournament.TournamentType)
+	normalize := roundNormalizerFor(format)
+
+	// Build bracket map: pre-initialize each known key with an empty slice so
+	// rounds with 0 matches still appear in the response.
+	bracketKeySet := bracketKeysFor(format)
+	bracket := make(map[string][]gin.H, len(bracketKeySet))
+	for k := range bracketKeySet {
+		bracket[k] = []gin.H{}
+	}
+
+	// Group stage: nil for pure bracket formats; dynamic accumulator for formats
+	// that separate group/play-in matches (CDL group-stage, EWC).
+	var groupStage map[string][]gin.H
+	if hasGroupStage(format) {
+		groupStage = map[string][]gin.H{}
 	}
 
 	for _, match := range matches {
@@ -314,17 +321,25 @@ func GetTournamentBracket(c *gin.Context) {
 			"bracket_position": match.BracketPosition,
 			"match_date":       match.MatchDate,
 		}
-		if _, exists := bracket[match.BracketRound]; exists {
-			bracket[match.BracketRound] = append(bracket[match.BracketRound], matchData)
+		key := normalize(match.BracketRound)
+		if _, inBracket := bracket[key]; inBracket {
+			bracket[key] = append(bracket[key], matchData)
+		} else if groupStage != nil {
+			groupStage[key] = append(groupStage[key], matchData)
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	resp := gin.H{
 		"tournament_id":   tournamentID,
 		"tournament_name": tournament.Name,
-		"bracket":         bracket,
+		"event_format":    formatName(format),
 		"total_matches":   len(matches),
-	})
+		"bracket":         bracket,
+	}
+	if groupStage != nil {
+		resp["group_stage"] = groupStage
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 // GetTournamentMatches returns every match for a tournament with team info,

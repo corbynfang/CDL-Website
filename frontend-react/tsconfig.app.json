@@ -21,7 +21,12 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "paths": {
+      "@g-loot/react-tournament-brackets": [
+        "./node_modules/@g-loot/react-tournament-brackets/dist/esm/index.d.ts"
+      ]
+    }
   },
   "include": ["src"]
 }

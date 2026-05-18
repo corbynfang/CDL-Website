@@ -58,5 +58,8 @@ func main() {
 	log.Println("==> Phase 5: Transfers (all 5 eras)")
 	seedTransfers(db, teamLookup, playerLookup)
 
+	log.Println("==> Phase 6: Bracket patches (bracket_round + bracket_position, all eras)")
+	seedBracketPatches(db, teamLookup, tournamentBySlug)
+
 	log.Println("==> Seeding complete.")
 }

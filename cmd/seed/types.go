@@ -230,6 +230,22 @@ type bpMatchTeams struct {
 	TeamBName string
 }
 
+// cwBracketRow is one match from database/cdl_cw_stage_brackets.csv.
+// canonical_round_key is already the target bracket_round value; no further
+// normalisation is needed. bracket_position is the 1-based slot within the round.
+type cwBracketRow struct {
+	TournamentSlug  string // stage slug, e.g. "cdl-2021-stage-1-major"
+	SourceRoundName string // human-readable name, kept for audit trail
+	CanonicalRound  string // target bracket_round value, e.g. "elim_r4"
+	Position        int    // 1-based position within the round
+	Team1Name       string
+	Team2Name       string
+	Team1Score      int
+	Team2Score      int
+	WinnerName      string
+	MatchDate       string
+}
+
 // unresolvedTeamEntry records the outcome of every transfer team name resolution.
 // Written to database/unresolved_transfer_teams.csv after Phase 5.
 type unresolvedTeamEntry struct {

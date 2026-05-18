@@ -358,6 +358,30 @@ func readEnrichedStatCSV(path string) []enrichedStatRow {
 
 // ─── Transfer reader (Phase 5) ────────────────────────────────────────────────
 
+func readBracketCSV(path string) []cwBracketRow {
+	records := readCSV(path)
+	if len(records) < 2 {
+		return nil
+	}
+	h := headerIndex(records[0])
+	var rows []cwBracketRow
+	for _, r := range records[1:] {
+		rows = append(rows, cwBracketRow{
+			TournamentSlug:  col(r, h, "tournament_slug"),
+			SourceRoundName: col(r, h, "source_round_name"),
+			CanonicalRound:  col(r, h, "canonical_round_key"),
+			Position:        atoi(col(r, h, "bracket_position")),
+			Team1Name:       col(r, h, "team1_name"),
+			Team2Name:       col(r, h, "team2_name"),
+			Team1Score:      atoi(col(r, h, "team1_score")),
+			Team2Score:      atoi(col(r, h, "team2_score")),
+			WinnerName:      col(r, h, "winner_name"),
+			MatchDate:       col(r, h, "match_date"),
+		})
+	}
+	return rows
+}
+
 func readTransferCSV(path string) []transferRow {
 	records := readCSV(path)
 	if len(records) < 2 {

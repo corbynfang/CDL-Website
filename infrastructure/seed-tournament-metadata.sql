@@ -18,6 +18,14 @@ WHERE slug IN (
     'cdl-major-3-tournament-2021'
 );
 
+-- Stages 1-3 were online-only but still had a $500K prize pool
+UPDATE tournaments SET prize_pool = 500000
+WHERE slug IN (
+    'cdl-major-1-tournament-2021',
+    'cdl-major-2-tournament-2021',
+    'cdl-major-3-tournament-2021'
+);
+
 -- Stage 4 Major — first LAN since March 2020
 UPDATE tournaments
 SET location = 'Dallas, Texas', country = 'USA', is_lan = true, prize_pool = 500000
@@ -132,8 +140,21 @@ SET location = 'Riyadh', country = 'SAU', is_lan = true, prize_pool = 1800000
 WHERE slug = 'esports-world-cup-2025';
 
 UPDATE tournaments
-SET location = 'Riyadh', country = 'SAU', is_lan = true
+SET location = 'Riyadh', country = 'SAU', is_lan = true, prize_pool = 1800000
 WHERE slug = 'esports-world-cup-2024';
+
+-- ── Event format overrides ────────────────────────────────────────────────────
+-- Sets tournament_format for events that need format-specific bracket rendering.
+-- Standard CDL double-elim events (major_tournament / championship / kickoff)
+-- are detected automatically from tournament_type and do not need an override.
+UPDATE tournaments SET tournament_format = 'cold_war_stage_double_elim'
+WHERE id IN (12, 22, 32, 42, 48); -- CW 2021 stage majors: 12-team with elim_r4/r5
+
+UPDATE tournaments SET tournament_format = 'cdl_major_group_stage_bracket'
+WHERE id = 14; -- CDL Major 1 2023: group stage + double-elim playoff
+
+UPDATE tournaments SET tournament_format = 'ewc_group_stage_single_elim'
+WHERE id IN (52, 53); -- EWC 2024/2025: group stage + single-elim playoff
 
 -- Verify the update
 SELECT slug, name, location, country, is_lan, prize_pool
