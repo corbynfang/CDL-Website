@@ -39,7 +39,9 @@ export interface BracketData {
   tournament_id: number;
   tournament_name: string;
   total_matches: number;
+  event_format?: string;
   bracket: Record<string, BracketMatch[]>;
+  group_stage?: Record<string, BracketMatch[]>;
 }
 
 // Create axios instance with base configuration

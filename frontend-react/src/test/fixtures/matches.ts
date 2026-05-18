@@ -62,3 +62,68 @@ export const emptyBracketData: BracketData = {
   total_matches: 0,
   bracket: {},
 }
+
+export const coldWarBracketData: BracketData = {
+  tournament_id: 12,
+  tournament_name: 'CDL Stage 1 2021',
+  total_matches: 4,
+  event_format: 'cold_war_stage_double_elim',
+  bracket: {
+    elim_r4: [bracketMatchComplete],
+    elim_r5: [bracketMatchComplete],
+    elim_finals: [bracketMatchComplete],
+    grand_finals: [bracketMatchNoWinner],
+  },
+}
+
+export const cdlGroupBracketData: BracketData = {
+  tournament_id: 14,
+  tournament_name: 'CDL Major 1 2023',
+  total_matches: 6,
+  event_format: 'cdl_major_group_stage_bracket',
+  bracket: {
+    winners_r1:   [bracketMatchComplete],
+    grand_finals: [bracketMatchNoWinner],
+  },
+  group_stage: {
+    round_1:             [bracketMatchComplete],
+    qualification_match: [bracketMatchComplete],
+    losers_bracket:      [bracketMatchNoWinner],
+  },
+}
+
+export const ewcBracketData: BracketData = {
+  tournament_id: 53,
+  tournament_name: 'Esports World Cup 2025',
+  total_matches: 10,
+  event_format: 'ewc_group_stage_single_elim',
+  bracket: {
+    quarterfinal:      [bracketMatchComplete],
+    semifinal:         [bracketMatchComplete],
+    grand_finals:      [bracketMatchNoWinner],
+    third_place_match: [bracketMatchNoWinner],
+  },
+  group_stage: {
+    opening_match:             [bracketMatchComplete],
+    winners_match:             [bracketMatchComplete],
+    group_play_a_winners_round_1: [bracketMatchComplete],
+    group_play_b_lower_round_1:   [bracketMatchComplete],
+  },
+}
+
+export const ewcNoPlayoffData: BracketData = {
+  tournament_id: 52,
+  tournament_name: 'Esports World Cup 2024',
+  total_matches: 4,
+  event_format: 'ewc_group_stage_single_elim',
+  bracket: {
+    quarterfinal:      [],
+    semifinal:         [],
+    grand_finals:      [],
+    third_place_match: [],
+  },
+  group_stage: {
+    opening_match: [bracketMatchComplete],
+    winners_match: [bracketMatchComplete],
+  },
+}

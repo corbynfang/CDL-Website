@@ -6,15 +6,12 @@ interface Props {
   data: BracketData
   activeRound: string | null
   zoom?: number
+  flat?: boolean
 }
 
-export default function BracketCanvas({ data, activeRound, zoom = 1 }: Props) {
+export default function BracketCanvas({ data, activeRound, zoom = 1, flat = false }: Props) {
   const allRounds = sortedRounds(Object.keys(data.bracket))
   const rounds    = activeRound ? [activeRound] : allRounds
-
-  const winnersRounds    = rounds.filter(r => bracketSection(r) === 'winners')
-  const elimRounds       = rounds.filter(r => bracketSection(r) === 'elimination')
-  const grandFinalsRound = rounds.filter(r => bracketSection(r) === 'grand_finals')
 
   function RoundColumn({ round }: { round: string }) {
     const matches = data.bracket[round] ?? []
@@ -29,6 +26,22 @@ export default function BracketCanvas({ data, activeRound, zoom = 1 }: Props) {
       </div>
     )
   }
+
+  if (flat) {
+    return (
+      <div className="overflow-auto pb-4">
+        <div style={{ zoom }} className="min-w-max">
+          <div className="flex gap-5">
+            {rounds.map(r => <RoundColumn key={r} round={r} />)}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const winnersRounds    = rounds.filter(r => bracketSection(r) === 'winners')
+  const elimRounds       = rounds.filter(r => bracketSection(r) === 'elimination')
+  const grandFinalsRound = rounds.filter(r => bracketSection(r) === 'grand_finals')
 
   function Section({ label, rounds: sectionRounds }: { label: string; rounds: string[] }) {
     if (sectionRounds.length === 0) return null

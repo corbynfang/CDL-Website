@@ -54,21 +54,44 @@ const COUNTRY_FLAGS: Record<string, string> = {
 export const countryFlag = (code: string) => COUNTRY_FLAGS[code?.toUpperCase()] ?? '🌐'
 
 const ROUND_LABELS: Record<string, string> = {
-  winners_r1:     'Winners Round 1',
-  winners_r2:     'Winners Round 2',
-  winners_r3:     'Winners Round 3',
-  winners_finals: 'Winners Finals',
-  elim_r1:        'Elimination Round 1',
-  elim_r2:        'Elimination Round 2',
-  elim_r3:        'Elimination Round 3',
-  elim_finals:    'Elimination Finals',
-  grand_finals:   'Grand Finals',
+  // Standard CDL double-elim
+  winners_r1:          'Winners Round 1',
+  winners_r2:          'Winners Round 2',
+  winners_r3:          'Winners Round 3',
+  winners_finals:      'Winners Finals',
+  elim_r1:             'Elimination Round 1',
+  elim_r2:             'Elimination Round 2',
+  elim_r3:             'Elimination Round 3',
+  elim_r4:             'Elimination Round 4',
+  elim_r5:             'Elimination Round 5',
+  elim_finals:         'Elimination Finals',
+  grand_finals:        'Grand Finals',
+  // EWC single-elim playoff
+  quarterfinal:        'Quarterfinal',
+  semifinal:           'Semifinal',
+  third_place_match:   'Third Place Match',
+  // EWC group stage — cross-group rounds
+  opening_match:       'Opening Match',
+  winners_match:       'Winners Match',
+  decider_match:       'Decider Match',
+  elimination_match:   'Elimination Match',
+  // CDL major group stage
+  round_1:             'Round 1',
+  qualification_match: 'Qualification Match',
+  losers_bracket:      'Losers Bracket',
 }
 
 const ROUND_ORDER: Record<string, number> = {
-  winners_r1: 1, winners_r2: 2, winners_r3: 3, winners_finals: 4,
-  elim_r1: 5, elim_r2: 6, elim_r3: 7, elim_finals: 8,
-  grand_finals: 9,
+  // Standard CDL double-elim
+  winners_r1: 10, winners_r2: 20, winners_r3: 30, winners_finals: 40,
+  elim_r1: 50, elim_r2: 60, elim_r3: 70, elim_r4: 73, elim_r5: 76, elim_finals: 80,
+  grand_finals: 90,
+  // EWC single-elim playoff (winners_r1 already at 10)
+  quarterfinal: 40, semifinal: 60, third_place_match: 85,
+  // EWC group stage cross-group rounds
+  opening_match: 10, winners_match: 20, decider_match: 30, elimination_match: 40,
+  // CDL major group stage
+  round_1: 10, qualification_match: 20, losers_bracket: 30,
 }
 
 export const formatRound      = (r: string) => ROUND_LABELS[r] ?? r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())

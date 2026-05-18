@@ -68,4 +68,40 @@ describe('BracketCanvas', () => {
     const { container } = wrap(<BracketCanvas data={empty} activeRound={null} />)
     expect(container.firstChild).toBeInTheDocument()
   })
+
+  // ── Flat mode (EWC single-elim) ────────────────────────────────────────────
+
+  it('flat mode renders round columns without section labels', () => {
+    const ewcData: BracketData = {
+      tournament_id: 53,
+      tournament_name: 'EWC 2025',
+      total_matches: 2,
+      event_format: 'ewc_group_stage_single_elim',
+      bracket: {
+        quarterfinal: [sampleBracketData.bracket.winners_r1[0]],
+        semifinal:    [sampleBracketData.bracket.grand_finals[0]],
+      },
+    }
+    wrap(<BracketCanvas data={ewcData} activeRound={null} flat={true} />)
+    expect(screen.getByText('Quarterfinal')).toBeInTheDocument()
+    expect(screen.getByText('Semifinal')).toBeInTheDocument()
+    expect(screen.queryByText('Winners Bracket')).not.toBeInTheDocument()
+    expect(screen.queryByText('Elimination Bracket')).not.toBeInTheDocument()
+  })
+
+  it('flat mode shows elim_r4 and elim_r5 labels for Cold War format', () => {
+    const cwData: BracketData = {
+      tournament_id: 12,
+      tournament_name: 'CW Stage 1',
+      total_matches: 2,
+      event_format: 'cold_war_stage_double_elim',
+      bracket: {
+        elim_r4: [sampleBracketData.bracket.winners_r1[0]],
+        elim_r5: [sampleBracketData.bracket.grand_finals[0]],
+      },
+    }
+    wrap(<BracketCanvas data={cwData} activeRound={null} flat={true} />)
+    expect(screen.getByText('Elimination Round 4')).toBeInTheDocument()
+    expect(screen.getByText('Elimination Round 5')).toBeInTheDocument()
+  })
 })
