@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { Tournament } from '../../types'
 import type { TournamentTeam } from '../../types'
-import { deriveStatus, formatDateRange, formatPrize, countryFlag } from '../../utils/eventUtils'
+import { deriveStatus, eventDisplayName, formatDateRange, formatPrize, countryFlag } from '../../utils/eventUtils'
 import TeamLogoStrip from './TeamLogoStrip'
 
 interface Props {
@@ -52,7 +52,7 @@ export default function FeaturedEventCard({ event, teams = [] }: Props) {
             {event.season?.game_code ?? event.tournament_type.replace(/_/g, ' ')}
           </p>
           <h3 className="font-grotesk text-lg font-bold text-white leading-tight group-hover:text-zinc-100 transition-colors">
-            {event.name}
+            {eventDisplayName(event.slug, event.name)}
           </h3>
         </div>
 

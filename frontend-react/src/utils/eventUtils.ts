@@ -94,6 +94,18 @@ const ROUND_ORDER: Record<string, number> = {
   round_1: 10, qualification_match: 20, losers_bracket: 30,
 }
 
+// CW 2021 stage majors were seeded with "CDL Major N Tournament 2021" names;
+// the preferred display form follows the bracket CSV convention: "CDL 2021 Stage N Major".
+const CW_SLUG_NAMES: Record<string, string> = {
+  'cdl-major-1-tournament-2021': 'CDL 2021 Stage 1 Major',
+  'cdl-major-2-tournament-2021': 'CDL 2021 Stage 2 Major',
+  'cdl-major-3-tournament-2021': 'CDL 2021 Stage 3 Major',
+  'cdl-major-4-tournament-2021': 'CDL 2021 Stage 4 Major',
+  'cdl-major-5-tournament-2021': 'CDL 2021 Stage 5 Major',
+}
+
+export const eventDisplayName = (slug: string, name: string) => CW_SLUG_NAMES[slug] ?? name
+
 export const formatRound      = (r: string) => ROUND_LABELS[r] ?? r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 export const roundOrder       = (r: string) => ROUND_ORDER[r] ?? 99
 export const bracketSection   = (r: string): 'winners' | 'elimination' | 'grand_finals' =>

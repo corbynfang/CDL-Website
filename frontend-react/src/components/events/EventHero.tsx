@@ -1,5 +1,5 @@
 import type { Tournament, TournamentTeam } from '../../types'
-import { deriveStatus, formatDateRange, formatPrize, countryFlag } from '../../utils/eventUtils'
+import { deriveStatus, eventDisplayName, formatDateRange, formatPrize, countryFlag } from '../../utils/eventUtils'
 import TeamLogoStrip from './TeamLogoStrip'
 
 interface Props {
@@ -33,7 +33,7 @@ export default function EventHero({ event, teamCount, teams }: Props) {
         </div>
 
         <h1 className="font-grotesk text-4xl sm:text-5xl font-bold text-white leading-tight">
-          {event.name}
+          {eventDisplayName(event.slug, event.name)}
         </h1>
 
         <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400">

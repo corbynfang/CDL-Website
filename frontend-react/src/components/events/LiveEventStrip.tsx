@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Tournament } from '../../types'
-import { formatDateRange, countryFlag } from '../../utils/eventUtils'
+import { eventDisplayName, formatDateRange, countryFlag } from '../../utils/eventUtils'
 
 interface Props {
   event: Tournament
@@ -19,7 +19,7 @@ export default function LiveEventStrip({ event }: Props) {
         </span>
         <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">Live Now</span>
         <span className="text-xs text-zinc-400 hidden sm:block">·</span>
-        <span className="text-sm font-semibold text-white hidden sm:block">{event.name}</span>
+        <span className="text-sm font-semibold text-white hidden sm:block">{eventDisplayName(event.slug, event.name)}</span>
         {event.location && (
           <span className="text-xs text-zinc-500 hidden md:block">
             {event.country ? countryFlag(event.country) : ''} {event.location}

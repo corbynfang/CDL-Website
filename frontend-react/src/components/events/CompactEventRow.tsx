@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Tournament } from '../../types'
-import { deriveStatus, formatDateRange, formatPrize, countryFlag } from '../../utils/eventUtils'
+import { deriveStatus, eventDisplayName, formatDateRange, formatPrize, countryFlag } from '../../utils/eventUtils'
 
 interface Props {
   event: Tournament
@@ -23,7 +23,7 @@ export default function CompactEventRow({ event }: Props) {
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[status]}`} />
 
       <span className="font-grotesk text-sm font-medium text-[#a3a3a3] group-hover:text-white transition-colors flex-1 min-w-0 truncate">
-        {event.name}
+        {eventDisplayName(event.slug, event.name)}
       </span>
 
       <span className="text-xs text-zinc-600 whitespace-nowrap hidden sm:block">

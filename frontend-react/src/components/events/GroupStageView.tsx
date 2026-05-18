@@ -111,12 +111,9 @@ interface EWCGroupSectionProps {
 }
 
 function EWCGroupSection({ letter, groupPrefix, roundKeys, groupStage }: EWCGroupSectionProps) {
-  // Sort by suffix (strips group prefix, then falls back to alphabetical)
-  const sorted = [...roundKeys].sort((a, b) => {
-    const sa = a.slice(groupPrefix.length)
-    const sb = b.slice(groupPrefix.length)
-    return sa.localeCompare(sb)
-  })
+  // Sort by canonical round order using the suffix (strips group prefix, then uses ROUND_ORDER weights)
+  const sorted = sortedRounds(roundKeys.map(k => k.slice(groupPrefix.length)))
+    .map(suffix => groupPrefix + suffix)
 
   return (
     <div className="space-y-3">
