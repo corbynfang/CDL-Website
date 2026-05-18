@@ -55,6 +55,14 @@ logs/
 # hard to collect. Keep out of the public repo until ready to share.
 /database/
 
+# ── Claude Code internal files ────────────────────────────────────────────────
+frontend-react/.agents/
+frontend-react/skills-lock.json
+
+# ── Duplicate / junk files ────────────────────────────────────────────────────
+deploy/deploy\ 2.sh
+"deploy/deploy 2.sh"
+
 # ── Misc ──────────────────────────────────────────────────────────────────────
 tmp/
 temp/
