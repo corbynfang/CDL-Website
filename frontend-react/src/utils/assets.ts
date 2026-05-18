@@ -32,10 +32,10 @@ const teamLogoKeys: Record<string, string> = {
   'faze black':                'fazeblack',
 
   // Boston
-  'boston breach':             'bostonbreach',
+  'boston breach':             'bostonlogo',
 
   // Carolina
-  'carolina royal ravens':     'carolinaroyalravens',
+  'carolina royal ravens':     'carolinalogo',
 
   // Dallas / OpTic lineage
   'dallas empire':             'dallasempire',
@@ -47,7 +47,7 @@ const teamLogoKeys: Record<string, string> = {
   'florida mutineers':         'florida_mutineerslogo_square',
 
   // LA Guerrillas
-  'los angeles guerrillas':    'losanglesgurreillas',
+  'los angeles guerrillas':    'losanglesguerillasm8',
   'la guerrillas m8':          'lagurreillasm8',
   'los angeles guerrillas m8': 'lagurreillasm8',
 
@@ -83,11 +83,11 @@ const teamLogoKeys: Record<string, string> = {
   'team falcons':              'newriyadhfalconslogo',
 
   // Toronto
-  'toronto ultra':             'torontonewlogo',
+  'toronto ultra':             'torontologo',
   'toronto koi':               'torontokoi',
 
   // Vancouver / Seattle
-  'vancouver surge':           'vancouversurge',
+  'vancouver surge':           'vancouverlogo',
   'seattle surge':             'seattlesurgelogo',
 
   // ── Academy / Sub-teams ─────────────────────────────────────────────────────
