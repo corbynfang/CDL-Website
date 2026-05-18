@@ -22,8 +22,8 @@ for (const [path, mod] of Object.entries(logoModules)) {
   logoMap[key] = mod.default;
 }
 
-// Map DB team names → logo file keys
-const teamLogoKeys: Record<string, string> = {
+// Map DB team names → logo file keys (lowercase name → lowercase filename without extension)
+export const teamLogoKeys: Record<string, string> = {
   // ── CDL Franchises ──────────────────────────────────────────────────────────
 
   // Atlanta / FaZe
@@ -32,10 +32,10 @@ const teamLogoKeys: Record<string, string> = {
   'faze black':                'fazeblack',
 
   // Boston
-  'boston breach':             'bostonlogo',
+  'boston breach':             'bostonbreach',
 
   // Carolina
-  'carolina royal ravens':     'carolinalogo',
+  'carolina royal ravens':     'carolinaroyalravens',
 
   // Dallas / OpTic lineage
   'dallas empire':             'dallasempire',
@@ -47,7 +47,7 @@ const teamLogoKeys: Record<string, string> = {
   'florida mutineers':         'florida_mutineerslogo_square',
 
   // LA Guerrillas
-  'los angeles guerrillas':    'losanglesguerillasm8',
+  'los angeles guerrillas':    'losanglesgurreillas',
   'la guerrillas m8':          'lagurreillasm8',
   'los angeles guerrillas m8': 'lagurreillasm8',
 
@@ -55,8 +55,9 @@ const teamLogoKeys: Record<string, string> = {
   'los angeles thieves':       'latheiveslogo',
   '100 thieves':               'latheiveslogo',
 
-  // Las Vegas / FaZe Vegas
+  // Las Vegas / Falcons
   'las vegas legion':          'lasvegaslegion',
+  'las vegas falcons':         'vegasfalconslogo',
   'vegas falcons':             'vegasfalconslogo',
 
   // London
@@ -73,21 +74,22 @@ const teamLogoKeys: Record<string, string> = {
   // New York
   'new york subliners':        'newyorksubliners',
   'cloud9 new york':           'cloud9logo',
+  'cloud9':                    'cloud9logo',
 
   // Paris
   'paris legion':              'parislegion',
 
-  // Riyadh / Team Falcons (Team Falcons = EWC name only)
+  // Riyadh / Team Falcons (EWC name)
   'riyadh falcons':            'riyadhfalconslogo',
   'new riyadh falcons':        'newriyadhfalconslogo',
   'team falcons':              'newriyadhfalconslogo',
 
   // Toronto
-  'toronto ultra':             'torontologo',
+  'toronto ultra':             'torontonewlogo',
   'toronto koi':               'torontokoi',
 
   // Vancouver / Seattle
-  'vancouver surge':           'vancouverlogo',
+  'vancouver surge':           'vancouversurge',
   'seattle surge':             'seattlesurgelogo',
 
   // ── Academy / Sub-teams ─────────────────────────────────────────────────────
@@ -97,7 +99,7 @@ const teamLogoKeys: Record<string, string> = {
   'røkkr academy':             'minnesotarokker',
   'toronto ultra academy na':  'toronto_ultraacademylogo',
 
-  // ── CDL Challengers placeholder (no logo exists) ────────────────────────────
+  // ── CDL Challengers placeholder ─────────────────────────────────────────────
   '18andcracked':              'callofdutychallengersplaceholderforchallengerteams',
   'slammed':                   'callofdutychallengersplaceholderforchallengerteams',
 
@@ -152,14 +154,16 @@ const teamLogoKeys: Record<string, string> = {
 };
 
 // Gamertags whose DB spelling differs from the avatar filename.
-const avatarNicknames: Record<string, string> = {
+export const avatarNicknames: Record<string, string> = {
   'hicksy':   'hicksey',
   'mercules': 'merc',
   'ojohnny':  'ojohnyy',
   'purj':     'purj_',
   'reeal':    'real',
-  'lyynnz':   'lynz',   // same player, different spelling in some CSVs
-  '04':       'new04',  // avatar file saved as New04
+  'lyynnz':   'lynz',
+  // Note: '04' avatar — 04.webp (old) and New04.webp (current) both exist.
+  // Delete src/assets/avatars/04.webp to make this nickname active.
+  '04':       'new04',
 };
 
 /**
