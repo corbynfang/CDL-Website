@@ -1,5 +1,6 @@
 import { useApi } from "../hooks/useApi";
 import { Link } from "react-router-dom";
+import { getPlayerAvatar } from "../utils/assets";
 import type { PlayerTransfer } from "../types";
 
 interface TransfersResponse {
@@ -70,9 +71,9 @@ const Transfers = () => {
             >
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  {transfer.player?.avatar_url && (
+                  {transfer.player && (
                     <img
-                      src={transfer.player.avatar_url}
+                      src={getPlayerAvatar(transfer.player.gamertag)}
                       alt={transfer.player.gamertag}
                       className="w-12 h-12 object-cover rounded-full opacity-90 flex-shrink-0"
                     />

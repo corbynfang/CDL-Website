@@ -18,44 +18,8 @@ const api = axios.create({
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-    'Pragma': 'no-cache',
-    'Expires': '0',
-    'X-Requested-With': 'XMLHttpRequest',
   },
 });
-
-// Request interceptor for logging and aggressive cache-busting
-api.interceptors.request.use(
-  (config) => {
-    // console.log(`Making ${config.method?.toUpperCase()} request to ${config.url}`);
-    
-    // Add multiple cache-busting parameters for GET requests
-    if (config.method === 'get') {
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substring(7);
-      
-      config.params = {
-        ...config.params,
-        _t: timestamp, // Cache-busting timestamp
-        _r: random, // Random string
-        _v: '1.0', // Version parameter
-      };
-    }
-    
-    // Add cache-busting headers
-    if (config.headers) {
-      config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0';
-      config.headers['Pragma'] = 'no-cache';
-      config.headers['Expires'] = '0';
-    }
-    
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Response interceptor for error handling
 api.interceptors.response.use(

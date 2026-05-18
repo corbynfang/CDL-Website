@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import { getTeamLogo } from "../utils/assets";
+import { getTeamLogo, getPlayerAvatar } from "../utils/assets";
 import type { Player, Team, Franchise } from "../types";
 
 interface FranchiseResponse {
@@ -105,13 +105,11 @@ const TeamDetail = () => {
                     className="group flex items-center justify-between p-4 bg-[#111111] border border-[#1a1a1a] hover:border-[#2a2a2a] hover:bg-[#161616] transition-all"
                   >
                     <div className="flex items-center gap-4">
-                      {player.avatar_url && (
-                        <img
-                          src={player.avatar_url}
-                          alt={player.gamertag}
-                          className="w-10 h-10 object-cover rounded-full opacity-90 group-hover:opacity-100 transition-opacity"
-                        />
-                      )}
+                      <img
+                        src={getPlayerAvatar(player.gamertag)}
+                        alt={player.gamertag}
+                        className="w-10 h-10 object-cover rounded-full opacity-90 group-hover:opacity-100 transition-opacity"
+                      />
                       <div>
                         <p className="font-grotesk font-semibold text-white text-sm">
                           {player.gamertag}

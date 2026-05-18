@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
+import { getPlayerAvatar } from "../utils/assets";
 import type { Player } from "../types";
 
 const TABS = [
@@ -87,13 +88,11 @@ const PlayerDetail = () => {
       <div className="grid md:grid-cols-2 gap-4 mb-4">
         {/* Left: Identity card */}
         <div className="flex flex-col gap-4">
-          {player.avatar_url && (
-            <img
-              src={player.avatar_url}
-              alt={player.gamertag}
-              className="w-36 h-36 object-cover"
-            />
-          )}
+          <img
+            src={getPlayerAvatar(player.gamertag)}
+            alt={player.gamertag}
+            className="w-36 h-36 object-cover"
+          />
 
           <div className="bg-[#111111] border border-[#1a1a1a] p-6 space-y-4 flex-1">
             <div>
