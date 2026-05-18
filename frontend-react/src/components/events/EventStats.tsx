@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
-import { useApi } from '../../hooks/useApi'
 import type { PlayerTournamentStats } from '../../types'
 import { getPlayerAvatar } from '../../utils/assets'
 
 interface Props {
-  tournamentId: number
+  stats: PlayerTournamentStats[] | null
+  loading: boolean
 }
 
 const kdColor = (kd: number) => {
@@ -13,9 +13,7 @@ const kdColor = (kd: number) => {
   return 'text-white'
 }
 
-export default function EventStats({ tournamentId }: Props) {
-  const { data: stats, loading } = useApi<PlayerTournamentStats[]>(`/api/v1/tournaments/${tournamentId}/stats`)
-
+export default function EventStats({ stats, loading }: Props) {
   if (loading) {
     return (
       <div className="space-y-2 animate-pulse">

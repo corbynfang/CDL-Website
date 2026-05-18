@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import EventMatches from './EventMatches'
@@ -9,70 +9,56 @@ vi.mock('../../utils/assets', () => ({
   getPlayerAvatar: vi.fn().mockReturnValue('/placeholder.png'),
 }))
 
-vi.mock('../../hooks/useApi')
-import { useApi } from '../../hooks/useApi'
-
 function wrap(ui: React.ReactElement) {
   return render(<MemoryRouter>{ui}</MemoryRouter>)
 }
 
-function makeApi(overrides: Partial<ReturnType<typeof useApi>>): ReturnType<typeof useApi<unknown>> {
-  return { data: null, loading: false, error: null, refetch: vi.fn(), ...overrides }
-}
-
 describe('EventMatches', () => {
-  beforeEach(() => vi.mocked(useApi).mockReset())
-
   it('shows skeleton loaders while loading', () => {
-    vi.mocked(useApi).mockReturnValue(makeApi({ loading: true, data: null }) as ReturnType<typeof useApi<unknown>>)
-    const { container } = wrap(<EventMatches tournamentId={1} />)
-    // MatchCardSkeleton has animate-pulse
+    const { container } = wrap(<EventMatches matches={null} loading={true} error={null} />)
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument()
   })
 
-  it('shows empty state when data is null', () => {
-    vi.mocked(useApi).mockReturnValue(makeApi({ data: null }) as ReturnType<typeof useApi<unknown>>)
-    wrap(<EventMatches tournamentId={1} />)
+  it('shows empty state when matches is null', () => {
+    wrap(<EventMatches matches={null} loading={false} error={null} />)
     expect(screen.getByText('No matches recorded yet.')).toBeInTheDocument()
   })
 
   it('shows empty state when matches array is empty', () => {
-    vi.mocked(useApi).mockReturnValue(makeApi({ data: [] }) as ReturnType<typeof useApi<unknown>>)
-    wrap(<EventMatches tournamentId={1} />)
+    wrap(<EventMatches matches={[]} loading={false} error={null} />)
     expect(screen.getByText('No matches recorded yet.')).toBeInTheDocument()
   })
 
-  it('renders match team names when data loads', () => {
-    vi.mocked(useApi).mockReturnValue(makeApi({ data: sampleMatches }) as ReturnType<typeof useApi<unknown>>)
-    wrap(<EventMatches tournamentId={1} />)
+  it('shows error state when error is provided', () => {
+    wrap(<EventMatches matches={null} loading={false} error="Failed" />)
+    expect(screen.getByText(/could not load matches/i)).toBeInTheDocument()
+  })
+
+  it('renders match team names when data is provided', () => {
+    wrap(<EventMatches matches={sampleMatches} loading={false} error={null} />)
     expect(screen.getAllByText('OpTic Texas').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Atlanta FaZe').length).toBeGreaterThan(0)
   })
 
   it('renders match scores', () => {
-    vi.mocked(useApi).mockReturnValue(makeApi({ data: [winnersR1Match] }) as ReturnType<typeof useApi<unknown>>)
-    wrap(<EventMatches tournamentId={1} />)
+    wrap(<EventMatches matches={[winnersR1Match]} loading={false} error={null} />)
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(screen.getByText('0')).toBeInTheDocument()
   })
 
   it('groups matches by match_type', () => {
-    vi.mocked(useApi).mockReturnValue(makeApi({ data: sampleMatches }) as ReturnType<typeof useApi<unknown>>)
-    wrap(<EventMatches tournamentId={1} />)
-    // The group header <p> renders the round name — both appear at least once
+    wrap(<EventMatches matches={sampleMatches} loading={false} error={null} />)
     expect(screen.getAllByText('winners r1').length).toBeGreaterThan(0)
     expect(screen.getAllByText('grand finals').length).toBeGreaterThan(0)
   })
 
   it('groups matches without match_type under "Other"', () => {
-    vi.mocked(useApi).mockReturnValue(makeApi({ data: [noTypeMatch] }) as ReturnType<typeof useApi<unknown>>)
-    wrap(<EventMatches tournamentId={1} />)
+    wrap(<EventMatches matches={[noTypeMatch]} loading={false} error={null} />)
     expect(screen.getByText('Other')).toBeInTheDocument()
   })
 
   it('links each match to /matches/:id', () => {
-    vi.mocked(useApi).mockReturnValue(makeApi({ data: [winnersR1Match] }) as ReturnType<typeof useApi<unknown>>)
-    wrap(<EventMatches tournamentId={1} />)
+    wrap(<EventMatches matches={[winnersR1Match]} loading={false} error={null} />)
     const links = screen.getAllByRole('link')
     expect(links.some(l => l.getAttribute('href') === '/matches/1')).toBe(true)
   })

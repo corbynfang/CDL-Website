@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
-import { useApi } from '../../hooks/useApi'
 import type { Match } from '../../types'
 import { getTeamLogo } from '../../utils/assets'
 import MatchCardSkeleton from '../loaders/MatchCardSkeleton'
 
 interface Props {
-  tournamentId: number
+  matches: Match[] | null
+  loading: boolean
+  error: string | null
 }
 
 function MatchRow({ match }: { match: Match }) {
@@ -61,9 +62,7 @@ function MatchRow({ match }: { match: Match }) {
   )
 }
 
-export default function EventMatches({ tournamentId }: Props) {
-  const { data: matches, loading } = useApi<Match[]>(`/api/v1/tournaments/${tournamentId}/matches`)
-
+export default function EventMatches({ matches, loading, error }: Props) {
   if (loading) {
     return (
       <div className="space-y-2">
@@ -72,11 +71,14 @@ export default function EventMatches({ tournamentId }: Props) {
     )
   }
 
+  if (error) {
+    return <p className="text-center text-zinc-600 py-16 text-sm">Could not load matches.</p>
+  }
+
   if (!matches || matches.length === 0) {
     return <p className="text-center text-zinc-600 py-16 text-sm">No matches recorded yet.</p>
   }
 
-  // Group by match_type (bracket round)
   const groups = new Map<string, Match[]>()
   for (const m of matches) {
     const key = m.match_type ?? 'Other'

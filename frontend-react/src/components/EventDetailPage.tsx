@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useApi } from '../hooks/useApi'
-import type { TournamentDetail, TournamentTeam } from '../types'
+import type { TournamentDetail, TournamentTeam, Match, PlayerTournamentStats } from '../types'
+import type { BracketData } from '../services/api'
 import BlobbyLoader from './loaders/BlobbyLoader'
 import EventHero from './events/EventHero'
 import EventTabs, { type TabId } from './events/EventTabs'
@@ -14,15 +15,45 @@ import EventStats from './events/EventStats'
 export default function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const [tab, setTab] = useState<TabId>('overview')
+  // Tracks which tabs have been opened at least once — prevents re-fetching on tab switch.
+  const [loadedTabs, setLoadedTabs] = useState<Set<TabId>>(new Set())
 
+  const handleTabSelect = (next: TabId) => {
+    setLoadedTabs(prev => new Set([...prev, next]))
+    setTab(next)
+  }
+
+  // ── Tournament detail (always, needed for the page to render at all) ────────
   const { data, loading, error } = useApi<TournamentDetail>(
     `/api/v1/tournaments/slug/${slug}`,
     { enabled: !!slug }
   )
 
-  const { data: teams } = useApi<TournamentTeam[]>(
-    `/api/v1/tournaments/${data?.tournament.id}/teams`,
-    { enabled: !!data?.tournament.id }
+  const id = data?.tournament.id
+  const hasId = !!id
+
+  // ── Teams: eager — needed immediately for the EventHero logo strip ──────────
+  const { data: teams, loading: teamsLoading } = useApi<TournamentTeam[]>(
+    `/api/v1/tournaments/${id}/teams`,
+    { enabled: hasId }
+  )
+
+  // ── Matches: deferred until Matches tab is first opened ────────────────────
+  const { data: matches, loading: matchesLoading, error: matchesError } = useApi<Match[]>(
+    `/api/v1/tournaments/${id}/matches`,
+    { enabled: hasId && loadedTabs.has('matches') }
+  )
+
+  // ── Bracket: deferred until Bracket tab is first opened ────────────────────
+  const { data: bracketData, loading: bracketLoading, error: bracketError } = useApi<BracketData>(
+    `/api/v1/tournaments/${id}/bracket`,
+    { enabled: hasId && loadedTabs.has('bracket') }
+  )
+
+  // ── Stats: deferred until Stats tab is first opened ────────────────────────
+  const { data: stats, loading: statsLoading } = useApi<PlayerTournamentStats[]>(
+    `/api/v1/tournaments/${id}/stats`,
+    { enabled: hasId && loadedTabs.has('stats') }
   )
 
   if (loading) return <BlobbyLoader label="Loading event..." />
@@ -39,15 +70,18 @@ export default function EventDetailPage() {
   }
 
   const { tournament, team_count } = data
-  const teamList = teams ?? []
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <EventHero event={tournament} teamCount={team_count} teams={teamList} />
+      <EventHero
+        event={tournament}
+        teamCount={team_count}
+        teams={teams ?? []}
+      />
 
       <EventTabs
         active={tab}
-        onSelect={setTab}
+        onSelect={handleTabSelect}
         tournamentType={tournament.tournament_type}
         hasStats={true}
       />
@@ -57,16 +91,16 @@ export default function EventDetailPage() {
           <EventOverview event={tournament} teamCount={team_count} />
         )}
         {tab === 'bracket' && (
-          <EventBracket tournamentId={tournament.id} />
+          <EventBracket data={bracketData} loading={bracketLoading} error={bracketError} />
         )}
         {tab === 'matches' && (
-          <EventMatches tournamentId={tournament.id} />
+          <EventMatches matches={matches} loading={matchesLoading} error={matchesError} />
         )}
         {tab === 'teams' && (
-          <EventTeams tournamentId={tournament.id} />
+          <EventTeams teams={teams} loading={teamsLoading} />
         )}
         {tab === 'stats' && (
-          <EventStats tournamentId={tournament.id} />
+          <EventStats stats={stats} loading={statsLoading} />
         )}
       </div>
     </div>

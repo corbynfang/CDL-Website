@@ -1,15 +1,13 @@
 import { Link } from 'react-router-dom'
-import { useApi } from '../../hooks/useApi'
 import type { TournamentTeam } from '../../types'
 import { getTeamLogo } from '../../utils/assets'
 
 interface Props {
-  tournamentId: number
+  teams: TournamentTeam[] | null
+  loading: boolean
 }
 
-export default function EventTeams({ tournamentId }: Props) {
-  const { data: teams, loading } = useApi<TournamentTeam[]>(`/api/v1/tournaments/${tournamentId}/teams`)
-
+export default function EventTeams({ teams, loading }: Props) {
   if (loading) {
     return (
       <div className="space-y-2 animate-pulse">

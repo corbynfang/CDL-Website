@@ -1,17 +1,17 @@
 import { useState } from 'react'
-import { useApi } from '../../hooks/useApi'
 import type { BracketData } from '../../services/api'
 import BracketSkeleton from '../loaders/BracketSkeleton'
 import BracketControls from './BracketControls'
 import BracketCanvas from './BracketCanvas'
 
 interface Props {
-  tournamentId: number
+  data: BracketData | null
+  loading: boolean
+  error: string | null
 }
 
-export default function EventBracket({ tournamentId }: Props) {
+export default function EventBracket({ data, loading, error }: Props) {
   const [activeRound, setActiveRound] = useState<string | null>(null)
-  const { data, loading, error } = useApi<BracketData>(`/api/v1/tournaments/${tournamentId}/bracket`)
 
   if (loading) return <BracketSkeleton />
 
