@@ -17,7 +17,7 @@ const LOGO_DIR   = join(__dir, '../assets/logos')
 // Build the same key format assets.ts uses: lowercase filename without extension
 function diskKeys(dir: string): Set<string> {
   return new Set(
-    readdirSync(dir).map(f => f.replace(/\.[^.]+$/, '').toLowerCase())
+    readdirSync(dir).map((f: string) => f.replace(/\.[^.]+$/, '').toLowerCase())
   )
 }
 
@@ -164,11 +164,8 @@ describe('missing asset report (informational — not failures)', () => {
   it('prints players with no avatar on disk', () => {
     // Any gamertag not covered by a file or a nickname falls through to Unknown.webp.
     // This test prints them so you know what to add images for in the future.
-    const allNicknamed = new Set(Object.keys(avatarNicknames))
-    const uncovered = [...avatarDisk]
-      .filter(k => k !== 'unknown')
-      .length
-    console.log(`Avatar files on disk: ${uncovered} players covered (excluding Unknown placeholder)`)
+    const covered = [...avatarDisk].filter(k => k !== 'unknown').length
+    console.log(`Avatar files on disk: ${covered} players covered (excluding Unknown placeholder)`)
     expect(true).toBe(true)
   })
 
