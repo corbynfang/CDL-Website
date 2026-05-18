@@ -80,10 +80,6 @@ func GetTopKDPlayers(c *gin.Context) {
 	})
 }
 
-// GetTopKDPlayersNew is an alias kept for backward compatibility.
-func GetTopKDPlayersNew(c *gin.Context) {
-	GetTopKDPlayers(c)
-}
 
 // GetAllPlayersKDStats returns K/D stats for all players, optionally filtered by season.
 func GetAllPlayersKDStats(c *gin.Context) {

@@ -89,5 +89,14 @@ func AutoMigrate() {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
+	// pg_trgm enables trigram indexes, which make ILIKE '%scump%' fast even with
+	// a leading wildcard. A regular B-tree index can't help with leading wildcards —
+	// it can only seek from the left side of the string. Trigrams split every word
+	// into overlapping 3-character chunks and index all of them, so any substring
+	// match is fast regardless of where in the string it appears.
+	DB.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+	DB.Exec(`CREATE INDEX IF NOT EXISTS idx_players_gamertag_trgm
+		ON players USING gin (gamertag gin_trgm_ops)`)
+
 	log.Println("Database migration completed")
 }

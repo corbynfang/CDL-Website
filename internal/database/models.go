@@ -29,14 +29,14 @@ type Team struct {
 	IsActive       bool       `json:"is_active" gorm:"default:true;column:is_active"`
 
 	// Franchise continuity — nil for non-CDL teams
-	FranchiseID *uint `json:"franchise_id" gorm:"column:franchise_id"`
+	FranchiseID *uint `json:"franchise_id" gorm:"column:franchise_id;index"`
 
 	// Which CDL game era this branding belongs to (BO6, CW, MW2, MW3, VG).
 	// Populated from cdl_team_branding_by_season.csv. Empty for non-CDL teams.
 	GameCode string `json:"game_code" gorm:"size:10;column:game_code"`
 
 	// Classification
-	IsCDLFranchise     bool   `json:"is_cdl_franchise" gorm:"default:false;column:is_cdl_franchise"`
+	IsCDLFranchise     bool   `json:"is_cdl_franchise" gorm:"default:false;column:is_cdl_franchise;index"`
 	TeamClassification string `json:"team_classification" gorm:"size:60;column:team_classification"`
 	// cdl_franchise | challenger | academy | non_cdl_org | orgless | unknown | unknown_challenger_or_regional
 	DoNotMerge bool `json:"do_not_merge" gorm:"default:false;column:do_not_merge"`
@@ -61,7 +61,7 @@ func (Team) TableName() string { return "teams" }
 
 type Player struct {
 	ID            uint       `json:"id" gorm:"primaryKey"`
-	Gamertag      string     `json:"gamertag" gorm:"not null;size:100"`
+	Gamertag      string     `json:"gamertag" gorm:"not null;size:100;index"`
 	FirstName     string     `json:"first_name" gorm:"size:100"`
 	LastName      string     `json:"last_name" gorm:"size:100"`
 	Country       string     `json:"country" gorm:"size:3"`
@@ -79,9 +79,9 @@ func (Player) TableName() string { return "players" }
 
 type TeamRoster struct {
 	ID        uint       `json:"id" gorm:"primaryKey"`
-	TeamID    uint       `json:"team_id"`
-	PlayerID  uint       `json:"player_id"`
-	SeasonID  uint       `json:"season_id"`
+	TeamID    uint       `json:"team_id" gorm:"index"`
+	PlayerID  uint       `json:"player_id" gorm:"index"`
+	SeasonID  uint       `json:"season_id" gorm:"index"`
 	Role      string     `json:"role" gorm:"size:50"`
 	StartDate time.Time  `json:"start_date"`
 	EndDate   *time.Time `json:"end_date"`
@@ -110,7 +110,7 @@ func (Season) TableName() string { return "seasons" }
 
 type Tournament struct {
 	ID               uint       `json:"id" gorm:"primaryKey"`
-	SeasonID         uint       `json:"season_id"`
+	SeasonID         uint       `json:"season_id" gorm:"index"`
 	Name             string     `json:"name" gorm:"not null;size:200"`
 	Slug             string     `json:"slug" gorm:"size:200"` // event_slug from event_aliases_clean.csv
 	TournamentType   string     `json:"tournament_type" gorm:"size:50"`
@@ -131,9 +131,9 @@ func (Tournament) TableName() string { return "tournaments" }
 
 type Match struct {
 	ID           uint      `json:"id" gorm:"primaryKey"`
-	TournamentID uint      `json:"tournament_id"`
-	Team1ID      uint      `json:"team1_id"`
-	Team2ID      uint      `json:"team2_id"`
+	TournamentID uint      `json:"tournament_id" gorm:"index"`
+	Team1ID      uint      `json:"team1_id" gorm:"index"`
+	Team2ID      uint      `json:"team2_id" gorm:"index"`
 	MatchDate    time.Time `json:"match_date"`
 	MatchType    string    `json:"match_type" gorm:"size:50"`
 	Format       string    `json:"format" gorm:"size:20"` // BO5, BO7, BO9
@@ -195,8 +195,8 @@ type PlayerMapStats struct {
 	ID        uint `json:"id" gorm:"primaryKey"`
 	MatchID   uint `json:"match_id" gorm:"not null;uniqueIndex:idx_player_map_stat_unique"`
 	MapNumber int  `json:"map_number" gorm:"not null;uniqueIndex:idx_player_map_stat_unique"`
-	PlayerID  uint `json:"player_id" gorm:"not null;uniqueIndex:idx_player_map_stat_unique"`
-	TeamID    uint `json:"team_id" gorm:"not null"`
+	PlayerID  uint `json:"player_id" gorm:"not null;uniqueIndex:idx_player_map_stat_unique;index"`
+	TeamID    uint `json:"team_id" gorm:"not null;index"`
 
 	// Core stats present across all eras
 	Kills   int     `json:"kills" gorm:"default:0"`
@@ -238,8 +238,8 @@ func (PlayerMapStats) TableName() string { return "player_map_stats" }
 type PlayerMatchStats struct {
 	ID           uint      `json:"id" gorm:"primaryKey"`
 	MatchID      uint      `json:"match_id" gorm:"uniqueIndex:idx_player_match_stat_unique"`
-	PlayerID     uint      `json:"player_id" gorm:"uniqueIndex:idx_player_match_stat_unique"`
-	TeamID       uint      `json:"team_id"`
+	PlayerID     uint      `json:"player_id" gorm:"uniqueIndex:idx_player_match_stat_unique;index"`
+	TeamID       uint      `json:"team_id" gorm:"index"`
 	MapsPlayed   int       `json:"maps_played" gorm:"default:0"`
 	TotalKills   int       `json:"total_kills" gorm:"default:0"`
 	TotalDeaths  int       `json:"total_deaths" gorm:"default:0"`
@@ -261,8 +261,8 @@ func (PlayerMatchStats) TableName() string { return "player_match_stats" }
 type PlayerTournamentStats struct {
 	ID           uint    `json:"id" gorm:"primaryKey"`
 	PlayerID     uint    `json:"player_id" gorm:"uniqueIndex:idx_player_tournament_stat_unique"`
-	TeamID       uint    `json:"team_id"`
-	TournamentID uint    `json:"tournament_id" gorm:"uniqueIndex:idx_player_tournament_stat_unique"`
+	TeamID       uint    `json:"team_id" gorm:"index"`
+	TournamentID uint    `json:"tournament_id" gorm:"uniqueIndex:idx_player_tournament_stat_unique;index"`
 	TotalKills   int     `json:"total_kills"`
 	TotalDeaths  int     `json:"total_deaths"`
 	TotalAssists int     `json:"total_assists"`
@@ -304,8 +304,8 @@ func (PlayerTournamentStats) TableName() string { return "player_tournament_stat
 
 type TeamTournamentStats struct {
 	ID            uint      `json:"id" gorm:"primaryKey"`
-	TournamentID  uint      `json:"tournament_id"`
-	TeamID        uint      `json:"team_id"`
+	TournamentID  uint      `json:"tournament_id" gorm:"index"`
+	TeamID        uint      `json:"team_id" gorm:"index"`
 	Placement     *int      `json:"placement"`
 	MatchesPlayed int       `json:"matches_played" gorm:"default:0"`
 	MatchesWon    int       `json:"matches_won" gorm:"default:0"`
@@ -334,9 +334,9 @@ func (Coach) TableName() string { return "coaches" }
 
 type PlayerTransfer struct {
 	ID           uint      `json:"id" gorm:"primaryKey"`
-	PlayerID     uint      `json:"player_id"`
-	FromTeamID   *uint     `json:"from_team_id"`
-	ToTeamID     *uint     `json:"to_team_id"`
+	PlayerID     uint      `json:"player_id" gorm:"index"`
+	FromTeamID   *uint     `json:"from_team_id" gorm:"index"`
+	ToTeamID     *uint     `json:"to_team_id" gorm:"index"`
 	TransferDate time.Time `json:"transfer_date"`
 	TransferType string    `json:"transfer_type" gorm:"size:50"` // Signing | Transfer | Release | Retirement | Role Change
 	Role         string    `json:"role" gorm:"size:50"`

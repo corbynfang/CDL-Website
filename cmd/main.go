@@ -68,10 +68,8 @@ func main() {
 		api.GET("/players/:id/matches", handlers.GetPlayerMatches)
 		api.GET("/players/:id/franchise-career", handlers.GetPlayerFranchiseCareer)
 		api.GET("/players/top-kd", handlers.GetTopKDPlayers)
-		api.GET("/players/top-kd-new", handlers.GetTopKDPlayersNew)
 
 		api.GET("/stats/all-kd-by-tournament", handlers.GetAllPlayersKDStats)
-		api.GET("/players/all-kd-stats-tournament", handlers.GetAllPlayersKDStats)
 
 		api.GET("/matches/:id", handlers.GetMatch)
 

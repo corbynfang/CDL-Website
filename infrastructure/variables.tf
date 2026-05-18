@@ -27,3 +27,8 @@ variable "database_url" {
   type        = string
   sensitive   = true
 }
+
+variable "alert_email" {
+  description = "Email address to receive CloudWatch 500-error alerts"
+  type        = string
+}
