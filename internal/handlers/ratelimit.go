@@ -11,6 +11,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -64,10 +65,11 @@ func getVisitor(ip string) *rate.Limiter {
 // RateLimit is a Gin middleware that returns 429 when an IP exceeds the limit.
 func RateLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Prefer X-Forwarded-For so the real client IP is used behind CloudFront.
-		ip := c.GetHeader("X-Forwarded-For")
-		if ip == "" {
-			ip = c.ClientIP()
+		// CloudFront sets X-Forwarded-For as "client-ip, cloudfront-ip".
+		// Take only the first entry — that's the real client address.
+		ip := c.ClientIP()
+		if xff := c.GetHeader("X-Forwarded-For"); xff != "" {
+			ip = strings.TrimSpace(strings.SplitN(xff, ",", 2)[0])
 		}
 
 		if !getVisitor(ip).Allow() {

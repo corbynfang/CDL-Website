@@ -150,7 +150,7 @@ export const playerApi = {
 export const statsApi = {
   // Get top KD players
   getTopKDPlayers: async (): Promise<TopKDPlayer[]> => {
-    const response: AxiosResponse<TopKDPlayer[]> = await api.get('/stats/top-kd-new');
+    const response: AxiosResponse<TopKDPlayer[]> = await api.get('/players/top-kd');
     return response.data;
   },
 
