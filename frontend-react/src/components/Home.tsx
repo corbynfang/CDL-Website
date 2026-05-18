@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 const CARDS = [
+  { to: "/events", title: "EVENTS", desc: "CDL tournaments, majors, and championships" },
   { to: "/players", title: "PLAYERS", desc: "Player statistics and performance data" },
   { to: "/teams", title: "TEAMS", desc: "Browse teams and roster information" },
   { to: "/stats", title: "STATS", desc: "K/D leaderboards and rankings" },
@@ -23,7 +24,7 @@ const Home = () => {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {CARDS.map(({ to, title, desc }) => (
             <Link
               key={to}

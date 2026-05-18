@@ -115,18 +115,32 @@ export interface Tournament {
   id: number;
   season_id: number;
   name: string;
-  slug?: string;
-  tournament_type?: string;
+  slug: string;
+  tournament_type: string;
   start_date: string;
-  end_date?: string;
-  prize_pool?: number;
+  end_date?: string | null;
+  prize_pool?: number | null;
   location?: string;
+  country?: string;
+  is_lan: boolean;
+  logo_url?: string;
   tournament_format?: string;
   liquipedia_url?: string;
   breaking_point_url?: string;
   created_at: string;
   updated_at: string;
   season?: Season;
+}
+
+export interface TournamentDetail {
+  tournament: Tournament;
+  team_count: number;
+}
+
+export interface TournamentTeam extends Team {
+  placement?: number | null;
+  matches_won: number;
+  matches_lost: number;
 }
 
 export interface Match {
@@ -239,6 +253,24 @@ export interface MatchMap {
   duration_sec: number;
   source: string;
   winner?: Team;
+}
+
+export interface PlayerTournamentStats {
+  id: number;
+  player_id: number;
+  team_id: number;
+  tournament_id: number;
+  total_kills: number;
+  total_deaths: number;
+  total_assists: number;
+  total_damage: number;
+  kd_ratio: number;
+  kda_ratio: number;
+  rank?: number | null;
+  overall_maps: number;
+  overall_plus_minus: number;
+  player?: Player;
+  team?: Team;
 }
 
 export interface PlayerMapStats {

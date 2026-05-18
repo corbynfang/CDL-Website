@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 
 const NAV_LINKS = [
+  { to: "/events", label: "Events" },
   { to: "/players", label: "Players" },
   { to: "/teams", label: "Teams" },
   { to: "/stats", label: "Stats" },

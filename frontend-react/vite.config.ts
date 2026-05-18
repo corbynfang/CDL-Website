@@ -23,6 +23,12 @@ export default defineConfig({
       input: {
         main: 'index.html',
       },
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-http':  ['axios'],
+        },
+      },
     },
   },
 })

@@ -77,8 +77,12 @@ func main() {
 		api.GET("/franchises/:key", handlers.GetFranchise)
 
 		api.GET("/tournaments", handlers.GetTournaments)
+		api.GET("/tournaments/slug/:slug", handlers.GetTournamentBySlug)
 		api.GET("/tournaments/:id", handlers.GetTournament)
 		api.GET("/tournaments/:id/bracket", handlers.GetTournamentBracket)
+		api.GET("/tournaments/:id/matches", handlers.GetTournamentMatches)
+		api.GET("/tournaments/:id/teams", handlers.GetTournamentTeams)
+		api.GET("/tournaments/:id/stats", handlers.GetTournamentStats)
 
 		api.GET("/transfers", handlers.GetTransfers)
 

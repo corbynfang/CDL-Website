@@ -190,7 +190,11 @@ func GetTournaments(c *gin.Context) {
 	defer cancel()
 
 	seasonID := c.Query("season_id")
-	query := database.DB.WithContext(ctx).Preload("Season").Order("start_date DESC")
+	// Hide data-artifact tournaments from the events page
+	query := database.DB.WithContext(ctx).
+		Preload("Season").
+		Where("tournament_type NOT IN ('season_summary','unknown')").
+		Order("start_date DESC")
 	if seasonID != "" {
 		query = query.Where("season_id = ?", seasonID)
 	}
@@ -202,6 +206,39 @@ func GetTournaments(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, tournaments)
+}
+
+// GetTournamentBySlug resolves an event by its URL-safe slug.
+// Used by the frontend to load /events/:slug without knowing the numeric ID.
+func GetTournamentBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+
+	ctx, cancel := getContext(10)
+	defer cancel()
+
+	var tournament database.Tournament
+	if err := database.DB.WithContext(ctx).
+		Preload("Season").
+		Where("slug = ?", slug).
+		First(&tournament).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Tournament not found"})
+		return
+	}
+
+	// Derive team_count from distinct team IDs in matches for this tournament
+	var teamCount int64
+	database.DB.WithContext(ctx).Raw(`
+		SELECT COUNT(*) FROM (
+			SELECT team1_id AS team_id FROM matches WHERE tournament_id = ?
+			UNION
+			SELECT team2_id FROM matches WHERE tournament_id = ?
+		) AS t
+	`, tournament.ID, tournament.ID).Scan(&teamCount)
+
+	c.JSON(http.StatusOK, gin.H{
+		"tournament": tournament,
+		"team_count": teamCount,
+	})
 }
 
 func GetTournament(c *gin.Context) {
@@ -288,4 +325,116 @@ func GetTournamentBracket(c *gin.Context) {
 		"bracket":         bracket,
 		"total_matches":   len(matches),
 	})
+}
+
+// GetTournamentMatches returns every match for a tournament with team info,
+// scores, and bracket context. Used by the Matches tab on the event detail page.
+func GetTournamentMatches(c *gin.Context) {
+	id, err := validateID(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
+		return
+	}
+
+	ctx, cancel := getContext(15)
+	defer cancel()
+
+	var matches []database.Match
+	if err := database.DB.WithContext(ctx).
+		Where("tournament_id = ?", id).
+		Preload("Team1").
+		Preload("Team2").
+		Preload("Winner").
+		Order("match_date ASC, bracket_position ASC").
+		Find(&matches).Error; err != nil {
+		log.Printf("GetTournamentMatches error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch matches"})
+		return
+	}
+	c.JSON(http.StatusOK, matches)
+}
+
+// GetTournamentTeams returns every team that played in a tournament,
+// enriched with placement and record from team_tournament_stats.
+func GetTournamentTeams(c *gin.Context) {
+	id, err := validateID(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
+		return
+	}
+
+	ctx, cancel := getContext(15)
+	defer cancel()
+
+	// Collect every distinct team_id that appears in this tournament's matches
+	var teamIDs []uint
+	database.DB.WithContext(ctx).Raw(`
+		SELECT DISTINCT team_id FROM (
+			SELECT team1_id AS team_id FROM matches WHERE tournament_id = ?
+			UNION ALL
+			SELECT team2_id FROM matches WHERE tournament_id = ?
+		) AS t
+	`, id, id).Scan(&teamIDs)
+
+	if len(teamIDs) == 0 {
+		c.JSON(http.StatusOK, []gin.H{})
+		return
+	}
+
+	var teams []database.Team
+	database.DB.WithContext(ctx).Where("id IN ?", teamIDs).Find(&teams)
+
+	var stats []database.TeamTournamentStats
+	database.DB.WithContext(ctx).Where("tournament_id = ?", id).Find(&stats)
+
+	statsMap := make(map[uint]database.TeamTournamentStats, len(stats))
+	for _, s := range stats {
+		statsMap[s.TeamID] = s
+	}
+
+	type teamOut struct {
+		database.Team
+		Placement   *int `json:"placement"`
+		MatchesWon  int  `json:"matches_won"`
+		MatchesLost int  `json:"matches_lost"`
+	}
+
+	result := make([]teamOut, 0, len(teams))
+	for _, t := range teams {
+		out := teamOut{Team: t}
+		if s, ok := statsMap[t.ID]; ok {
+			out.Placement = s.Placement
+			out.MatchesWon = s.MatchesWon
+			out.MatchesLost = s.MatchesLost
+		}
+		result = append(result, out)
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// GetTournamentStats returns per-player K/D stats for a single tournament.
+// Used by the Stats tab on the event detail page.
+func GetTournamentStats(c *gin.Context) {
+	id, err := validateID(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
+		return
+	}
+
+	ctx, cancel := getContext(15)
+	defer cancel()
+
+	var stats []database.PlayerTournamentStats
+	if err := database.DB.WithContext(ctx).
+		Where("tournament_id = ? AND (total_kills > 0 OR total_deaths > 0)", id).
+		Preload("Player").
+		Preload("Team").
+		Order("(CASE WHEN total_deaths > 0 THEN CAST(total_kills AS decimal) / total_deaths ELSE 0 END) DESC").
+		Find(&stats).Error; err != nil {
+		log.Printf("GetTournamentStats error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stats"})
+		return
+	}
+	c.JSON(http.StatusOK, stats)
 }
