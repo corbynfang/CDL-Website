@@ -41,30 +41,18 @@ export default function EventOverview({ event, teamCount }: Props) {
         </div>
       </div>
 
-      {(event.liquipedia_url || event.breaking_point_url) && (
+      {event.liquipedia_url && (
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-widest text-zinc-600">External Links</p>
           <div className="flex flex-wrap gap-3">
-            {event.liquipedia_url && (
-              <a
-                href={event.liquipedia_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs uppercase tracking-widest text-zinc-500 hover:text-white border border-[#1a1a1a] hover:border-[#2a2a2a] px-4 py-2 transition-colors"
-              >
-                Liquipedia →
-              </a>
-            )}
-            {event.breaking_point_url && (
-              <a
-                href={event.breaking_point_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs uppercase tracking-widest text-zinc-500 hover:text-white border border-[#1a1a1a] hover:border-[#2a2a2a] px-4 py-2 transition-colors"
-              >
-                Breaking Point →
-              </a>
-            )}
+            <a
+              href={event.liquipedia_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs uppercase tracking-widest text-zinc-500 hover:text-white border border-[#1a1a1a] hover:border-[#2a2a2a] px-4 py-2 transition-colors"
+            >
+              Liquipedia →
+            </a>
           </div>
         </div>
       )}

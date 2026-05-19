@@ -68,16 +68,23 @@ describe('EventOverview', () => {
     expect(link).toHaveAttribute('href', 'https://liquipedia.net/callofduty/test')
   })
 
-  it('shows the Breaking Point link when breaking_point_url is provided', () => {
+  it('never shows the Breaking Point link even when breaking_point_url is set', () => {
     render(<EventOverview event={completedMajor} teamCount={12} />)
-    const link = screen.getByRole('link', { name: /breaking point/i })
-    expect(link).toHaveAttribute('href', 'https://breakingpoint.gg/test')
+    expect(screen.queryByRole('link', { name: /breaking point/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/breakingpoint\.gg/i)).not.toBeInTheDocument()
   })
 
-  it('does not render external links section when both URLs are empty', () => {
+  it('does not render external links section when liquipedia_url is empty', () => {
     render(<EventOverview event={upcomingQualifier} teamCount={0} />)
+    expect(screen.queryByText(/external links/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /liquipedia/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /breaking point/i })).not.toBeInTheDocument()
+  })
+
+  it('hides external links section when only breaking_point_url is set and liquipedia_url is absent', () => {
+    const bpOnly = { ...upcomingQualifier, breaking_point_url: 'https://breakingpoint.gg/test', liquipedia_url: '' }
+    render(<EventOverview event={bpOnly} teamCount={0} />)
+    expect(screen.queryByText(/external links/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
   })
 
   it('does not crash with no location or season', () => {
