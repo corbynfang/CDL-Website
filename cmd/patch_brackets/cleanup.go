@@ -315,6 +315,112 @@ func runEWC2025Fix() {
 	printEWC2025Summary(db)
 }
 
+// ─── EWC 2024 group-stage position patch ─────────────────────────────────────
+//
+// EWC 2024 (tournament_id=53) group-stage matches have bracket_position=0.
+// The frontend's ewcGroupKey() uses bracket_position (1→A, 2→B, 3→C, 4→D) to
+// assign matches to per-group sections in EWCGroupStageView.
+//
+// Groups were determined by tracing the GSL match flow from the API:
+//
+//   Group A (pos=1): OG, CRR, OB, LVL
+//   Group B (pos=2): VS, C,   GM, GE
+//   Group C (pos=3): TU, BB,  S,  TH
+//   Group D (pos=4): AF, T,   LG, TF
+//
+// Match IDs verified from /api/v1/tournaments/53/bracket before patching.
+
+// ewc2024Positions maps each group-stage match ID to its group position (1–4).
+var ewc2024Positions = map[uint]int{
+	// Group A (OG / CRR / OB / LVL)
+	1179: 1, // opening:  OG  vs OB
+	1180: 1, // opening:  LVL vs CRR
+	1181: 1, // elim:     OB  vs LVL
+	1182: 1, // winners:  OG  vs CRR
+	1183: 1, // decider:  CRR vs LVL
+
+	// Group B (VS / C / GM / GE)
+	1184: 2, // opening:  C   vs GM
+	1185: 2, // opening:  VS  vs GE
+	1186: 2, // elim:     GM  vs GE
+	1187: 2, // winners:  C   vs VS
+	1188: 2, // decider:  C   vs GM
+
+	// Group C (TU / BB / S / TH)
+	1189: 3, // opening:  TU  vs S
+	1190: 3, // opening:  TH  vs BB
+	1191: 3, // elim:     S   vs TH
+	1192: 3, // winners:  TU  vs BB
+	1193: 3, // decider:  BB  vs S
+
+	// Group D (AF / T / LG / TF)
+	1194: 4, // opening:  T   vs LG
+	1195: 4, // opening:  AF  vs TF
+	1196: 4, // elim:     LG  vs TF
+	1197: 4, // winners:  T   vs AF
+	1198: 4, // decider:  T   vs LG
+}
+
+func runEWC2024PositionPatch() {
+	database.ConnectDatabase()
+	db := database.DB
+
+	fmt.Println("=== EWC 2024 group-stage position patch (dry-run first) ===")
+
+	// Dry-run: print current state for all 20 group-stage matches.
+	type row struct {
+		ID              uint
+		Team1ID, Team2ID uint
+		BracketRound    string
+		BracketPosition int
+	}
+	var current []row
+	ids := make([]uint, 0, len(ewc2024Positions))
+	for id := range ewc2024Positions {
+		ids = append(ids, id)
+	}
+	db.Table("matches").
+		Where("id IN ?", ids).
+		Select("id, team1_id, team2_id, bracket_round, bracket_position").
+		Order("bracket_round, id").
+		Scan(&current)
+
+	fmt.Printf("Found %d matches to patch (expected 20).\n\n", len(current))
+	for _, r := range current {
+		want := ewc2024Positions[r.ID]
+		flag := ""
+		if r.BracketPosition == want {
+			flag = " (already correct)"
+		}
+		fmt.Printf("  id=%-5d  %-20s  pos %d → %d%s\n",
+			r.ID, r.BracketRound, r.BracketPosition, want, flag)
+	}
+
+	if len(current) != 20 {
+		fmt.Printf("\nERROR: expected 20 matches, found %d — aborting.\n", len(current))
+		return
+	}
+
+	fmt.Println("\nApplying bracket_position updates...")
+	updated := 0
+	for _, r := range current {
+		want := ewc2024Positions[r.ID]
+		if r.BracketPosition == want {
+			continue
+		}
+		res := db.Table("matches").
+			Where("id = ? AND tournament_id = 53", r.ID).
+			Update("bracket_position", want)
+		if res.Error != nil {
+			log.Printf("ERROR updating id=%d: %v", r.ID, res.Error)
+		} else if res.RowsAffected == 1 {
+			updated++
+		}
+	}
+
+	fmt.Printf("\nDone. %d rows updated.\n", updated)
+}
+
 func printEWC2025Summary(db *gorm.DB) {
 	type sumRow struct {
 		BracketRound    string

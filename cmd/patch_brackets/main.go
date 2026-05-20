@@ -213,6 +213,10 @@ func main() {
 		runEWC2025Fix()
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "ewc2024" {
+		runEWC2024PositionPatch()
+		return
+	}
 
 	database.ConnectDatabase()
 	db := database.DB
