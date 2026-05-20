@@ -217,6 +217,10 @@ func main() {
 		runEWC2024PositionPatch()
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "toronto-koi" {
+		runTorontoKoiRebrand()
+		return
+	}
 
 	database.ConnectDatabase()
 	db := database.DB

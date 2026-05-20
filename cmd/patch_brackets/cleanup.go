@@ -315,6 +315,128 @@ func runEWC2025Fix() {
 	printEWC2025Summary(db)
 }
 
+// ─── Toronto Koi EWC rebrand ─────────────────────────────────────────────────
+//
+// Toronto Ultra (team_id=5) competed as "Toronto Koi" at EWC events.
+// This patch creates the Toronto Koi team entry (if absent) and migrates all
+// EWC match + stats references from the Ultra team_id to the Koi team_id.
+//
+// Tables updated: matches, match_maps, player_map_stats, player_match_stats,
+//                 player_tournament_stats, team_tournament_stats.
+// Tables intentionally skipped: team_rosters (CDL season rosters only),
+//                               player_transfers (CDL context).
+
+const torontoUltraName = "Toronto Ultra"
+const torontoKoiName   = "Toronto Koi"
+
+func runTorontoKoiRebrand() {
+	database.ConnectDatabase()
+	db := database.DB
+
+	// 1. Find Toronto Ultra
+	var ultra database.Team
+	if err := db.Where("name = ?", torontoUltraName).First(&ultra).Error; err != nil {
+		log.Fatalf("Toronto Ultra not found: %v", err)
+	}
+	log.Printf("[toronto] Ultra: id=%d franchise_id=%v abbr=%s", ultra.ID, ultra.FranchiseID, ultra.Abbreviation)
+
+	// 2. Find or create Toronto Koi
+	var koi database.Team
+	if err := db.Where("name = ?", torontoKoiName).First(&koi).Error; err != nil {
+		koi = database.Team{
+			Name:               torontoKoiName,
+			Abbreviation:       "TK",
+			FranchiseID:        ultra.FranchiseID,
+			IsCDLFranchise:     ultra.IsCDLFranchise,
+			TeamClassification: ultra.TeamClassification,
+			IsActive:           false,
+			Source:             "ewc_rebrand",
+		}
+		if err := db.Create(&koi).Error; err != nil {
+			log.Fatalf("Failed to create Toronto Koi: %v", err)
+		}
+		log.Printf("[toronto] Created Toronto Koi: id=%d", koi.ID)
+	} else {
+		log.Printf("[toronto] Found existing Toronto Koi: id=%d", koi.ID)
+	}
+
+	// 3. All international_major tournament IDs
+	var tournamentIDs []uint
+	db.Table("tournaments").Where("tournament_type = ?", "international_major").Pluck("id", &tournamentIDs)
+	log.Printf("[toronto] EWC tournaments: %v", tournamentIDs)
+
+	if len(tournamentIDs) == 0 {
+		log.Println("[toronto] No EWC tournaments found — nothing to do.")
+		return
+	}
+
+	// 4. Find all match IDs for Toronto Ultra in those tournaments
+	var matchIDs []uint
+	db.Table("matches").
+		Where("tournament_id IN ? AND (team1_id = ? OR team2_id = ?)", tournamentIDs, ultra.ID, ultra.ID).
+		Pluck("id", &matchIDs)
+	log.Printf("[toronto] Affected matches: %v", matchIDs)
+
+	// Dry-run print
+	type matchRow struct {
+		ID           uint
+		TournamentID uint
+		Team1ID      uint
+		Team2ID      uint
+		WinnerID     *uint
+		BracketRound string
+	}
+	var rows []matchRow
+	db.Table("matches").Where("id IN ?", matchIDs).
+		Select("id, tournament_id, team1_id, team2_id, winner_id, bracket_round").
+		Scan(&rows)
+	fmt.Printf("\n%-6s %-6s %-12s %-6s %-6s %-6s\n", "id", "t_id", "bracket_round", "tm1", "tm2", "win")
+	for _, r := range rows {
+		win := "nil"
+		if r.WinnerID != nil {
+			win = fmt.Sprintf("%d", *r.WinnerID)
+		}
+		fmt.Printf("%-6d %-6d %-12s %-6d %-6d %-6s\n",
+			r.ID, r.TournamentID, r.BracketRound, r.Team1ID, r.Team2ID, win)
+	}
+	fmt.Println()
+
+	if len(matchIDs) == 0 {
+		log.Println("[toronto] No matches to update — nothing to do.")
+		return
+	}
+
+	// 5. matches
+	res := db.Table("matches").Where("id IN ? AND team1_id = ?", matchIDs, ultra.ID).Update("team1_id", koi.ID)
+	log.Printf("[toronto] matches.team1_id: %d rows", res.RowsAffected)
+	res = db.Table("matches").Where("id IN ? AND team2_id = ?", matchIDs, ultra.ID).Update("team2_id", koi.ID)
+	log.Printf("[toronto] matches.team2_id: %d rows", res.RowsAffected)
+	res = db.Table("matches").Where("id IN ? AND winner_id = ?", matchIDs, ultra.ID).Update("winner_id", koi.ID)
+	log.Printf("[toronto] matches.winner_id: %d rows", res.RowsAffected)
+
+	// 6. match_maps winner_id
+	res = db.Table("match_maps").Where("match_id IN ? AND winner_id = ?", matchIDs, ultra.ID).Update("winner_id", koi.ID)
+	log.Printf("[toronto] match_maps.winner_id: %d rows", res.RowsAffected)
+
+	// 7. player_map_stats
+	res = db.Table("player_map_stats").Where("match_id IN ? AND team_id = ?", matchIDs, ultra.ID).Update("team_id", koi.ID)
+	log.Printf("[toronto] player_map_stats: %d rows", res.RowsAffected)
+
+	// 8. player_match_stats
+	res = db.Table("player_match_stats").Where("match_id IN ? AND team_id = ?", matchIDs, ultra.ID).Update("team_id", koi.ID)
+	log.Printf("[toronto] player_match_stats: %d rows", res.RowsAffected)
+
+	// 9. player_tournament_stats
+	res = db.Table("player_tournament_stats").Where("tournament_id IN ? AND team_id = ?", tournamentIDs, ultra.ID).Update("team_id", koi.ID)
+	log.Printf("[toronto] player_tournament_stats: %d rows", res.RowsAffected)
+
+	// 10. team_tournament_stats
+	res = db.Table("team_tournament_stats").Where("tournament_id IN ? AND team_id = ?", tournamentIDs, ultra.ID).Update("team_id", koi.ID)
+	log.Printf("[toronto] team_tournament_stats: %d rows", res.RowsAffected)
+
+	log.Printf("[toronto] Done. %d EWC matches rebranded to Toronto Koi (id=%d).", len(matchIDs), koi.ID)
+}
+
 // ─── EWC 2024 group-stage position patch ─────────────────────────────────────
 //
 // EWC 2024 (tournament_id=53) group-stage matches have bracket_position=0.
