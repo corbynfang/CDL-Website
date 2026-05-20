@@ -2,9 +2,10 @@ package handlers
 
 // ratelimit.go — per-IP rate limiting middleware using a token bucket algorithm.
 //
-// Each IP gets a bucket of 10 tokens that refills at 1 token/second.
-// This allows short bursts (clicking through pages quickly) while blocking
-// sustained high-rate traffic like scrapers or runaway scripts.
+// Each IP gets a bucket of 20 tokens that refills at 2 tokens/second.
+// An event detail page fires ~5 requests on first open; 20-token burst covers
+// ~4 rapid page loads before the bucket empties. Scrapers that sustain >2 req/s
+// will still be blocked within a few seconds.
 //
 // A background goroutine cleans up limiters for IPs not seen in 5 minutes
 // so the map doesn't grow forever.
@@ -54,8 +55,8 @@ func getVisitor(ip string) *rate.Limiter {
 
 	v, exists := visitors[ip]
 	if !exists {
-		// 1 token per second sustained, burst up to 10 tokens.
-		v = &visitor{limiter: rate.NewLimiter(rate.Every(time.Second), 10)}
+		// 2 tokens per second sustained, burst up to 20 tokens.
+		v = &visitor{limiter: rate.NewLimiter(rate.Every(500*time.Millisecond), 20)}
 		visitors[ip] = v
 	}
 	v.lastSeen = time.Now()

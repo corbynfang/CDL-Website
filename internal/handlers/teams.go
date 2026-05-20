@@ -9,10 +9,23 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"sync"
+	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
 	"github.com/gin-gonic/gin"
 )
+
+// defaultTeamsCache holds the result of the no-filter GetTeams query (the hot path
+// hit by ALB health checks every 30s and most user visits). TTL of 60s means at most
+// two DB queries per minute regardless of traffic or health-check frequency.
+var defaultTeamsCache struct {
+	sync.RWMutex
+	teams     []database.Team
+	expiresAt time.Time
+}
+
+const defaultTeamsCacheTTL = 60 * time.Second
 
 // GetTeams returns one CDL franchise team per franchise slot.
 //
@@ -90,8 +103,19 @@ func GetTeams(c *gin.Context) {
 				Find(&teams).Error
 		} else {
 			// Default: CDL teams that played in the active season's CDL events.
-			// Same logic as season filter — driven by match stats, not branding.
-			// Dallas Empire won't show because it has no active-season matches.
+			// Served from a 60s in-memory cache — ALB health checks hit this path
+			// every 30s and would otherwise run a five-table join each time.
+			defaultTeamsCache.RLock()
+			cached := defaultTeamsCache.teams
+			valid := time.Now().Before(defaultTeamsCache.expiresAt)
+			defaultTeamsCache.RUnlock()
+
+			if valid && cached != nil {
+				c.Header("Cache-Control", "public, max-age=60, s-maxage=300")
+				c.JSON(http.StatusOK, cached)
+				return
+			}
+
 			err = database.DB.WithContext(ctx).Raw(`
 				SELECT DISTINCT t.*
 				FROM teams t
@@ -110,6 +134,14 @@ func GetTeams(c *gin.Context) {
 				  )
 				ORDER BY t.name ASC
 			`).Scan(&teams).Error
+
+			if err == nil {
+				sort.Slice(teams, func(i, j int) bool { return teams[i].Name < teams[j].Name })
+				defaultTeamsCache.Lock()
+				defaultTeamsCache.teams = teams
+				defaultTeamsCache.expiresAt = time.Now().Add(defaultTeamsCacheTTL)
+				defaultTeamsCache.Unlock()
+			}
 		}
 	}
 
@@ -120,6 +152,7 @@ func GetTeams(c *gin.Context) {
 	}
 
 	sort.Slice(teams, func(i, j int) bool { return teams[i].Name < teams[j].Name })
+	c.Header("Cache-Control", "public, max-age=60, s-maxage=300")
 	c.JSON(http.StatusOK, teams)
 }
 

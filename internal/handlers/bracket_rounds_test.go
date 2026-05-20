@@ -91,7 +91,6 @@ func TestFormatName(t *testing.T) {
 	assert.Equal(t, "cdl_major_group_stage_bracket", formatName(bracketFmtCDLMajorGroupBracket))
 	assert.Equal(t, "ewc_group_stage_single_elim", formatName(bracketFmtEWCGroupBracket))
 	assert.Equal(t, "unknown", formatName(bracketFmtUnknown))
-	assert.Equal(t, "unknown", formatName(bracketFmtCDCOpen))
 }
 
 func TestBracketKeysFor(t *testing.T) {
@@ -130,7 +129,6 @@ func TestBracketKeysFor(t *testing.T) {
 	})
 	t.Run("unknown format returns nil", func(t *testing.T) {
 		assert.Nil(t, bracketKeysFor(bracketFmtUnknown))
-		assert.Nil(t, bracketKeysFor(bracketFmtCDCOpen))
 	})
 }
 
@@ -140,7 +138,6 @@ func TestHasGroupStage(t *testing.T) {
 	assert.False(t, hasGroupStage(bracketFmtStandardCDLDoubleElim))
 	assert.False(t, hasGroupStage(bracketFmtColdWarStageDoubleElim))
 	assert.False(t, hasGroupStage(bracketFmtUnknown))
-	assert.False(t, hasGroupStage(bracketFmtCDCOpen))
 }
 
 func TestRoundNormalizerFor(t *testing.T) {

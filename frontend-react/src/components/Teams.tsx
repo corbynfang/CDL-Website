@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import { getTeamLogo } from "../utils/assets";
+import { getTeamLogo } from "../utils/logoAssets";
 import type { Season } from "../types";
 
 interface Team {
@@ -20,7 +20,7 @@ const Teams = () => {
     ? `/api/v1/teams?season_id=${selectedSeasonId}`
     : "/api/v1/teams";
 
-  const { data: allTeams, loading, error } = useApi<Team[]>(teamsUrl);
+  const { data: allTeams, loading, error } = useApi<Team[]>(teamsUrl, { cacheTtl: 5 * 60 * 1000 });
 
   const teams = allTeams?.filter((t) => t.name !== "Unaffiliated");
 

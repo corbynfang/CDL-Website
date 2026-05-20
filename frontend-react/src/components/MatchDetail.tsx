@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import { getTeamLogo } from "../utils/assets";
+import { getTeamLogo } from "../utils/logoAssets";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

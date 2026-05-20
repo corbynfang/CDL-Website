@@ -5,7 +5,7 @@ import FeaturedEventCard from './FeaturedEventCard'
 import { completedMajor, upcomingQualifier, liveMajor } from '../../test/fixtures/events'
 import { sampleTeams } from '../../test/fixtures/teams'
 
-vi.mock('../../utils/assets', () => ({
+vi.mock('../../utils/logoAssets', () => ({
   getTeamLogo: vi.fn().mockReturnValue(null),
   getPlayerAvatar: vi.fn().mockReturnValue('/placeholder.png'),
 }))

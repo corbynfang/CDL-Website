@@ -238,7 +238,7 @@ func seedTournaments(db *gorm.DB, seasonByCode map[string]uint) (map[string]uint
 			TournamentType:   r.EventType,
 			StartDate:        startDate,
 			EndDate:          endDatePtr,
-			BreakingPointURL: r.SourceURL,
+			SourceURL: r.SourceURL,
 		}
 		db.Where("slug = ? AND season_id = ?", r.EventSlug, seasonID).FirstOrCreate(&t)
 		bySlug[r.EventSlug] = t.ID

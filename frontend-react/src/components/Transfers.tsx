@@ -1,6 +1,6 @@
 import { useApi } from "../hooks/useApi";
 import { Link } from "react-router-dom";
-import { getPlayerAvatar } from "../utils/assets";
+import { getPlayerAvatar } from "../utils/avatarAssets";
 import type { PlayerTransfer } from "../types";
 
 interface TransfersResponse {

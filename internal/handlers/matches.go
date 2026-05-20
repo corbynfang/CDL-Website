@@ -176,10 +176,9 @@ func GetMatch(c *gin.Context) {
 			"team1_score":             match.Team1Score,
 			"team2_score":             match.Team2Score,
 			"winner_id":               match.WinnerID,
-			"match_date":              match.MatchDate,
-			"format":                  match.Format,
-			"bracket_round":           match.BracketRound,
-			"breaking_point_match_id": match.BreakingPointMatchID,
+			"match_date":    match.MatchDate,
+			"format":        match.Format,
+			"bracket_round": match.BracketRound,
 		},
 		"maps": maps,
 	})
@@ -235,9 +234,19 @@ func GetTournamentBySlug(c *gin.Context) {
 		) AS t
 	`, tournament.ID, tournament.ID).Scan(&teamCount)
 
+	// If tournament_format is empty in the DB, derive it from tournament_type.
+	// This keeps the Overview tab from showing blank where the bracket handler
+	// would compute the correct format from the same fallback logic.
+	if tournament.TournamentFormat == "" {
+		if f := detectBracketFormat("", tournament.TournamentType); f != bracketFmtUnknown {
+			tournament.TournamentFormat = formatName(f)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"tournament": tournament,
-		"team_count": teamCount,
+		"tournament":   tournament,
+		"team_count":   teamCount,
+		"event_format": tournament.TournamentFormat,
 	})
 }
 
@@ -322,6 +331,12 @@ func GetTournamentBracket(c *gin.Context) {
 			"match_date":       match.MatchDate,
 		}
 		key := normalize(match.BracketRound)
+		// For EWC format: legacy data (EWC 2024) has bare round names without a
+		// group_play_X_ prefix. Derive the group from bracket_position so the
+		// frontend can split matches into per-group sections.
+		if format == bracketFmtEWCGroupBracket {
+			key = ewcGroupKey(key, match.BracketPosition)
+		}
 		if _, inBracket := bracket[key]; inBracket {
 			bracket[key] = append(bracket[key], matchData)
 		} else if groupStage != nil {

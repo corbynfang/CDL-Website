@@ -21,8 +21,8 @@ type Team struct {
 	ID             uint       `json:"id" gorm:"primaryKey;column:id"`
 	Name           string     `json:"name" gorm:"not null;size:200;column:name"`
 	Abbreviation   string     `json:"abbreviation" gorm:"not null;size:10;column:abbreviation"`
-	City           string     `json:"city" gorm:"size:100;column:city"`
-	LogoURL        string     `json:"logo_url" gorm:"column:logo_url"`
+	City           string     `json:"city,omitempty" gorm:"size:100;column:city"`
+	LogoURL        string     `json:"logo_url,omitempty" gorm:"column:logo_url"`
 	PrimaryColor   string     `json:"primary_color" gorm:"size:7;column:primary_color"`
 	SecondaryColor string     `json:"secondary_color" gorm:"size:7;column:secondary_color"`
 	FoundedDate    *time.Time `json:"founded_date" gorm:"column:founded_date"`
@@ -68,7 +68,7 @@ type Player struct {
 	Birthdate     *time.Time `json:"birthdate"`
 	Role          string     `json:"role" gorm:"size:50"`
 	IsActive      bool       `json:"is_active" gorm:"default:true"`
-	LiquipediaURL string     `json:"liquipedia_url"`
+	LiquipediaURL string     `json:"source_profile_url,omitempty" gorm:"column:liquipedia_url"`
 	TwitterHandle string     `json:"twitter_handle" gorm:"size:100"`
 	AvatarURL     string     `json:"avatar_url"`
 	CreatedAt     time.Time  `json:"created_at"`
@@ -122,8 +122,8 @@ type Tournament struct {
 	IsLAN            bool       `json:"is_lan" gorm:"default:false"`
 	LogoURL          string     `json:"logo_url" gorm:"size:500"`
 	TournamentFormat string     `json:"tournament_format" gorm:"size:50"`
-	LiquipediaURL    string     `json:"liquipedia_url"`
-	BreakingPointURL string     `json:"breaking_point_url" gorm:"column:breaking_point_url"`
+	SourceEventURL string `json:"source_event_url,omitempty" gorm:"column:liquipedia_url"`
+	SourceURL      string `json:"-" gorm:"column:breaking_point_url"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
 
@@ -145,10 +145,10 @@ type Match struct {
 	WinnerID     *uint     `json:"winner_id"`
 	DurationMins *int      `json:"duration_minutes"`
 	VodURL       string    `json:"vod_url"`
-	LiquipediaURL string   `json:"liquipedia_url"` // general dedup key / external URL
+	LiquipediaURL string `json:"-" gorm:"column:liquipedia_url"` // internal dedup/provenance key
 
-	// Set for all era_finals sourced matches (real BP match IDs like 93815)
-	BreakingPointMatchID *int `json:"breaking_point_match_id" gorm:"column:breaking_point_match_id"`
+	// Source provider's internal match ID — used for dedup during seeding only.
+	BreakingPointMatchID *int `json:"-" gorm:"column:breaking_point_match_id"`
 
 	// Bracket context
 	BracketRound    string `json:"bracket_round" gorm:"size:50"`
@@ -181,7 +181,7 @@ type MatchMap struct {
 
 	// duration_min*60 + duration_sec from BP source
 	DurationSec int    `json:"duration_sec" gorm:"default:0"`
-	Source      string `json:"source" gorm:"size:50"` // breakingpoint | ewc_2024 | ewc_2025 | major1_2023_wiki
+	Source      string `json:"source" gorm:"size:50"` // primary_source | ewc_2024 | ewc_2025 | wiki
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -208,7 +208,7 @@ type PlayerMapStats struct {
 	Damage  int     `json:"damage" gorm:"default:0"`
 	Assists int     `json:"assists" gorm:"default:0"`
 
-	// BreakingPoint composite rating
+	// Composite performance rating from the source provider
 	BPRating float64 `json:"bp_rating" gorm:"type:decimal(10,6);default:0"`
 
 	// Mode-specific — 0 when not applicable to the map's mode

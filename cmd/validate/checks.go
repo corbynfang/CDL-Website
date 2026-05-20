@@ -17,8 +17,6 @@ import (
 	"time"
 )
 
-// ─── Issue type ───────────────────────────────────────────────────────────────
-
 type issueLevel int
 
 const (
@@ -96,8 +94,6 @@ func loadRaw(path string) ([]string, [][]string, []Issue) {
 	return headers, rows, issues
 }
 
-// ─── Header and column helpers ────────────────────────────────────────────────
-
 // requireHeaders checks that every name in required appears in the header row.
 func requireHeaders(path string, headers []string, required []string) []Issue {
 	set := map[string]bool{}
@@ -132,8 +128,6 @@ func cell(row []string, i int) string {
 	return strings.TrimSpace(row[i])
 }
 
-// ─── Date parsers ─────────────────────────────────────────────────────────────
-
 func isValidISO(s string) bool {
 	_, e1 := time.Parse(time.RFC3339, s)
 	_, e2 := time.Parse("2006-01-02T15:04:05", s)
@@ -157,8 +151,6 @@ func isValidTransferDate(s string) bool {
 	}
 	return false
 }
-
-// ─── Validators ───────────────────────────────────────────────────────────────
 
 // validateNonCDLTeams validates database/non_cdl_team_aliases_clean.csv.
 // This is the file that broke previously (Project 7, line 19 — unquoted comma in notes).

@@ -49,6 +49,7 @@ logs/
 /seeder
 /seed
 /validate
+/patch_brackets
 
 # ── Database CSV files (proprietary data — share privately) ───────────────────
 # This folder contains cleaned match, transfer, and player stat CSVs that were

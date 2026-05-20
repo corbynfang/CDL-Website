@@ -1,5 +1,5 @@
 import type { Tournament } from '../../types'
-import { formatPrize, formatDateRange, countryFlag } from '../../utils/eventUtils'
+import { formatPrize, formatDateRange, countryFlag, formatTournamentFormat } from '../../utils/eventUtils'
 
 interface Props {
   event: Tournament
@@ -21,7 +21,7 @@ export default function EventOverview({ event, teamCount }: Props) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Teams" value={teamCount > 0 ? String(teamCount) : '—'} />
         <StatCard label="Prize Pool" value={formatPrize(event.prize_pool)} />
-        <StatCard label="Format" value={event.tournament_format ?? '—'} />
+        <StatCard label="Format" value={formatTournamentFormat(event.tournament_format)} />
         <StatCard label="Type" value={event.is_lan ? 'LAN' : 'Online'} />
       </div>
 
@@ -41,17 +41,17 @@ export default function EventOverview({ event, teamCount }: Props) {
         </div>
       </div>
 
-      {event.liquipedia_url && (
+      {event.source_event_url && (
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-widest text-zinc-600">External Links</p>
           <div className="flex flex-wrap gap-3">
             <a
-              href={event.liquipedia_url}
+              href={event.source_event_url}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs uppercase tracking-widest text-zinc-500 hover:text-white border border-[#1a1a1a] hover:border-[#2a2a2a] px-4 py-2 transition-colors"
             >
-              Liquipedia →
+              Event Page →
             </a>
           </div>
         </div>

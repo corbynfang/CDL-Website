@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-// ─── Low-level CSV infrastructure ────────────────────────────────────────────
-
 func readCSV(path string) [][]string {
 	f, err := os.Open(path)
 	if err != nil {
@@ -142,7 +140,7 @@ func readEventAliasCSV(path string) []eventAliasRow {
 			EventType:            col(r, h, "event_type"),
 			StartDate:            col(r, h, "start_date"),
 			EndDate:              col(r, h, "end_date"),
-			BreakingPointEventID: col(r, h, "breakingpoint_event_id"),
+			SourceEventID: col(r, h, "breakingpoint_event_id"),
 			SourceURL:            col(r, h, "source_url"),
 			FandomURL:            col(r, h, "fandom_url"),
 			StatsOnly:            colBool(r, h, "stats_only"),
@@ -178,7 +176,7 @@ func readSeriesCSV(path string) []seriesRow {
 			TeamBScore:    atoi(col(r, h, "team_b_score")),
 			WinnerID:      atoi(col(r, h, "winner_id")),
 			WinnerName:    col(r, h, "winner_name"),
-			BPRoundName:   col(r, h, "bp_round_name"),
+			RoundName:     col(r, h, "bp_round_name"),
 			SeriesFormat:  col(r, h, "series_format"),
 			SourceType:    col(r, h, "source_type"),
 		})

@@ -45,12 +45,12 @@ func seedEraFinals(
 			statsByMatchID[sr.MatchID] = append(statsByMatchID[sr.MatchID], sr)
 		}
 
-		// Build BP-team-ID → team name per match.
-		bpTeamByMatch := map[int]bpMatchTeams{}
+		// Build source-provider team ID → team name per match.
+		matchTeamByID := map[int]matchTeamContext{}
 		for _, sr := range seriesRows {
-			bpTeamByMatch[sr.MatchID] = bpMatchTeams{
-				TeamABPID: sr.TeamAID, TeamAName: sr.TeamAName,
-				TeamBBPID: sr.TeamBID, TeamBName: sr.TeamBName,
+			matchTeamByID[sr.MatchID] = matchTeamContext{
+				TeamASourceID: sr.TeamAID, TeamAName: sr.TeamAName,
+				TeamBSourceID: sr.TeamBID, TeamBName: sr.TeamBName,
 			}
 		}
 
@@ -90,7 +90,7 @@ func seedEraFinals(
 				WinnerID:             winnerID,
 				BreakingPointMatchID: &bpID,
 				LiquipediaURL:        s.SourceURL,
-				BracketRound:         bpRoundToDBRound(s.BPRoundName),
+				BracketRound:         rawRoundToDBRound(s.RoundName),
 			}
 			// Match is kept as FirstOrCreate — we need m.ID immediately for child rows.
 			db.Where("breaking_point_match_id = ?", bpID).FirstOrCreate(&m)
@@ -116,7 +116,7 @@ func seedEraFinals(
 				})
 			}
 
-			bpTeams := bpTeamByMatch[s.MatchID]
+			matchTeams := matchTeamByID[s.MatchID]
 			type matchAgg struct {
 				PlayerID uint
 				TeamID   uint
@@ -134,10 +134,10 @@ func seedEraFinals(
 					continue
 				}
 				teamName := ""
-				if st.TeamID == bpTeams.TeamABPID {
-					teamName = bpTeams.TeamAName
-				} else if st.TeamID == bpTeams.TeamBBPID {
-					teamName = bpTeams.TeamBName
+				if st.TeamID == matchTeams.TeamASourceID {
+					teamName = matchTeams.TeamAName
+				} else if st.TeamID == matchTeams.TeamBSourceID {
+					teamName = matchTeams.TeamBName
 				}
 				teamID := teamLookup[teamName]
 

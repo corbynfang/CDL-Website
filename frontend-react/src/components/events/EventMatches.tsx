@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Match } from '../../types'
-import { getTeamLogo } from '../../utils/assets'
+import { getTeamLogo } from '../../utils/logoAssets'
 import MatchCardSkeleton from '../loaders/MatchCardSkeleton'
 
 interface Props {

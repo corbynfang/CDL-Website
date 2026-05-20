@@ -41,31 +41,27 @@ func fireRequest(ip string) int {
 	return w.Code
 }
 
-func TestRateLimit_AllowsFirstTenRequests(t *testing.T) {
-	// The bucket starts with 10 tokens (burst size). All 10 should succeed.
+func TestRateLimit_AllowsFirstTwentyRequests(t *testing.T) {
+	// The bucket starts with 20 tokens (burst size). All 20 should succeed.
 	// Use a unique IP so this test doesn't share a bucket with other tests.
 	ip := "192.0.2.10"
 
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= 20; i++ {
 		code := fireRequest(ip)
 		assert.Equal(t, http.StatusOK, code, "request %d should be allowed", i)
 	}
 }
 
 func TestRateLimit_BlocksAfterBurst(t *testing.T) {
-	// After exhausting the 10-token burst, the 11th request must get 429.
+	// After exhausting the 20-token burst, the 21st request must get 429.
 	ip := "192.0.2.11"
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		fireRequest(ip)
 	}
-	// 11th request — bucket is empty
+	// 21st request — bucket is empty
 	code := fireRequest(ip)
 	assert.Equal(t, http.StatusTooManyRequests, code)
-
-	var body map[string]string
-	// The response recorder has the JSON body even on 429
-	_ = body
 }
 
 func TestRateLimit_DifferentIPsHaveIndependentBuckets(t *testing.T) {
@@ -75,7 +71,7 @@ func TestRateLimit_DifferentIPsHaveIndependentBuckets(t *testing.T) {
 	ipB := "192.0.2.21"
 
 	// Drain ipA's bucket completely
-	for i := 0; i < 11; i++ {
+	for i := 0; i < 21; i++ {
 		fireRequest(ipA)
 	}
 
@@ -92,12 +88,12 @@ func TestRateLimit_ExtractsFirstIPFromXForwardedFor(t *testing.T) {
 	edge1 := fmt.Sprintf("%s, 13.32.0.1",  clientIP)  // same client, edge node 1
 	edge2 := fmt.Sprintf("%s, 13.32.0.99", clientIP)  // same client, edge node 2
 
-	// Send 10 requests through edge node 1 — drains the bucket for clientIP
-	for i := 0; i < 10; i++ {
+	// Send 20 requests through edge node 1 — drains the bucket for clientIP
+	for i := 0; i < 20; i++ {
 		fireRequest(edge1)
 	}
 
-	// 11th request through a different edge node must still be blocked —
+	// 21st request through a different edge node must still be blocked —
 	// because it's the same underlying client IP
 	code := fireRequest(edge2)
 	assert.Equal(t, http.StatusTooManyRequests, code,

@@ -73,7 +73,7 @@ func seedEnrichedMatches(
 			Team2Score:    s.Team2MapWins,
 			WinnerID:      winnerID,
 			LiquipediaURL: dedupKey,
-			BracketRound:  bpRoundToDBRound(s.RoundName),
+			BracketRound:  rawRoundToDBRound(s.RoundName),
 		}
 		// Match is kept as FirstOrCreate — we need m.ID immediately for child rows.
 		db.Where("liquipedia_url = ?", dedupKey).FirstOrCreate(&m)

@@ -134,20 +134,20 @@ func runAudit() {
 	fmt.Printf("\n=== tournament 52: slug=%q ===\n", t52.Slug)
 
 	// Breakdown of tournament 52 matches by dedup key type
-	var withBPID, withEnriched, withBPURL, withOther int64
-	db.Table("matches").Where("tournament_id = 52 AND breaking_point_match_id IS NOT NULL").Count(&withBPID)
+	var withSourceID, withEnriched, withSourceURL, withOther int64
+	db.Table("matches").Where("tournament_id = 52 AND breaking_point_match_id IS NOT NULL").Count(&withSourceID)
 	db.Table("matches").Where("tournament_id = 52 AND liquipedia_url LIKE 'enriched:EWC2025%'").Count(&withEnriched)
-	db.Table("matches").Where("tournament_id = 52 AND liquipedia_url LIKE 'https://www.breakingpoint%'").Count(&withBPURL)
+	db.Table("matches").Where("tournament_id = 52 AND liquipedia_url LIKE 'https://www.breakingpoint%'").Count(&withSourceURL)
 	db.Table("matches").Where("tournament_id = 52 AND liquipedia_url NOT LIKE 'enriched:EWC2025%' AND liquipedia_url NOT LIKE 'https://www.breakingpoint%'").Count(&withOther)
-	fmt.Printf("  bp_id IS NOT NULL: %d\n  enriched:EWC2025: %d\n  breakingpoint URL: %d\n  other: %d\n", withBPID, withEnriched, withBPURL, withOther)
-	type t52Row struct{ ID uint; LiquipediaURL string; BPID *int; BracketRound string }
+	fmt.Printf("  source_id IS NOT NULL: %d\n  enriched:EWC2025: %d\n  source URL: %d\n  other: %d\n", withSourceID, withEnriched, withSourceURL, withOther)
+	type t52Row struct{ ID uint; SourceURL string; SourceID *int; BracketRound string }
 	var t52Rows []t52Row
-	db.Table("matches").Where("tournament_id = 52").Select("id, liquipedia_url, breaking_point_match_id, bracket_round").Limit(6).Scan(&t52Rows)
+	db.Table("matches").Where("tournament_id = 52").Select("id, liquipedia_url AS source_url, breaking_point_match_id AS source_id, bracket_round").Limit(6).Scan(&t52Rows)
 	fmt.Println("  sample rows:")
 	for _, r := range t52Rows {
-		bpid := "nil"
-		if r.BPID != nil { bpid = fmt.Sprintf("%d", *r.BPID) }
-		fmt.Printf("    id=%d bp=%s rnd=%q url=%q\n", r.ID, bpid, r.BracketRound, r.LiquipediaURL)
+		sourceID := "nil"
+		if r.SourceID != nil { sourceID = fmt.Sprintf("%d", *r.SourceID) }
+		fmt.Printf("    id=%d src=%s rnd=%q url=%q\n", r.ID, sourceID, r.BracketRound, r.SourceURL)
 	}
 
 	// G2 Minnesota bracket_patch inserts from this run

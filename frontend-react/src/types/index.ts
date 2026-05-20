@@ -53,7 +53,7 @@ export interface Player {
   birthdate?: string;
   role?: string;
   is_active: boolean;
-  liquipedia_url?: string;
+  source_profile_url?: string;
   twitter_handle?: string;
   avatar_url?: string;
   created_at: string;
@@ -125,8 +125,7 @@ export interface Tournament {
   is_lan: boolean;
   logo_url?: string;
   tournament_format?: string;
-  liquipedia_url?: string;
-  breaking_point_url?: string;
+  source_event_url?: string;
   created_at: string;
   updated_at: string;
   season?: Season;
@@ -135,6 +134,7 @@ export interface Tournament {
 export interface TournamentDetail {
   tournament: Tournament;
   team_count: number;
+  event_format?: string;
 }
 
 export interface TournamentTeam extends Team {
@@ -156,7 +156,6 @@ export interface Match {
   winner_id?: number;
   duration_minutes?: number;
   vod_url?: string;
-  liquipedia_url?: string;
   created_at: string;
   updated_at: string;
   tournament?: Tournament;

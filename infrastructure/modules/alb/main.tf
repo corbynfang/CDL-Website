@@ -39,7 +39,7 @@ resource "aws_lb_target_group" "api" {
   target_type = "ip" # required for Fargate — no EC2 instance to target
 
   health_check {
-    path                = "/api/v1/teams"
+    path                = "/health"
     interval            = 30
     timeout             = 5
     healthy_threshold   = 2

@@ -54,7 +54,7 @@ type eventAliasRow struct {
 	EventType            string
 	StartDate            string
 	EndDate              string
-	BreakingPointEventID string
+	SourceEventID string
 	SourceURL            string
 	FandomURL            string
 	StatsOnly            bool
@@ -70,15 +70,15 @@ type seriesRow struct {
 	MatchDatetime string
 	BestOf        int
 	Status        string
-	TeamAID       int // BP internal team ID
+	TeamAID       int // source-provider team ID
 	TeamAName     string
-	TeamBID       int // BP internal team ID
+	TeamBID       int // source-provider team ID
 	TeamBName     string
 	TeamAScore    int
 	TeamBScore    int
-	WinnerID      int // BP internal
+	WinnerID      int // source-provider internal
 	WinnerName    string
-	BPRoundName   string
+	RoundName     string
 	SeriesFormat  string
 	SourceType    string
 }
@@ -221,13 +221,13 @@ type eventRange struct {
 	EndDate   time.Time
 }
 
-// bpMatchTeams holds BP team IDs → team names for resolving which team a player belongs to.
-// The era_finals player stats file only has BP internal team IDs, not names.
-type bpMatchTeams struct {
-	TeamABPID int
-	TeamAName string
-	TeamBBPID int
-	TeamBName string
+// matchTeamContext maps source-provider team IDs → team names for resolving which team a player belongs to.
+// The era_finals player stats file only has source-provider internal team IDs, not names.
+type matchTeamContext struct {
+	TeamASourceID int
+	TeamAName     string
+	TeamBSourceID int
+	TeamBName     string
 }
 
 // cwBracketRow is one match from database/cdl_cw_stage_brackets.csv.

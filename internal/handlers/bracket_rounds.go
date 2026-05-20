@@ -21,7 +21,8 @@ const (
 	bracketFmtColdWarStageDoubleElim               // CW 2021 stage majors: 10-round double-elim (elim_r4/r5)
 	bracketFmtCDLMajorGroupBracket                 // CDL major with group stage + double-elim playoff
 	bracketFmtEWCGroupBracket                      // EWC: group stage + single-elim playoff
-	bracketFmtCDCOpen                             // CDC Open: not yet modelled
+	// To add CDC Open: add a constant here, handle it in detectBracketFormat,
+	// bracketKeysFor, hasGroupStage, and roundNormalizerFor.
 )
 
 // detectBracketFormat returns the bracketFormat for a tournament.
@@ -133,6 +134,29 @@ func normalizeEWCRoundKey(raw string) string {
 		return "grand_finals"
 	}
 	return raw
+}
+
+// ewcGroupRoundTypes are the group-stage round names used in EWC 2024 data that
+// lack a group_play_X_ prefix. EWC 2025 data already has the full prefixed form.
+var ewcGroupRoundTypes = map[string]bool{
+	"opening_match":    true,
+	"winners_match":    true,
+	"decider_match":    true,
+	"elimination_match": true,
+}
+
+// ewcGroupKey adds a group_play_X_ prefix to legacy EWC group-stage round keys
+// using bracket_position to identify the group (1→a, 2→b, 3→c, 4→d).
+// Already-prefixed keys (EWC 2025+) pass through unchanged.
+// This makes EWC 2024 group data compatible with EWCGroupStageView's prefix-based grouping.
+func ewcGroupKey(key string, position int) string {
+	if !ewcGroupRoundTypes[key] {
+		return key
+	}
+	if position < 1 || position > 4 {
+		return key
+	}
+	return "group_play_" + string(rune('a'+position-1)) + "_" + key
 }
 
 // roundNormalizerFor returns the round key normalizer for the given bracket format.

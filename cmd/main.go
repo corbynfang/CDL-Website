@@ -49,6 +49,12 @@ func main() {
 		c.Next()
 	})
 
+	// Lightweight health check — use this as the ALB target group health check
+	// path instead of /api/v1/teams to avoid running a five-table join every 30s.
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
 	api := r.Group("/api/v1")
 	api.Use(handlers.RateLimit())
 	{

@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import BracketMatchCard from './BracketMatchCard'
 import { bracketMatchComplete, bracketMatchNoWinner } from '../../test/fixtures/matches'
 
-vi.mock('../../utils/assets', () => ({
+vi.mock('../../utils/logoAssets', () => ({
   getTeamLogo: vi.fn().mockReturnValue(null),
   getPlayerAvatar: vi.fn().mockReturnValue('/placeholder.png'),
 }))
@@ -40,7 +40,7 @@ describe('BracketMatchCard', () => {
   })
 
   it('uses team logo from getTeamLogo when available', async () => {
-    const { getTeamLogo } = await import('../../utils/assets')
+    const { getTeamLogo } = await import('../../utils/logoAssets')
     vi.mocked(getTeamLogo).mockReturnValue('/logos/optic.png')
     wrap(<BracketMatchCard match={bracketMatchComplete} />)
     const imgs = screen.getAllByRole('img')

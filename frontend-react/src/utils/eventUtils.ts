@@ -106,6 +106,14 @@ const CW_SLUG_NAMES: Record<string, string> = {
 
 export const eventDisplayName = (slug: string, name: string) => CW_SLUG_NAMES[slug] ?? name
 
+const FORMAT_LABELS: Record<string, string> = {
+  standard_cdl_double_elim:      'Double Elimination',
+  cold_war_stage_double_elim:    'Double Elimination',
+  cdl_major_group_stage_bracket: 'Group Stage + Double Elim',
+  ewc_group_stage_single_elim:   'Group Stage + Single Elim',
+}
+export const formatTournamentFormat = (f?: string | null): string => FORMAT_LABELS[f ?? ''] ?? (f || '—')
+
 export const formatRound      = (r: string) => ROUND_LABELS[r] ?? r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 export const roundOrder       = (r: string) => ROUND_ORDER[r] ?? 99
 export const bracketSection   = (r: string): 'winners' | 'elimination' | 'grand_finals' =>

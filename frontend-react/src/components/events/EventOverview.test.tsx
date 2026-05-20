@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import EventOverview from './EventOverview'
 import { completedMajor, upcomingQualifier } from '../../test/fixtures/events'
 
-vi.mock('../../utils/assets', () => ({
+vi.mock('../../utils/logoAssets', () => ({
   getTeamLogo: vi.fn().mockReturnValue(null),
   getPlayerAvatar: vi.fn().mockReturnValue('/placeholder.png'),
 }))
@@ -62,27 +62,14 @@ describe('EventOverview', () => {
     expect(screen.getByText('Black Ops 6 2025')).toBeInTheDocument()
   })
 
-  it('shows the Liquipedia link when liquipedia_url is provided', () => {
+  it('shows the Event Page link when source_event_url is provided', () => {
     render(<EventOverview event={completedMajor} teamCount={12} />)
-    const link = screen.getByRole('link', { name: /liquipedia/i })
+    const link = screen.getByRole('link', { name: /event page/i })
     expect(link).toHaveAttribute('href', 'https://liquipedia.net/callofduty/test')
   })
 
-  it('never shows the Breaking Point link even when breaking_point_url is set', () => {
-    render(<EventOverview event={completedMajor} teamCount={12} />)
-    expect(screen.queryByRole('link', { name: /breaking point/i })).not.toBeInTheDocument()
-    expect(screen.queryByText(/breakingpoint\.gg/i)).not.toBeInTheDocument()
-  })
-
-  it('does not render external links section when liquipedia_url is empty', () => {
+  it('does not render external links section when source_event_url is empty', () => {
     render(<EventOverview event={upcomingQualifier} teamCount={0} />)
-    expect(screen.queryByText(/external links/i)).not.toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /liquipedia/i })).not.toBeInTheDocument()
-  })
-
-  it('hides external links section when only breaking_point_url is set and liquipedia_url is absent', () => {
-    const bpOnly = { ...upcomingQualifier, breaking_point_url: 'https://breakingpoint.gg/test', liquipedia_url: '' }
-    render(<EventOverview event={bpOnly} teamCount={0} />)
     expect(screen.queryByText(/external links/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
   })

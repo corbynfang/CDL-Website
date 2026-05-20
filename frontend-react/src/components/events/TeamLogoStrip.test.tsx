@@ -3,12 +3,12 @@ import { render, screen } from '@testing-library/react'
 import TeamLogoStrip from './TeamLogoStrip'
 import { sampleTeams, largeTeamList, unknownTeam } from '../../test/fixtures/teams'
 
-vi.mock('../../utils/assets', () => ({
+vi.mock('../../utils/logoAssets', () => ({
   getTeamLogo: vi.fn().mockReturnValue(null),
   getPlayerAvatar: vi.fn().mockReturnValue('/placeholder.png'),
 }))
 
-import { getTeamLogo } from '../../utils/assets'
+import { getTeamLogo } from '../../utils/logoAssets'
 
 describe('TeamLogoStrip', () => {
   beforeEach(() => vi.mocked(getTeamLogo).mockReturnValue(''))

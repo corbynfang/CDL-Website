@@ -5,7 +5,18 @@ interface UseApiOptions {
   retries?: number;
   retryDelay?: number;
   enabled?: boolean;
+  cacheTtl?: number; // ms; if set, responses are cached in memory for this duration
 }
+
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+// Module-level cache shared across all useApi instances. Avoids re-fetching
+// static-ish data (e.g. /api/v1/teams) on every component mount or navigation.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const apiCache = new Map<string, CacheEntry<any>>();
 
 interface UseApiResult<T> {
   data: T | null;
@@ -23,16 +34,27 @@ export function useApi<T>(
   const [error, setError] = useState<string | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
-  const { 
-    retries = 3, 
+  const {
+    retries = 3,
     retryDelay = 1000,
-    enabled = true 
+    enabled = true,
+    cacheTtl,
   } = options;
 
   useEffect(() => {
     if (!enabled) {
       setLoading(false);
       return;
+    }
+
+    // Serve from cache if valid — avoids a network round-trip on re-mount.
+    if (cacheTtl !== undefined) {
+      const entry = apiCache.get(url);
+      if (entry && Date.now() < entry.expiresAt) {
+        setData(entry.data as T);
+        setLoading(false);
+        return;
+      }
     }
 
     let isMounted = true;
@@ -50,6 +72,9 @@ export function useApi<T>(
         });
 
         if (isMounted) {
+          if (cacheTtl !== undefined) {
+            apiCache.set(url, { data: response.data, expiresAt: Date.now() + cacheTtl });
+          }
           setData(response.data);
           setError(null);
         }

@@ -133,9 +133,9 @@ func mergeInto(dst, src map[string]uint) {
 
 // ─── Bracket round mapping ────────────────────────────────────────────────────
 
-// bpRoundToDBRound converts BreakingPoint bp_round_name values to short snake_case identifiers
+// rawRoundToDBRound converts source-provider round name values to short snake_case identifiers
 // stored in matches.bracket_round. Unknown values are snake_cased automatically.
-func bpRoundToDBRound(raw string) string {
+func rawRoundToDBRound(raw string) string {
 	switch raw {
 	case "Major Qualifier":
 		return "major_qualifier"

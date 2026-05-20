@@ -11,25 +11,18 @@ SEED="${SEED:-false}" # set SEED=true on first deploy to load CSV data into RDS
 
 echo "==> Deploying commit $GIT_SHA"
 
-# ── Step 1: Apply Terraform ───────────────────────────────────────────────────
-echo "==> Running terraform apply..."
+# ── Step 1: Bootstrap ECR (must exist before we can push an image) ────────────
+# We apply only the ECR module first so we have a registry to push to.
+# All other infra changes (ALB health check path, etc.) are applied AFTER the
+# new image is live and ECS has stabilized — that way the old running containers
+# are never health-checked against a route they don't serve.
+echo "==> Applying ECR module..."
 cd "$INFRA_DIR"
 terraform init -input=false
-terraform apply -input=false -auto-approve
+terraform apply -input=false -auto-approve -target=module.ecr
 
-# Read outputs into variables
 ECR_URL=$(terraform output -raw ecr_repository_url)
-S3_BUCKET=$(terraform output -raw s3_bucket_name)
-CF_DIST_ID=$(terraform output -raw cloudfront_distribution_id 2>/dev/null || echo "")
-ECS_CLUSTER=$(terraform output -raw ecs_cluster)
-ECS_SERVICE=$(terraform output -raw ecs_service)
-TASK_FAMILY="cdl-api"
-TASK_SG=$(terraform output -raw ecs_task_security_group_id)
-# Convert Terraform list output ["subnet-a","subnet-b"] → subnet-a,subnet-b
-SUBNETS=$(terraform output -json public_subnet_ids | jq -r 'join(",")')
-
 echo "==> ECR: $ECR_URL"
-echo "==> S3:  $S3_BUCKET"
 
 # ── Step 2: Build and push Docker image ──────────────────────────────────────
 echo "==> Authenticating with ECR..."
@@ -44,7 +37,26 @@ echo "==> Pushing image to ECR..."
 docker push "${ECR_URL}:${GIT_SHA}"
 docker push "${ECR_URL}:latest"
 
-# ── Step 3: Update ECS task definition and service ───────────────────────────
+# ── Step 3: Apply remaining Terraform infrastructure ─────────────────────────
+# The new image is now in ECR, so any infra changes (health check path, etc.)
+# take effect against tasks that are already running the correct code.
+echo "==> Applying full Terraform..."
+cd "$INFRA_DIR"
+terraform apply -input=false -auto-approve
+
+# Read outputs into variables
+S3_BUCKET=$(terraform output -raw s3_bucket_name)
+CF_DIST_ID=$(terraform output -raw cloudfront_distribution_id 2>/dev/null || echo "")
+ECS_CLUSTER=$(terraform output -raw ecs_cluster)
+ECS_SERVICE=$(terraform output -raw ecs_service)
+TASK_FAMILY="cdl-api"
+TASK_SG=$(terraform output -raw ecs_task_security_group_id)
+# Convert Terraform list output ["subnet-a","subnet-b"] → subnet-a,subnet-b
+SUBNETS=$(terraform output -json public_subnet_ids | jq -r 'join(",")')
+
+echo "==> S3:  $S3_BUCKET"
+
+# ── Step 4: Update ECS task definition and service ───────────────────────────
 echo "==> Registering new ECS task definition..."
 
 CURRENT_TASK=$(aws ecs describe-task-definition \
@@ -76,7 +88,16 @@ aws ecs update-service \
   --force-new-deployment \
   --output json > /dev/null
 
-# ── Step 3b: Seed database (first deploy only) ────────────────────────────────
+# Wait for ECS to finish the rolling deployment before proceeding.
+# This ensures new tasks are healthy before we consider the deploy done.
+echo "==> Waiting for ECS service to stabilize..."
+aws ecs wait services-stable \
+  --region "$REGION" \
+  --cluster "$ECS_CLUSTER" \
+  --services "$ECS_SERVICE"
+echo "==> ECS service is stable."
+
+# ── Step 4b: Seed database (first deploy only) ────────────────────────────────
 # Run the seeder as a one-off Fargate task inside the VPC so it can reach
 # the private RDS instance. The container image already has the CSV files baked in.
 # Usage: SEED=true ./deploy/deploy.sh
@@ -115,7 +136,7 @@ if [ "$SEED" = "true" ]; then
   echo "==> Seeder finished successfully."
 fi
 
-# ── Step 4: Build and upload frontend ────────────────────────────────────────
+# ── Step 5: Build and upload frontend ────────────────────────────────────────
 echo "==> Building React frontend..."
 cd "$FRONTEND_DIR"
 npm ci
@@ -130,7 +151,7 @@ aws s3 sync dist/ "s3://${S3_BUCKET}/" \
 aws s3 cp dist/index.html "s3://${S3_BUCKET}/index.html" \
   --cache-control "no-cache, no-store, must-revalidate"
 
-# ── Step 5: Invalidate CloudFront cache ───────────────────────────────────────
+# ── Step 6: Invalidate CloudFront cache ───────────────────────────────────────
 if [ -n "$CF_DIST_ID" ]; then
   echo "==> Invalidating CloudFront cache..."
   aws cloudfront create-invalidation \

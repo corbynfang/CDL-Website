@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import { getTeamLogo, getPlayerAvatar } from "../utils/assets";
+import { getTeamLogo } from "../utils/logoAssets";
+import { getPlayerAvatar } from "../utils/avatarAssets";
 import type { Player, Team, Franchise } from "../types";
 
 interface FranchiseResponse {

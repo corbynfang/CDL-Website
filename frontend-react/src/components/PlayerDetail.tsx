@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import { getPlayerAvatar } from "../utils/assets";
+import { getPlayerAvatar } from "../utils/avatarAssets";
 import type { Player } from "../types";
 
 const TABS = [

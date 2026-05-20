@@ -149,19 +149,19 @@ func runEWC2025Fix() {
 	db := database.DB
 
 	// Load all EWC 2025 matches split by source.
-	var bpMatches, enrichedMatches []matchDetail
+	var primaryMatches, enrichedMatches []matchDetail
 
 	db.Table("matches").
 		Where("tournament_id = ? AND liquipedia_url LIKE 'https://www.breakingpoint%'", ewcTournamentID).
 		Select("id, team1_id, team2_id, team1_score, team2_score, bracket_round, bracket_position, liquipedia_url").
-		Scan(&bpMatches)
+		Scan(&primaryMatches)
 
 	db.Table("matches").
 		Where("tournament_id = ? AND liquipedia_url LIKE 'enriched:EWC2025%'", ewcTournamentID).
 		Select("id, team1_id, team2_id, team1_score, team2_score, bracket_round, bracket_position, liquipedia_url").
 		Scan(&enrichedMatches)
 
-	log.Printf("[ewc2025] %d era_finals (BP URL) matches, %d enriched matches", len(bpMatches), len(enrichedMatches))
+	log.Printf("[ewc2025] %d era_finals (source URL) matches, %d enriched matches", len(primaryMatches), len(enrichedMatches))
 
 	// Build a normalised key for matching: use LEAST/GREATEST on team IDs + scores.
 	type matchKey struct{ t1, t2, s1, s2 uint }
@@ -172,9 +172,9 @@ func runEWC2025Fix() {
 		return matchKey{m.Team2ID, m.Team1ID, uint(m.Team2Score), uint(m.Team1Score)}
 	}
 
-	bpByKey := map[matchKey]matchDetail{}
-	for _, m := range bpMatches {
-		bpByKey[norm(m)] = m
+	primaryByKey := map[matchKey]matchDetail{}
+	for _, m := range primaryMatches {
+		primaryByKey[norm(m)] = m
 	}
 
 	type pair struct {
@@ -187,8 +187,8 @@ func runEWC2025Fix() {
 
 	for _, e := range enrichedMatches {
 		k := norm(e)
-		if bp, ok := bpByKey[k]; ok {
-			pairs = append(pairs, pair{keep: bp, del: e, hasDup: true})
+		if primary, ok := primaryByKey[k]; ok {
+			pairs = append(pairs, pair{keep: primary, del: e, hasDup: true})
 		} else {
 			enrichedOnly = append(enrichedOnly, e)
 		}

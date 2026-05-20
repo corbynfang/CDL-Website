@@ -1,0 +1,2 @@
+database_url = "postgresql://USER:PASSWORD@HOST:5432/DATABASE"
+alert_email  = "you@example.com"
