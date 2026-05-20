@@ -41,6 +41,17 @@ func seedSeasonStats(db *gorm.DB, cfg seasonStatCfg, seasonID uint, teamLookup m
 		}
 		return strings.TrimSpace(rec[i])
 	}
+	// getFirst tries each name in order and returns the first non-empty value.
+	// Needed because MW3's CSV uses "CTL Maps" (→ ctl_maps) while other seasons
+	// use "ctl_maps_played".
+	getFirst := func(rec []string, names ...string) string {
+		for _, name := range names {
+			if v := get(rec, name); v != "" {
+				return v
+			}
+		}
+		return ""
+	}
 
 	// A virtual "Season Stats" tournament holds all aggregate rows.
 	// It's not a real event — just a DB container so PlayerTournamentStats has a tournament_id.
@@ -101,9 +112,9 @@ func seedSeasonStats(db *gorm.DB, cfg seasonStatCfg, seasonID uint, teamLookup m
 			SndKPerMap:      atof(get(rec, "snd_kpr")),
 			SndMaps:         atoi(get(rec, "snd_maps_played")),
 			ControlKDRatio:  atof(get(rec, "ctl_kd")),
-			ControlKPerMap:  atof(get(rec, "ctl_k/10m")),
+			ControlKPerMap:  atof(getFirst(rec, "ctl_k/10m", "ctl_k_per_10m")),
 			ControlCaptures: atoi(get(rec, "ctl_ticks")),
-			ControlMaps:     atoi(get(rec, "ctl_maps_played")),
+			ControlMaps:     atoi(getFirst(rec, "ctl_maps_played", "ctl_maps")),
 		})
 	}
 

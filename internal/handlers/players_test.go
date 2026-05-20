@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -172,5 +173,68 @@ func TestGetPlayers_CountDBError(t *testing.T) {
 	var body map[string]string
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
 	assert.Contains(t, body["error"], "Failed to fetch players")
+}
+
+// ── GetPlayerMatches ──────────────────────────────────────────────────────────
+
+func TestGetPlayerMatches_InvalidID(t *testing.T) {
+	c, w := newCtx(gin.Params{{Key: "id", Value: "notanumber"}}, "")
+	GetPlayerMatches(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestGetPlayerMatches_EmptyResponse(t *testing.T) {
+	mock := setupMockDB(t)
+
+	// GORM fires one SELECT on player_match_stats; 0 rows means no preload queries.
+	mock.ExpectQuery(`SELECT \* FROM "player_match_stats"`).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "match_id", "player_id", "team_id",
+			"maps_played", "total_kills", "total_deaths", "total_assists",
+			"total_damage", "kd_ratio", "kda_ratio", "adr",
+			"created_at", "updated_at",
+		}))
+
+	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
+	GetPlayerMatches(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var body map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+	events, _ := body["events"].([]interface{})
+	assert.Empty(t, events)
+	assert.Equal(t, float64(0), body["total"])
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+// ── sortEventsByRecentMatch ───────────────────────────────────────────────────
+
+func TestSortEventsByRecentMatch_OrdersByRecentMatchFirst(t *testing.T) {
+	// Event B (match_id 5) was built before event A (match_id 10) — simulates map iteration.
+	events := []gin.H{
+		{"event": "B", "matches": []gin.H{{"match_id": uint(5)}}},
+		{"event": "A", "matches": []gin.H{{"match_id": uint(10)}}},
+	}
+	sortEventsByRecentMatch(events)
+	assert.Equal(t, "A", events[0]["event"])
+	assert.Equal(t, "B", events[1]["event"])
+}
+
+func TestSortEventsByRecentMatch_EmptyMatchesLastRight(t *testing.T) {
+	events := []gin.H{
+		{"event": "empty", "matches": []gin.H{}},
+		{"event": "has-match", "matches": []gin.H{{"match_id": uint(1)}}},
+	}
+	sortEventsByRecentMatch(events)
+	assert.Equal(t, "has-match", events[0]["event"])
+	assert.Equal(t, "empty", events[1]["event"])
+}
+
+func TestSortEventsByRecentMatch_StableOnSingleEvent(t *testing.T) {
+	events := []gin.H{
+		{"event": "only", "matches": []gin.H{{"match_id": uint(7)}}},
+	}
+	sortEventsByRecentMatch(events)
+	assert.Equal(t, "only", events[0]["event"])
 }
 

@@ -8,6 +8,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -117,7 +118,9 @@ func GetPlayerKDStats(c *gin.Context) {
 	}
 
 	var totalKills, totalDeaths, totalAssists int
-	var totalHpK, totalHpD, totalSndK, totalSndD, totalCtlK, totalCtlD int
+	var totalHpK, totalHpD, totalSndK, totalSndD int
+	var ctlKDSum float64
+	var ctlMapsTotal int
 
 	tournamentList := make([]gin.H, 0, len(tournamentStats))
 	for _, stat := range tournamentStats {
@@ -128,8 +131,10 @@ func GetPlayerKDStats(c *gin.Context) {
 		totalHpD += stat.HpDeaths
 		totalSndK += stat.SndKills
 		totalSndD += stat.SndDeaths
-		totalCtlK += stat.ControlKills
-		totalCtlD += stat.ControlDeaths
+		if stat.ControlMaps > 0 {
+			ctlKDSum += stat.ControlKDRatio * float64(stat.ControlMaps)
+			ctlMapsTotal += stat.ControlMaps
+		}
 		tournamentList = append(tournamentList, gin.H{
 			"tournament_id":   stat.TournamentID,
 			"tournament_name": stat.Tournament.Name,
@@ -151,7 +156,12 @@ func GetPlayerKDStats(c *gin.Context) {
 		"avg_kd":           calculateKD(totalKills, totalDeaths),
 		"hp_kd_ratio":      calculateKD(totalHpK, totalHpD),
 		"snd_kd_ratio":     calculateKD(totalSndK, totalSndD),
-		"control_kd_ratio": calculateKD(totalCtlK, totalCtlD),
+		"control_kd_ratio": func() float64 {
+			if ctlMapsTotal == 0 {
+				return 0
+			}
+			return ctlKDSum / float64(ctlMapsTotal)
+		}(),
 		"tournament_stats": tournamentList,
 	})
 }
@@ -236,6 +246,7 @@ func GetPlayerMatches(c *gin.Context) {
 	for _, event := range eventsMap {
 		events = append(events, event)
 	}
+	sortEventsByRecentMatch(events)
 
 	c.JSON(http.StatusOK, gin.H{
 		"player_id": playerID,
@@ -377,5 +388,25 @@ func GetPlayerFranchiseCareer(c *gin.Context) {
 		"player_id":  playerID,
 		"gamertag":   player.Gamertag,
 		"franchises": result,
+	})
+}
+
+// sortEventsByRecentMatch sorts events so the event containing the highest (most recent)
+// match_id is first. Matches within each event are already ordered DESC by the query,
+// so events[i]["matches"][0] holds the most recent match for that event.
+// This ensures the frontend's flatMap produces a globally-recency-sorted list.
+func sortEventsByRecentMatch(events []gin.H) {
+	sort.Slice(events, func(i, j int) bool {
+		iMatches, _ := events[i]["matches"].([]gin.H)
+		jMatches, _ := events[j]["matches"].([]gin.H)
+		if len(iMatches) == 0 {
+			return false
+		}
+		if len(jMatches) == 0 {
+			return true
+		}
+		iID, _ := iMatches[0]["match_id"].(uint)
+		jID, _ := jMatches[0]["match_id"].(uint)
+		return iID > jID
 	})
 }

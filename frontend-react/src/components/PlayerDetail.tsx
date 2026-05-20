@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { getPlayerAvatar } from "../utils/avatarAssets";
+import { getKdColorClass } from "../utils/kdUtils";
 import type { Player } from "../types";
 
 const TABS = [
@@ -66,7 +67,8 @@ const PlayerDetail = () => {
   }
 
   const events = matchesData?.events || [];
-  const allMatches = events.flatMap((e: any) => e.matches || []);
+  const allMatches = (events.flatMap((e: any) => e.matches || []) as any[])
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const last5Matches = allMatches.slice(0, 5);
   const tournamentStats = stats?.tournament_stats || [];
 
@@ -159,7 +161,7 @@ const PlayerDetail = () => {
               <div key={label}>
                 <div className="flex justify-between items-baseline mb-2">
                   <p className="text-xs text-[#737373]">{label}</p>
-                  <p className="font-mono font-bold text-white text-sm">
+                  <p className={`font-mono font-bold text-sm ${getKdColorClass(value)}`}>
                     {value.toFixed(2)}
                   </p>
                 </div>
@@ -242,13 +244,13 @@ const PlayerDetail = () => {
                         </div>
                         <div className="flex gap-5 text-right items-center">
                           {[
-                            { label: "K/D", value: typeof match.kd === "number" ? match.kd.toFixed(2) : "0.00" },
-                            { label: "K", value: match.kills || "0" },
-                            { label: "D", value: match.deaths || "0" },
-                          ].map(({ label, value }) => (
+                            { label: "K/D", value: typeof match.kd === "number" ? match.kd.toFixed(2) : "0.00", color: getKdColorClass(match.kd) },
+                            { label: "K", value: match.kills || "0", color: "text-white" },
+                            { label: "D", value: match.deaths || "0", color: "text-white" },
+                          ].map(({ label, value, color }) => (
                             <div key={label}>
                               <p className="text-xs text-[#737373] uppercase mb-0.5">{label}</p>
-                              <p className="text-white font-bold text-sm font-mono">{value}</p>
+                              <p className={`font-bold text-sm font-mono ${color}`}>{value}</p>
                             </div>
                           ))}
                           <span className="text-[#404040] text-xs ml-2">→</span>
@@ -303,7 +305,7 @@ const PlayerDetail = () => {
                                   <td className={`px-3 py-2 text-xs font-bold font-mono ${match.result?.startsWith("W") ? "text-green-400" : "text-[#737373]"}`}>
                                     {match.result || "—"}
                                   </td>
-                                  <td className="px-3 py-2 text-white text-xs font-bold font-mono">
+                                  <td className={`px-3 py-2 text-xs font-bold font-mono ${getKdColorClass(match.kd)}`}>
                                     {typeof match.kd === "number" ? match.kd.toFixed(2) : "0.00"}
                                   </td>
                                   <td className="px-3 py-2 text-[#737373] text-xs font-mono">{match.kills || "0"}</td>
@@ -354,7 +356,7 @@ const PlayerDetail = () => {
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-[#737373] uppercase tracking-wider mb-0.5">K/D</p>
-                          <p className="font-mono font-bold text-white text-xl">
+                          <p className={`font-mono font-bold text-xl ${getKdColorClass(t.kd_ratio)}`}>
                             {t.kd_ratio?.toFixed(2) || "0.00"}
                           </p>
                         </div>
