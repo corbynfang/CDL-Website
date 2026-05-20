@@ -53,6 +53,9 @@ export const teamLogoKeys: Record<string, string> = {
   'miami heretics':            'miamiheretics',
   'team heretics':             'teamheretics',
 
+  // G2 Esports (international — distinct from G2 Minnesota CDL franchise)
+  'g2 esports':                'g2esportslogo',
+
   // Minnesota
   'minnesota røkkr':           'minnesotarokker',
   'g2 minnesota':              'g2minnesota',
@@ -71,7 +74,7 @@ export const teamLogoKeys: Record<string, string> = {
   'team falcons':              'newriyadhfalconslogo',
 
   // Toronto
-  'toronto ultra':             'torontonewlogo',
+  'toronto ultra':             'torontoultra',
   'toronto koi':               'torontokoi',
 
   // Vancouver / Seattle
