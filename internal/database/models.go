@@ -343,7 +343,7 @@ type PlayerTransfer struct {
 	TransferDate time.Time `json:"transfer_date"`
 	TransferType string    `json:"transfer_type" gorm:"size:50"` // Signing | Transfer | Release | Retirement | Role Change
 	Role         string    `json:"role" gorm:"size:50"`
-	GameCode     string    `json:"game_code" gorm:"size:10"` // BO6, CW, MW2, MW3, VG
+	GameCode     string    `json:"game_code" gorm:"size:10"` // BO6, CW, MW2, MW3, VG (Will add more sesaons in the future!)
 	Season       string    `json:"season" gorm:"size:50"`
 	Description  string    `json:"description" gorm:"size:500"`
 

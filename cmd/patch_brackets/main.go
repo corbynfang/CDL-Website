@@ -1,16 +1,5 @@
 package main
 
-// cmd/patch_brackets — standalone runner for the bracket position patch.
-// Reads the three bracket CSV files and applies UPDATE bracket_round +
-// bracket_position to matching matches already in the DB.
-//
-// Needs only DATABASE_URL in the environment. Run from the repo root:
-//
-//	DATABASE_URL=... go run ./cmd/patch_brackets/
-//
-// Matches by (tournament_id, team pair, scores) in either orientation,
-// identical to the logic in cmd/seed/phase6_bracket_patches.go.
-
 import (
 	"encoding/csv"
 	"fmt"

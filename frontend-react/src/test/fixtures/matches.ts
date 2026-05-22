@@ -92,22 +92,33 @@ export const cdlGroupBracketData: BracketData = {
   },
 }
 
+const ewcQF1 = makeBracketMatch({ id: 20, bracket_position: 1, winner_id: 1 })
+const ewcQF2 = makeBracketMatch({ id: 21, bracket_position: 2, winner_id: 1 })
+const ewcSF1 = makeBracketMatch({ id: 22, bracket_position: 1, winner_id: 1 })
+const ewcGF  = makeBracketMatch({ id: 23, bracket_position: 1, winner_id: null, team1_score: 0, team2_score: 0 })
+const ewcTP  = makeBracketMatch({ id: 24, bracket_position: 1, winner_id: null, team1_score: 0, team2_score: 0 })
+const ewcOpenA1 = makeBracketMatch({ id: 30, bracket_position: 1, winner_id: 1 })
+const ewcOpenA2 = makeBracketMatch({ id: 31, bracket_position: 2, winner_id: 1 })
+
 export const ewcBracketData: BracketData = {
   tournament_id: 53,
   tournament_name: 'Esports World Cup 2025',
   total_matches: 10,
   event_format: 'ewc_group_stage_single_elim',
   bracket: {
-    quarterfinal:      [bracketMatchComplete],
-    semifinal:         [bracketMatchComplete],
-    grand_finals:      [bracketMatchNoWinner],
-    third_place_match: [bracketMatchNoWinner],
+    quarterfinal:      [ewcQF1, ewcQF2],
+    semifinal:         [ewcSF1],
+    grand_finals:      [ewcGF],
+    third_place_match: [ewcTP],
   },
   group_stage: {
-    opening_match:             [bracketMatchComplete],
-    winners_match:             [bracketMatchComplete],
-    group_play_a_winners_round_1: [bracketMatchComplete],
-    group_play_b_lower_round_1:   [bracketMatchComplete],
+    group_play_a_opening_match:     [ewcOpenA1, ewcOpenA2],
+    group_play_a_winners_match:     [bracketMatchComplete],
+    group_play_a_elimination_match: [bracketMatchComplete],
+    group_play_a_decider_match:     [bracketMatchComplete],
+    // extra keys used by GroupStageView tests (ignored by BracketTree layout)
+    group_play_a_winners_round_1:   [bracketMatchComplete],
+    group_play_b_lower_round_1:     [bracketMatchComplete],
   },
 }
 
@@ -123,7 +134,7 @@ export const ewcNoPlayoffData: BracketData = {
     third_place_match: [],
   },
   group_stage: {
-    opening_match: [bracketMatchComplete],
-    winners_match: [bracketMatchComplete],
+    group_play_a_opening_match: [makeBracketMatch({ id: 40, bracket_position: 1, winner_id: 1 })],
+    group_play_a_winners_match: [bracketMatchComplete],
   },
 }

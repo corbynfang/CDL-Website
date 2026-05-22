@@ -1,12 +1,5 @@
 package main
 
-// cmd/validate/main.go — pre-seed CSV validator.
-// Run this before go run ./cmd/seed/ to catch malformed data early.
-// Exits 0 if all checks pass, 1 if any errors are found.
-//
-// Usage:
-//   go run ./cmd/validate/
-
 import (
 	"fmt"
 	"os"

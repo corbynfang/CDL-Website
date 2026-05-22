@@ -89,30 +89,29 @@ describe('EventBracket', () => {
     expect(screen.getByText(/round 1/i)).toBeInTheDocument()
   })
 
-  it('EWC shows Bracket and Group Stage tabs', () => {
+  it('EWC shows no tabs — uses combined tree view', () => {
     wrap(<EventBracket data={ewcBracketData} loading={false} error={null} />)
-    expect(screen.getByRole('button', { name: /^bracket$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^group stage$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^bracket$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^group stage$/i })).not.toBeInTheDocument()
   })
 
-  it('EWC defaults to Group Stage tab', () => {
+  it('EWC renders match cards in combined tree', () => {
     wrap(<EventBracket data={ewcBracketData} loading={false} error={null} />)
-    // Group stage content visible
-    expect(screen.getByText(/opening match/i)).toBeInTheDocument()
-    // Bracket section labels absent
-    expect(screen.queryByText('Winners Bracket')).not.toBeInTheDocument()
+    // Match abbreviations rendered by BracketMatchCard
+    expect(screen.getAllByText('OTX').length).toBeGreaterThan(0)
   })
 
-  it('EWC switches to Bracket tab on click', async () => {
+  it('EWC tree shows zoom controls', () => {
     wrap(<EventBracket data={ewcBracketData} loading={false} error={null} />)
-    await userEvent.click(screen.getByRole('button', { name: /^bracket$/i }))
-    // 'Quarterfinal' appears in both BracketControls button and canvas column header
-    expect(screen.getAllByText('Quarterfinal').length).toBeGreaterThan(0)
+    // BracketTree renders +/- zoom buttons
+    expect(screen.getByRole('button', { name: '+' })).toBeInTheDocument()
   })
 
-  it('EWC shows playoff empty state when bracket has no matches', async () => {
+  it('EWC with only group stage data renders tree (no empty state)', () => {
     wrap(<EventBracket data={ewcNoPlayoffData} loading={false} error={null} />)
-    await userEvent.click(screen.getByRole('button', { name: /^bracket$/i }))
-    expect(screen.getByText(/playoff bracket data is not available/i)).toBeInTheDocument()
+    // Should NOT show the generic "no bracket matches" empty state
+    expect(screen.queryByText(/no bracket matches/i)).not.toBeInTheDocument()
+    // Match cards from group stage are rendered
+    expect(screen.getAllByText('OTX').length).toBeGreaterThan(0)
   })
 })
