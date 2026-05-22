@@ -180,13 +180,16 @@ func GetPlayerMatches(c *gin.Context) {
 
 	var matchStats []database.PlayerMatchStats
 	if err := database.DB.WithContext(ctx).
-		Where("player_id = ?", playerID).
+		Where("player_match_stats.player_id = ?", playerID).
 		Preload("Match").
 		Preload("Match.Tournament").
 		Preload("Match.Team1").
 		Preload("Match.Team2").
 		Preload("Team").
-		Order("match_id DESC").
+		Joins("JOIN matches ON matches.id = player_match_stats.match_id").
+		// Sort by real match_date descending; push zero-date rows (0001-01-01) to end.
+		// Tie-break by match_id DESC for same-date matches.
+		Order("CASE WHEN matches.match_date <= '0001-01-02 00:00:00+00'::timestamptz THEN 0 ELSE 1 END DESC, matches.match_date DESC, player_match_stats.match_id DESC").
 		Limit(100).
 		Find(&matchStats).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player matches"})
@@ -391,10 +394,11 @@ func GetPlayerFranchiseCareer(c *gin.Context) {
 	})
 }
 
-// sortEventsByRecentMatch sorts events so the event containing the highest (most recent)
-// match_id is first. Matches within each event are already ordered DESC by the query,
-// so events[i]["matches"][0] holds the most recent match for that event.
-// This ensures the frontend's flatMap produces a globally-recency-sorted list.
+// sortEventsByRecentMatch sorts events so the event with the most recent match comes
+// first. Matches within each event are already ordered by the query (real dates first,
+// zero-date rows last), so events[i]["matches"][0] holds the most recent real match.
+// Comparison uses the RFC3339 "date" string: "2025-..." sorts after "0001-..." and
+// after "" lexicographically, so real-dated events naturally precede undated ones.
 func sortEventsByRecentMatch(events []gin.H) {
 	sort.Slice(events, func(i, j int) bool {
 		iMatches, _ := events[i]["matches"].([]gin.H)
@@ -405,8 +409,8 @@ func sortEventsByRecentMatch(events []gin.H) {
 		if len(jMatches) == 0 {
 			return true
 		}
-		iID, _ := iMatches[0]["match_id"].(uint)
-		jID, _ := jMatches[0]["match_id"].(uint)
-		return iID > jID
+		iDate, _ := iMatches[0]["date"].(string)
+		jDate, _ := jMatches[0]["date"].(string)
+		return iDate > jDate
 	})
 }

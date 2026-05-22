@@ -188,8 +188,11 @@ func TestGetPlayerMatches_InvalidID(t *testing.T) {
 func TestGetPlayerMatches_EmptyResponse(t *testing.T) {
 	mock := setupMockDB(t)
 
-	// GORM fires one SELECT on player_match_stats; 0 rows means no preload queries.
-	mock.ExpectQuery(`SELECT \* FROM "player_match_stats"`).
+	// GetPlayerMatches now JOINs matches for date-based ordering.
+	// GORM emits SELECT "player_match_stats".* FROM "player_match_stats"
+	// JOIN matches ON ... WHERE player_match_stats.player_id = ? ...
+	// Zero rows returned → no preload queries fire.
+	mock.ExpectQuery(`SELECT .+ FROM "player_match_stats" JOIN matches`).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "match_id", "player_id", "team_id",
 			"maps_played", "total_kills", "total_deaths", "total_assists",
@@ -210,6 +213,75 @@ func TestGetPlayerMatches_EmptyResponse(t *testing.T) {
 }
 
 // ── sortEventsByRecentMatch ───────────────────────────────────────────────────
+
+// TestSortEventsByRecentMatch_DateOverMatchID proves that EWC 2025 (real date,
+// low match IDs 252-275) is sorted above CDL Major 1 2023 (zero date, high match
+// IDs 1240+). The old match_id-based sort would place CDL 2023 first; the new
+// date-based sort must place EWC 2025 first.
+func TestSortEventsByRecentMatch_DateOverMatchID(t *testing.T) {
+	events := []gin.H{
+		{
+			"event":         "CDL Major 1 2023",
+			"tournament_id": uint(14),
+			"matches": []gin.H{
+				// High match_id but zero date (stored as Go zero-time).
+				{"match_id": uint(1266), "date": "0001-01-01T00:00:00Z"},
+				{"match_id": uint(1259), "date": "0001-01-01T00:00:00Z"},
+			},
+		},
+		{
+			"event":         "Esports World Cup 2025",
+			"tournament_id": uint(52),
+			"matches": []gin.H{
+				// Low match_id but real date — must appear first.
+				{"match_id": uint(275), "date": "2025-07-26T18:30:00Z"},
+				{"match_id": uint(263), "date": "2025-07-24T19:30:00Z"},
+			},
+		},
+	}
+
+	sortEventsByRecentMatch(events)
+
+	require.Len(t, events, 2)
+	assert.Equal(t, "Esports World Cup 2025", events[0]["event"],
+		"EWC 2025 must be first despite lower match_ids (275 < 1266)")
+	assert.Equal(t, "CDL Major 1 2023", events[1]["event"],
+		"CDL Major 1 2023 must be second because its matches have zero dates")
+}
+
+// TestSortEventsByRecentMatch_RealDatesOrdered verifies that among multiple
+// tournaments with real dates the most recent one comes first.
+func TestSortEventsByRecentMatch_RealDatesOrdered(t *testing.T) {
+	events := []gin.H{
+		{
+			"event":   "EWC 2024",
+			"matches": []gin.H{{"match_id": uint(1202), "date": "2024-08-17T00:00:00Z"}},
+		},
+		{
+			"event":   "EWC 2025",
+			"matches": []gin.H{{"match_id": uint(275), "date": "2025-07-26T18:30:00Z"}},
+		},
+	}
+
+	sortEventsByRecentMatch(events)
+
+	assert.Equal(t, "EWC 2025", events[0]["event"])
+	assert.Equal(t, "EWC 2024", events[1]["event"])
+}
+
+// TestSortEventsByRecentMatch_EmptyEventsSink ensures events with no matches
+// sink to the bottom regardless of the other event's dates.
+func TestSortEventsByRecentMatch_EmptyEventsSink(t *testing.T) {
+	events := []gin.H{
+		{"event": "Empty Event", "matches": []gin.H{}},
+		{"event": "EWC 2025", "matches": []gin.H{{"match_id": uint(275), "date": "2025-07-26T18:30:00Z"}}},
+	}
+
+	sortEventsByRecentMatch(events)
+
+	assert.Equal(t, "EWC 2025", events[0]["event"])
+	assert.Equal(t, "Empty Event", events[1]["event"])
+}
 
 // ── GetPlayerKDStats ──────────────────────────────────────────────────────────
 
@@ -380,10 +452,10 @@ func TestGetPlayerMatches_ResponseShape(t *testing.T) {
 // ── sortEventsByRecentMatch ───────────────────────────────────────────────────
 
 func TestSortEventsByRecentMatch_OrdersByRecentMatchFirst(t *testing.T) {
-	// Event B (match_id 5) was built before event A (match_id 10) — simulates map iteration.
+	// Sort is now date-based: event with the most recent RFC3339 date comes first.
 	events := []gin.H{
-		{"event": "B", "matches": []gin.H{{"match_id": uint(5)}}},
-		{"event": "A", "matches": []gin.H{{"match_id": uint(10)}}},
+		{"event": "B", "matches": []gin.H{{"match_id": uint(5), "date": "2024-08-01T00:00:00Z"}}},
+		{"event": "A", "matches": []gin.H{{"match_id": uint(10), "date": "2025-07-26T00:00:00Z"}}},
 	}
 	sortEventsByRecentMatch(events)
 	assert.Equal(t, "A", events[0]["event"])
@@ -393,7 +465,7 @@ func TestSortEventsByRecentMatch_OrdersByRecentMatchFirst(t *testing.T) {
 func TestSortEventsByRecentMatch_EmptyMatchesLastRight(t *testing.T) {
 	events := []gin.H{
 		{"event": "empty", "matches": []gin.H{}},
-		{"event": "has-match", "matches": []gin.H{{"match_id": uint(1)}}},
+		{"event": "has-match", "matches": []gin.H{{"match_id": uint(1), "date": "2025-01-01T00:00:00Z"}}},
 	}
 	sortEventsByRecentMatch(events)
 	assert.Equal(t, "has-match", events[0]["event"])
@@ -402,7 +474,7 @@ func TestSortEventsByRecentMatch_EmptyMatchesLastRight(t *testing.T) {
 
 func TestSortEventsByRecentMatch_StableOnSingleEvent(t *testing.T) {
 	events := []gin.H{
-		{"event": "only", "matches": []gin.H{{"match_id": uint(7)}}},
+		{"event": "only", "matches": []gin.H{{"match_id": uint(7), "date": "2025-07-26T00:00:00Z"}}},
 	}
 	sortEventsByRecentMatch(events)
 	assert.Equal(t, "only", events[0]["event"])
