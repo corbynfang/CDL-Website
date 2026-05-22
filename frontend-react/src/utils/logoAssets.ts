@@ -106,6 +106,8 @@ export const teamLogoKeys: Record<string, string> = {
   'clutch rayn esport':        'clutchraynesportlogo',
   'convoy gaming':             'convoygaminglogo',
   'decimate gaming':           'decimategaminglogo',
+  'elevate':                   'elevatelogo_square',
+  'pollodrom':                 'pollodromlogo_square',
   'deviance x notorious':      'deviancexnotoriouslogo',
   'eastr':                     'eastrlogo',
   'electrify steel gaming black': 'electrifysteelgamingblacklogo',
