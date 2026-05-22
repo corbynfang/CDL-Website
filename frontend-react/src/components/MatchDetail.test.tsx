@@ -36,8 +36,9 @@ describe('MatchDetail — response contract rendering', () => {
   it('renders both team names', () => {
     mockUseApi.mockReturnValue({ data: matchDetailFixture, loading: false, error: null, refetch: vi.fn() })
     renderMatch()
-    expect(screen.getByText('OpTic Texas')).toBeInTheDocument()
-    expect(screen.getByText('Atlanta FaZe')).toBeInTheDocument()
+    // Team names appear in both the header and per-map scoreboards.
+    expect(screen.getAllByText('OpTic Texas').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Atlanta FaZe').length).toBeGreaterThan(0)
   })
 
   it('renders team abbreviations', () => {
@@ -133,16 +134,16 @@ describe('MatchDetail — player stats in scoreboard', () => {
   it('renders HP mode header column', () => {
     mockUseApi.mockReturnValue({ data: matchDetailFixture, loading: false, error: null, refetch: vi.fn() })
     renderMatch()
-    // Hardpoint map adds "Hill" column
-    expect(screen.getByText('Hill')).toBeInTheDocument()
+    // "Hill" appears once per Hardpoint map scoreboard; use getAllByText when multiple HP maps are present.
+    expect(screen.getAllByText('Hill').length).toBeGreaterThan(0)
   })
 
   it('renders SND mode header columns', () => {
     mockUseApi.mockReturnValue({ data: matchDetailFixture, loading: false, error: null, refetch: vi.fn() })
     renderMatch()
-    // Search and Destroy map adds Plants, Defuses, FB columns
-    expect(screen.getByText('Plants')).toBeInTheDocument()
-    expect(screen.getByText('Defuses')).toBeInTheDocument()
-    expect(screen.getByText('FB')).toBeInTheDocument()
+    // Column headers appear once per S&D map scoreboard; use getAllByText when multiple S&D maps are present.
+    expect(screen.getAllByText('Plants').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Defuses').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('FB').length).toBeGreaterThan(0)
   })
 })
