@@ -92,6 +92,12 @@ export const teamLogoKeys: Record<string, string> = {
   '18andcracked':              'callofdutychallengersplaceholderforchallengerteams',
   'slammed':                   'callofdutychallengersplaceholderforchallengerteams',
 
+  // ── Qualifier-only teams (real logos) ────────────────────────────────────────
+  'aw0babobs':                 'aw0babobslogo_square',
+  'd1 gaming la':              'd1_gaminglogo_square',
+  'exm esports':               'exm_esports_allmode',
+  'faze vegas':                'faze_vegaslogo_square',
+
   // ── Challenger Orgs (real logos) ─────────────────────────────────────────────
   'fantastic four':            'fantasticfourlogo',
   'fc black':                  'fc_blacklogo_square',
