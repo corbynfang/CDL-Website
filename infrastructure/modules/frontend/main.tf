@@ -97,6 +97,38 @@ resource "aws_acm_certificate_validation" "main" {
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
+# --- CloudFront Response Headers Policy ---
+# Adds security headers to every response CloudFront sends to browsers.
+# Covers both the API and S3/frontend paths.
+
+resource "aws_cloudfront_response_headers_policy" "security" {
+  name = "${var.prefix}-security-headers"
+
+  security_headers_config {
+    content_type_options {
+      override = true
+    }
+    frame_options {
+      frame_option = "DENY"
+      override     = true
+    }
+    referrer_policy {
+      referrer_policy = "strict-origin-when-cross-origin"
+      override        = true
+    }
+    strict_transport_security {
+      access_control_max_age_sec = 31536000
+      include_subdomains         = true
+      override                   = true
+    }
+    xss_protection {
+      mode_block = true
+      protection = true
+      override   = true
+    }
+  }
+}
+
 # --- CloudFront Distribution ---
 
 resource "aws_cloudfront_distribution" "main" {
@@ -128,11 +160,12 @@ resource "aws_cloudfront_distribution" "main" {
 
   # Default behavior: all traffic goes to S3
   default_cache_behavior {
-    target_origin_id       = "s3-frontend"
-    viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD"]
-    cached_methods         = ["GET", "HEAD"]
-    compress               = true
+    target_origin_id           = "s3-frontend"
+    viewer_protocol_policy     = "redirect-to-https"
+    allowed_methods            = ["GET", "HEAD"]
+    cached_methods             = ["GET", "HEAD"]
+    compress                   = true
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
 
     forwarded_values {
       query_string = false
@@ -140,18 +173,20 @@ resource "aws_cloudfront_distribution" "main" {
     }
 
     min_ttl     = 0
-    default_ttl = 86400   # 1 day
+    default_ttl = 86400    # 1 day
     max_ttl     = 31536000 # 1 year
   }
 
-  # Ordered behavior: /api/* goes to the ALB, not cached
+  # Ordered behavior: /api/* goes to the ALB, not cached.
+  # Only GET/HEAD/OPTIONS allowed — the API is read-only.
   ordered_cache_behavior {
-    path_pattern           = "/api/*"
-    target_origin_id       = "alb-api"
-    viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods         = ["GET", "HEAD"]
-    compress               = false
+    path_pattern               = "/api/*"
+    target_origin_id           = "alb-api"
+    viewer_protocol_policy     = "redirect-to-https"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    compress                   = false
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
 
     forwarded_values {
       query_string = true

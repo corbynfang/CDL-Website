@@ -1,14 +1,22 @@
+# AWS-managed prefix list of all CloudFront origin-facing IPs.
+# Using this instead of 0.0.0.0/0 ensures the ALB only accepts traffic that
+# actually came through CloudFront — direct hits to the ALB DNS name are dropped
+# at the security-group level before they reach the application.
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
+}
+
 resource "aws_security_group" "alb" {
   name        = "${var.prefix}-alb-sg"
-  description = "Allow HTTP inbound from CloudFront"
+  description = "Allow HTTP inbound from CloudFront only"
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "HTTP from internet (CloudFront)"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "HTTP from CloudFront edge nodes only"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
   }
 
   egress {

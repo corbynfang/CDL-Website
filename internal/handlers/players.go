@@ -22,6 +22,9 @@ func GetPlayers(c *gin.Context) {
 
 	page, limit, offset := parsePagination(c)
 	search := c.Query("search")
+	if len(search) > 50 {
+		search = search[:50]
+	}
 
 	base := database.DB.WithContext(ctx).Model(&database.Player{})
 	if search != "" {

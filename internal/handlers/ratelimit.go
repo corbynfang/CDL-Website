@@ -12,7 +12,6 @@ package handlers
 
 import (
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -64,16 +63,16 @@ func getVisitor(ip string) *rate.Limiter {
 }
 
 // RateLimit is a Gin middleware that returns 429 when an IP exceeds the limit.
+// Uses c.ClientIP() which respects the trusted-proxy list set in main.go —
+// that makes XFF safe to read because only trusted infrastructure (the ALB)
+// can inject the header. Never parse XFF manually: a caller who hits the ALB
+// directly could forge any IP and rotate through unlimited fresh buckets.
 func RateLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// CloudFront sets X-Forwarded-For as "client-ip, cloudfront-ip".
-		// Take only the first entry — that's the real client address.
 		ip := c.ClientIP()
-		if xff := c.GetHeader("X-Forwarded-For"); xff != "" {
-			ip = strings.TrimSpace(strings.SplitN(xff, ",", 2)[0])
-		}
 
 		if !getVisitor(ip).Allow() {
+			c.Header("Retry-After", "1")
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 				"error": "Too many requests. Please slow down.",
 			})

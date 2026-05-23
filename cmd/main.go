@@ -22,6 +22,23 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 
+	// Trust only the VPC CIDR (10.0.0.0/16) — the ALB sits there and is the
+	// only machine that should be forwarding requests. With this set, c.ClientIP()
+	// walks X-Forwarded-For and returns the first IP that is NOT in the trusted
+	// range, which is the real client IP added by CloudFront.
+	if err := r.SetTrustedProxies([]string{"10.0.0.0/16"}); err != nil {
+		log.Fatalf("Failed to set trusted proxies: %v", err)
+	}
+
+	// Security headers on every response — defence-in-depth layer.
+	r.Use(func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Header("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
+		c.Next()
+	})
+
 	// CORS middleware — frontend is served from CloudFront/S3, not this server
 	r.Use(func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
@@ -91,8 +108,6 @@ func main() {
 		api.GET("/tournaments/:id/stats", handlers.GetTournamentStats)
 
 		api.GET("/transfers", handlers.GetTransfers)
-
-		api.GET("/debug/validation", handlers.GetDatabaseValidation)
 	}
 
 	// 404 for unknown API routes — CloudFront handles all non-API routes before they get here
