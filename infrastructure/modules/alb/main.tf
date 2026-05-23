@@ -8,7 +8,7 @@ data "aws_ec2_managed_prefix_list" "cloudfront" {
 
 resource "aws_security_group" "alb" {
   name        = "${var.prefix}-alb-sg"
-  description = "Allow HTTP inbound from CloudFront only"
+  description = "Allow HTTP inbound from CloudFront"
   vpc_id      = var.vpc_id
 
   ingress {

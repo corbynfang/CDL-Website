@@ -46,7 +46,7 @@ resource "aws_db_instance" "main" {
   multi_az               = false
   storage_encrypted      = true
 
-  backup_retention_period = 7    # keep 7 days of automated daily backups
+  backup_retention_period = 0    # free tier does not support automated backups
   skip_final_snapshot     = true
 
   tags = merge(var.tags, { Name = "${var.prefix}-postgres" })
