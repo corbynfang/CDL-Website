@@ -162,7 +162,7 @@ func rawRoundToDBRound(raw string) string {
 	case "Grand Finals":
 		return "grand_finals"
 	case "3rd Place Decider":
-		return "3rd_place"
+		return "third_place_match"
 	default:
 		return strings.ToLower(strings.ReplaceAll(raw, " ", "_"))
 	}

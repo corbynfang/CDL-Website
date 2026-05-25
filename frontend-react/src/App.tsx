@@ -2,9 +2,6 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
-
-// Layout, ErrorBoundary, and NotFound stay eagerly loaded — they're tiny
-// and needed on every route before any page renders.
 import NotFound from "./components/NotFound";
 
 const Home          = lazy(() => import("./components/Home"));

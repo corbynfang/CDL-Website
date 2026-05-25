@@ -58,16 +58,6 @@ func runAudit() {
 		fmt.Printf("  %-40s total=%3d  pos_zero=%d%s\n", r.Slug, r.Total, r.PosZero, flag)
 	}
 
-	// Duplicate match detection — normalized key:
-	//   tournament_id + LEAST/GREATEST(team_ids) + scores normalized to follow lower team_id
-	//   + winner_id + bracket_round
-	//
-	// Scores are normalized so that score_lower / score_higher correspond to the lower/higher
-	// team ID respectively. This prevents false positives where the same two teams produce the
-	// same raw (team1_score, team2_score) values in different orientations.
-	//
-	// bracket_round is included so that teams legitimately meeting twice in the same tournament
-	// (e.g. EWC group stage opening_match then decider_match) are never flagged.
 	fmt.Println("\n=== Duplicate match check (normalized) ===")
 	type dupRow struct {
 		TournamentID   uint
@@ -150,7 +140,6 @@ func runAudit() {
 		fmt.Printf("    id=%d src=%s rnd=%q url=%q\n", r.ID, sourceID, r.BracketRound, r.SourceURL)
 	}
 
-	// G2 Minnesota bracket_patch inserts from this run
 	type matchRow struct {
 		ID, Team1ID, Team2ID uint
 		Team1Score, Team2Score, BracketPosition int
@@ -167,7 +156,6 @@ func runAudit() {
 			m.ID, m.Team1ID, m.Team2ID, m.Team1Score, m.Team2Score, m.BracketRound, m.BracketPosition)
 	}
 
-	// Do originals exist with RØKKR (id=17)?
 	var rokkrBracket int64
 	db.Table("matches").
 		Joins("JOIN tournaments t ON t.id = matches.tournament_id").
@@ -175,7 +163,6 @@ func runAudit() {
 		Count(&rokkrBracket)
 	fmt.Printf("\n=== Minnesota RØKKR (id=17) bracket matches in majors: %d ===\n", rokkrBracket)
 
-	// Spot-check the 4 requested tournament IDs
 	fmt.Println("\n=== Spot-check requested tournament IDs ===")
 	for _, tid := range []uint{14, 36, 46, 52} {
 		var slug string

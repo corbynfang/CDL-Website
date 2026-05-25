@@ -3,7 +3,7 @@ package database
 import "time"
 
 // Franchise is a CDL franchise slot stable across team rebrands.
-// Minnesota RØKKR and G2 Minnesota are separate Team rows both pointing to the same Franchise.
+// Minnesota RØKKR and G2 Minnesota are separate Team rows both pointing to the same Franchise. (Still having query finding to being inconsistent with the website. Even though the API is having issues)
 type Franchise struct {
 	ID           uint      `json:"id" gorm:"primaryKey"`
 	FranchiseKey string    `json:"franchise_key" gorm:"uniqueIndex;not null;size:100"`

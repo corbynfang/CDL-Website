@@ -12,10 +12,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// deleteG2MinnBadInserts removes the placeholder matches inserted during the first
-// patch run when "G2 Minnesota" (team_id=85) was incorrectly looked up instead of
-// "Minnesota RØKKR" (team_id=17). These rows have a bracket_patch: dedup key and
-// carry no real match data. The historical matches with RØKKR (id=17) remain intact.
 func deleteG2MinnBadInserts() {
 	database.ConnectDatabase()
 	db := database.DB
@@ -29,16 +25,6 @@ func deleteG2MinnBadInserts() {
 	}
 	log.Printf("[cleanup] deleted %d G2 Minnesota bracket_patch placeholder rows", result.RowsAffected)
 }
-
-// ─── EWC 2025 fix ────────────────────────────────────────────────────────────
-//
-// EWC 2025 (tournament_id=52) was double-seeded:
-//   - phase2 era_finals: stored round names like "group_play_a_winners_round_1" (wrong canonical)
-//   - phase3 enriched:   stored "opening_match" without group prefix (correct base name, wrong key)
-//
-// Fix: delete era_finals BP duplicates, then update enriched records to:
-//   - bracket_round  = "group_play_a_opening_match" (group prefix + canonical name)
-//   - bracket_position = 1…N within each (round, group) block sorted by series_match_id
 
 const ewcTournamentID = 52
 
@@ -213,13 +199,10 @@ func runEWC2025Fix() {
 		fmt.Printf("  id=%-5d rnd=%q\n", e.ID, e.BracketRound)
 	}
 
-	// Now load the CSV to compute correct bracket_round + bracket_position.
 	teamLookup := buildTeamLookup(db)
 	rows := readEWC2025CSV()
 	log.Printf("[ewc2025] %d enriched EWC 2025 rows from CSV", len(rows))
 
-	// 2. Compute canonical bracket_round and position for each row.
-	//    Position = rank within (canonical_round) sorted by series_match_id (lexicographic = chronological).
 	byRound := map[string][]ewcRow{}
 	for _, row := range rows {
 		cr := ewcCanonicalRound(row.Group, row.RoundName)
@@ -238,8 +221,6 @@ func runEWC2025Fix() {
 		}
 	}
 
-	// Build lookup: (team1_id, team2_id, score1, score2) → patchInfo for BP kept matches.
-	// Also build enriched dedup-key → patchInfo for enriched-only matches.
 	type teamKey struct{ t1, t2 uint; s1, s2 int }
 	teamKeyToPatch := map[teamKey]patchInfo{}
 	enrichedKeyToPatch := map[string]patchInfo{}
@@ -256,8 +237,6 @@ func runEWC2025Fix() {
 		enrichedKeyToPatch["enriched:"+row.SeriesMatchID] = p
 	}
 
-	// 3. For each duplicate pair: confirm enriched has no player_match_stats, delete
-	//    its child rows and itself, then update the kept BP match with correct round/pos.
 	updated, deleted, skipped := 0, 0, 0
 
 	for _, pr := range pairs {
@@ -294,7 +273,6 @@ func runEWC2025Fix() {
 		}
 	}
 
-	// 4. Enriched-only matches (no BP duplicate): update bracket_round / bracket_position.
 	for _, e := range enrichedOnly {
 		p, ok := enrichedKeyToPatch[e.LiquipediaURL]
 		if !ok {
@@ -315,17 +293,6 @@ func runEWC2025Fix() {
 	printEWC2025Summary(db)
 }
 
-// ─── Toronto Koi EWC rebrand ─────────────────────────────────────────────────
-//
-// Toronto Ultra (team_id=5) competed as "Toronto Koi" at EWC events.
-// This patch creates the Toronto Koi team entry (if absent) and migrates all
-// EWC match + stats references from the Ultra team_id to the Koi team_id.
-//
-// Tables updated: matches, match_maps, player_map_stats, player_match_stats,
-//                 player_tournament_stats, team_tournament_stats.
-// Tables intentionally skipped: team_rosters (CDL season rosters only),
-//                               player_transfers (CDL context).
-
 const torontoUltraName = "Toronto Ultra"
 const torontoKoiName   = "Toronto Koi"
 
@@ -333,14 +300,12 @@ func runTorontoKoiRebrand() {
 	database.ConnectDatabase()
 	db := database.DB
 
-	// 1. Find Toronto Ultra
 	var ultra database.Team
 	if err := db.Where("name = ?", torontoUltraName).First(&ultra).Error; err != nil {
 		log.Fatalf("Toronto Ultra not found: %v", err)
 	}
 	log.Printf("[toronto] Ultra: id=%d franchise_id=%v abbr=%s", ultra.ID, ultra.FranchiseID, ultra.Abbreviation)
 
-	// 2. Find or create Toronto Koi
 	var koi database.Team
 	if err := db.Where("name = ?", torontoKoiName).First(&koi).Error; err != nil {
 		koi = database.Team{
@@ -360,7 +325,6 @@ func runTorontoKoiRebrand() {
 		log.Printf("[toronto] Found existing Toronto Koi: id=%d", koi.ID)
 	}
 
-	// 3. All international_major tournament IDs
 	var tournamentIDs []uint
 	db.Table("tournaments").Where("tournament_type = ?", "international_major").Pluck("id", &tournamentIDs)
 	log.Printf("[toronto] EWC tournaments: %v", tournamentIDs)
@@ -370,14 +334,12 @@ func runTorontoKoiRebrand() {
 		return
 	}
 
-	// 4. Find all match IDs for Toronto Ultra in those tournaments
 	var matchIDs []uint
 	db.Table("matches").
 		Where("tournament_id IN ? AND (team1_id = ? OR team2_id = ?)", tournamentIDs, ultra.ID, ultra.ID).
 		Pluck("id", &matchIDs)
 	log.Printf("[toronto] Affected matches: %v", matchIDs)
 
-	// Dry-run print
 	type matchRow struct {
 		ID           uint
 		TournamentID uint
@@ -406,53 +368,26 @@ func runTorontoKoiRebrand() {
 		return
 	}
 
-	// 5. matches
 	res := db.Table("matches").Where("id IN ? AND team1_id = ?", matchIDs, ultra.ID).Update("team1_id", koi.ID)
 	log.Printf("[toronto] matches.team1_id: %d rows", res.RowsAffected)
 	res = db.Table("matches").Where("id IN ? AND team2_id = ?", matchIDs, ultra.ID).Update("team2_id", koi.ID)
 	log.Printf("[toronto] matches.team2_id: %d rows", res.RowsAffected)
 	res = db.Table("matches").Where("id IN ? AND winner_id = ?", matchIDs, ultra.ID).Update("winner_id", koi.ID)
 	log.Printf("[toronto] matches.winner_id: %d rows", res.RowsAffected)
-
-	// 6. match_maps winner_id
 	res = db.Table("match_maps").Where("match_id IN ? AND winner_id = ?", matchIDs, ultra.ID).Update("winner_id", koi.ID)
 	log.Printf("[toronto] match_maps.winner_id: %d rows", res.RowsAffected)
-
-	// 7. player_map_stats
 	res = db.Table("player_map_stats").Where("match_id IN ? AND team_id = ?", matchIDs, ultra.ID).Update("team_id", koi.ID)
 	log.Printf("[toronto] player_map_stats: %d rows", res.RowsAffected)
-
-	// 8. player_match_stats
 	res = db.Table("player_match_stats").Where("match_id IN ? AND team_id = ?", matchIDs, ultra.ID).Update("team_id", koi.ID)
 	log.Printf("[toronto] player_match_stats: %d rows", res.RowsAffected)
-
-	// 9. player_tournament_stats
 	res = db.Table("player_tournament_stats").Where("tournament_id IN ? AND team_id = ?", tournamentIDs, ultra.ID).Update("team_id", koi.ID)
 	log.Printf("[toronto] player_tournament_stats: %d rows", res.RowsAffected)
-
-	// 10. team_tournament_stats
 	res = db.Table("team_tournament_stats").Where("tournament_id IN ? AND team_id = ?", tournamentIDs, ultra.ID).Update("team_id", koi.ID)
 	log.Printf("[toronto] team_tournament_stats: %d rows", res.RowsAffected)
 
 	log.Printf("[toronto] Done. %d EWC matches rebranded to Toronto Koi (id=%d).", len(matchIDs), koi.ID)
 }
 
-// ─── EWC 2024 group-stage position patch ─────────────────────────────────────
-//
-// EWC 2024 (tournament_id=53) group-stage matches have bracket_position=0.
-// The frontend's ewcGroupKey() uses bracket_position (1→A, 2→B, 3→C, 4→D) to
-// assign matches to per-group sections in EWCGroupStageView.
-//
-// Groups were determined by tracing the GSL match flow from the API:
-//
-//   Group A (pos=1): OG, CRR, OB, LVL
-//   Group B (pos=2): VS, C,   GM, GE
-//   Group C (pos=3): TU, BB,  S,  TH
-//   Group D (pos=4): AF, T,   LG, TF
-//
-// Match IDs verified from /api/v1/tournaments/53/bracket before patching.
-
-// ewc2024Positions maps each group-stage match ID to its group position (1–4).
 var ewc2024Positions = map[uint]int{
 	// Group A (OG / CRR / OB / LVL)
 	1179: 1, // opening:  OG  vs OB
@@ -489,7 +424,6 @@ func runEWC2024PositionPatch() {
 
 	fmt.Println("=== EWC 2024 group-stage position patch (dry-run first) ===")
 
-	// Dry-run: print current state for all 20 group-stage matches.
 	type row struct {
 		ID              uint
 		Team1ID, Team2ID uint

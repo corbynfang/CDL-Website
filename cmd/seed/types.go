@@ -2,12 +2,6 @@ package main
 
 import "time"
 
-// types.go — all struct types used across the seeder.
-// Keeping types in one place means any phase file can use them without hunting through 2,000 lines.
-
-// ─── CSV row types ────────────────────────────────────────────────────────────
-// Each struct maps 1:1 to a CSV file we read.
-
 type brandingRow struct {
 	GameCode          string
 	SeasonYear        string

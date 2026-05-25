@@ -51,8 +51,6 @@ func colBool(rec []string, h map[string]int, name string) bool {
 	return v == "true" || v == "1" || v == "yes"
 }
 
-// ─── Foundation readers (Phase 1) ────────────────────────────────────────────
-
 func readBrandingCSV(path string) []brandingRow {
 	records := readCSV(path)
 	if len(records) < 2 {
@@ -140,7 +138,6 @@ func readEventAliasCSV(path string) []eventAliasRow {
 			EventType:            col(r, h, "event_type"),
 			StartDate:            col(r, h, "start_date"),
 			EndDate:              col(r, h, "end_date"),
-			SourceEventID: col(r, h, "breakingpoint_event_id"),
 			SourceURL:            col(r, h, "source_url"),
 			FandomURL:            col(r, h, "fandom_url"),
 			StatsOnly:            colBool(r, h, "stats_only"),
@@ -151,8 +148,6 @@ func readEventAliasCSV(path string) []eventAliasRow {
 	}
 	return rows
 }
-
-// ─── era_finals readers (Phase 2) ────────────────────────────────────────────
 
 func readSeriesCSV(path string) []seriesRow {
 	records := readCSV(path)
@@ -250,8 +245,6 @@ func readPlayerStatCSV(path string) []playerStatRow {
 	}
 	return rows
 }
-
-// ─── Enriched readers (Phase 3) ───────────────────────────────────────────────
 
 func readEnrichedSeriesCSV(path string) []enrichedSeriesRow {
 	records := readCSV(path)
@@ -353,8 +346,6 @@ func readEnrichedStatCSV(path string) []enrichedStatRow {
 	}
 	return rows
 }
-
-// ─── Transfer reader (Phase 5) ────────────────────────────────────────────────
 
 func readBracketCSV(path string) []cwBracketRow {
 	records := readCSV(path)

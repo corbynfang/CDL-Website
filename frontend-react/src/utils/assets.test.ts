@@ -1,9 +1,3 @@
-// @vitest-environment node
-//
-// Uses Node.js environment so we can read the filesystem directly.
-// This lets us verify every mapping key in assets.ts points to a real file
-// without needing Vite's import.meta.glob to work in tests.
-
 import { describe, it, expect } from 'vitest'
 import { readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -14,7 +8,6 @@ const __dir = dirname(fileURLToPath(import.meta.url))
 const AVATAR_DIR = join(__dir, '../assets/avatars')
 const LOGO_DIR   = join(__dir, '../assets/logos')
 
-// Build the same key format assets.ts uses: lowercase filename without extension
 function diskKeys(dir: string): Set<string> {
   return new Set(
     readdirSync(dir).map((f: string) => f.replace(/\.[^.]+$/, '').toLowerCase())
@@ -81,8 +74,6 @@ describe('teamLogoKeys — is case-insensitive by design', () => {
   })
 })
 
-// ── Avatar nickname consistency ──────────────────────────────────────────────
-
 describe('avatarNicknames — every target key has a file on disk', () => {
   const broken: string[] = []
 
@@ -144,8 +135,6 @@ describe('avatar files — nickname aliases resolve', () => {
   }
 })
 
-// ── Missing asset report ─────────────────────────────────────────────────────
-
 describe('placeholder avatars — no public photo available', () => {
   const noPhotoPlayers = ['5aLDx', 'FelonY', 'Hamza', 'MarkyB', 'qk4b']
 
@@ -160,8 +149,6 @@ describe('placeholder avatars — no public photo available', () => {
 
 describe('missing asset report (informational — not failures)', () => {
   it('prints players with no avatar on disk', () => {
-    // Any gamertag not covered by a file or a nickname falls through to Unknown.webp.
-    // This test prints them so you know what to add images for in the future.
     const covered = [...avatarDisk].filter(k => k !== 'unknown').length
     console.log(`Avatar files on disk: ${covered} players covered (excluding Unknown placeholder)`)
     expect(true).toBe(true)

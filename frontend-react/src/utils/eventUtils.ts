@@ -12,12 +12,13 @@ export function deriveStatus(startDate: string, endDate?: string | null): EventS
   const now   = new Date()
   const start = new Date(startDate)
   if (start > now) return 'upcoming'
+
   if (endDate) {
     const end = new Date(endDate)
     if (now <= end) return 'live'
     return 'completed'
   }
-  // No end_date: treat as live if started within the last 5 days
+
   const fiveDays = 5 * 24 * 60 * 60 * 1000
   if (now.getTime() - start.getTime() < fiveDays) return 'live'
   return 'completed'
@@ -66,36 +67,27 @@ const ROUND_LABELS: Record<string, string> = {
   elim_r5:             'Elimination Round 5',
   elim_finals:         'Elimination Finals',
   grand_finals:        'Grand Finals',
-  // EWC single-elim playoff
   quarterfinal:        'Quarterfinal',
   semifinal:           'Semifinal',
   third_place_match:   'Third Place Match',
-  // EWC group stage — cross-group rounds
   opening_match:       'Opening Match',
   winners_match:       'Winners Match',
   decider_match:       'Decider Match',
   elimination_match:   'Elimination Match',
-  // CDL major group stage
   round_1:             'Round 1',
   qualification_match: 'Qualification Match',
   losers_bracket:      'Losers Bracket',
 }
 
 const ROUND_ORDER: Record<string, number> = {
-  // Standard CDL double-elim
   winners_r1: 10, winners_r2: 20, winners_r3: 30, winners_finals: 40,
   elim_r1: 50, elim_r2: 60, elim_r3: 70, elim_r4: 73, elim_r5: 76, elim_finals: 80,
   grand_finals: 90,
-  // EWC single-elim playoff (winners_r1 already at 10)
   quarterfinal: 40, semifinal: 60, third_place_match: 85,
-  // EWC group stage cross-group rounds
   opening_match: 10, winners_match: 20, decider_match: 30, elimination_match: 40,
-  // CDL major group stage
   round_1: 10, qualification_match: 20, losers_bracket: 30,
 }
 
-// CW 2021 stage majors were seeded with "CDL Major N Tournament 2021" names;
-// the preferred display form follows the bracket CSV convention: "CDL 2021 Stage N Major".
 const CW_SLUG_NAMES: Record<string, string> = {
   'cdl-major-1-tournament-2021': 'CDL 2021 Stage 1 Major',
   'cdl-major-2-tournament-2021': 'CDL 2021 Stage 2 Major',

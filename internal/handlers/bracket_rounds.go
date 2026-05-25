@@ -1,32 +1,14 @@
 package handlers
-
-// bracket_rounds.go — event-format detection and round key normalization for
-// the tournament bracket endpoint.
-//
-// To add support for a new event format:
-//  1. Add a bracketFormat constant below.
-//  2. Map it in detectBracketFormat (tournament_format column takes precedence
-//     over tournament_type fallback).
-//  3. Define its bracket key set in bracketKeysFor.
-//  4. Return true in hasGroupStage if it separates group/play-in matches.
-//  5. Write a normalizer if needed and wire it in roundNormalizerFor.
-
-// bracketFormat identifies how a tournament's rounds should be structured
-// in the bracket API response.
 type bracketFormat int
 
 const (
 	bracketFmtUnknown                bracketFormat = iota
-	bracketFmtStandardCDLDoubleElim               // CDL Major / Champs / Kickoff: 8-round double-elim
-	bracketFmtColdWarStageDoubleElim               // CW 2021 stage majors: 10-round double-elim (elim_r4/r5)
-	bracketFmtCDLMajorGroupBracket                 // CDL major with group stage + double-elim playoff
-	bracketFmtEWCGroupBracket                      // EWC: group stage + single-elim playoff
-	// To add CDC Open: add a constant here, handle it in detectBracketFormat,
-	// bracketKeysFor, hasGroupStage, and roundNormalizerFor.
+	bracketFmtStandardCDLDoubleElim
+	bracketFmtColdWarStageDoubleElim
+	bracketFmtCDLMajorGroupBracket
+	bracketFmtEWCGroupBracket
 )
 
-// detectBracketFormat returns the bracketFormat for a tournament.
-// The tournament_format DB column takes precedence; tournament_type is the fallback.
 func detectBracketFormat(tournamentFormat, tournamentType string) bracketFormat {
 	switch tournamentFormat {
 	case "standard_cdl_double_elim":
@@ -64,9 +46,6 @@ func formatName(f bracketFormat) string {
 	}
 }
 
-// bracketKeysFor returns the set of round keys that belong in the bracket
-// section for a given format. A match whose normalized key is not in this set
-// either goes into group_stage (if hasGroupStage) or is dropped (unknown format).
 func bracketKeysFor(f bracketFormat) map[string]struct{} {
 	set := func(ss ...string) map[string]struct{} {
 		m := make(map[string]struct{}, len(ss))
@@ -90,7 +69,7 @@ func bracketKeysFor(f bracketFormat) map[string]struct{} {
 		)
 	case bracketFmtEWCGroupBracket:
 		return set(
-			"winners_r1",
+			"winners_r1", "winners_r2",
 			"quarterfinal", "semifinal",
 			"grand_finals", "third_place_match",
 		)
@@ -99,15 +78,10 @@ func bracketKeysFor(f bracketFormat) map[string]struct{} {
 	}
 }
 
-// hasGroupStage returns true if the format separates group/play-in matches from
-// the main bracket. When true, the handler populates a dynamic group_stage map
-// with any round not in the bracket key set.
 func hasGroupStage(f bracketFormat) bool {
 	return f == bracketFmtCDLMajorGroupBracket || f == bracketFmtEWCGroupBracket
 }
 
-// normalizeDoubleElimRoundKey maps known bracket_round aliases from CDL Major
-// source data to canonical bracket keys. Ambiguous values pass through unchanged.
 func normalizeDoubleElimRoundKey(raw string) string {
 	switch raw {
 	case "winners_final":

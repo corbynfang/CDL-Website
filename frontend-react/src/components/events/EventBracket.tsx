@@ -42,7 +42,6 @@ export default function EventBracket({ data, loading, error }: Props) {
 
   const isEWC = data.event_format === 'ewc_group_stage_single_elim'
 
-  // EWC: render the combined tree (group stage + playoff in one view, no tabs)
   if (isEWC) {
     return (
       <div
@@ -58,7 +57,7 @@ export default function EventBracket({ data, loading, error }: Props) {
     )
   }
 
-  // CDL formats: keep existing tab-based layout (BracketCanvas + GroupStageView)
+  // CDL formats: keep existing tab-based layout (BracketCanvas + GroupStageView) (Need to fix by May 25th, 2026)
   const hasGroupStage = !!(data.group_stage && Object.keys(data.group_stage).length > 0)
   const activeTab: 'bracket' | 'group_stage' = userTab ?? 'bracket'
   const bracketRounds = Object.keys(data.bracket)

@@ -138,6 +138,7 @@ function layoutEWC(data: BracketData): BracketLayout {
     for (let i = 0; i < openMatches.length; i++) {
       const y = bandTop + EWC_OPEN_Y + (openMatches.length > 1 ? i * EWC_OPEN_GAP : EWC_OPEN_GAP / 2 - CARD_H / 2 + 10)
       const n = mkNode(openMatches[i], `${pre}opening_match`, 0, y, 'group')
+      n.roundLabel = formatRound('opening_match')
       nodes.push(n); nodeById.set(openMatches[i].id, n)
     }
 
@@ -145,6 +146,7 @@ function layoutEWC(data: BracketData): BracketLayout {
     let wNode: MatchNode | null = null
     if (wMatches.length > 0) {
       wNode = mkNode(wMatches[0], `${pre}winners_match`, 1, bandTop + EWC_OPEN_Y, 'group')
+      wNode.roundLabel = formatRound('winners_match')
       nodes.push(wNode); nodeById.set(wMatches[0].id, wNode)
     }
 
@@ -156,6 +158,7 @@ function layoutEWC(data: BracketData): BracketLayout {
         ? bandTop + EWC_OPEN_Y + EWC_OPEN_GAP
         : bandTop + EWC_OPEN_Y + EWC_OPEN_GAP
       eNode = mkNode(eMatches[0], `${pre}elimination_match`, 1, y, 'group')
+      eNode.roundLabel = formatRound('elimination_match')
       nodes.push(eNode); nodeById.set(eMatches[0].id, eNode)
     }
 
@@ -163,6 +166,7 @@ function layoutEWC(data: BracketData): BracketLayout {
     let dNode: MatchNode | null = null
     if (dMatches.length > 0) {
       dNode = mkNode(dMatches[0], `${pre}decider_match`, 2, bandTop + EWC_DECIDER_Y, 'group')
+      dNode.roundLabel = formatRound('decider_match')
       nodes.push(dNode); nodeById.set(dMatches[0].id, dNode)
     }
 
@@ -183,8 +187,11 @@ function layoutEWC(data: BracketData): BracketLayout {
 
   // ── Quarterfinals (col 3) ────────────────────────────────────────────────────
   const qfMatches = sorted(br['quarterfinal'] ?? br['winners_r1'] ?? [])
-  for (const m of qfMatches) {
-    const gi = m.bracket_position - 1
+  for (let i = 0; i < qfMatches.length; i++) {
+    const m = qfMatches[i]
+    // bracket_position 1-4 maps to group band 0-3; fall back to array index
+    // when bracket_position is unset (0) in the enriched-CSV seeder.
+    const gi = m.bracket_position > 0 ? m.bracket_position - 1 : i
     if (gi < 0 || gi >= GROUPS.length) continue
     const y = gi * EWC_BAND + EWC_QF_Y
     const n = mkNode(m, 'quarterfinal', 3, y, 'winners')
@@ -206,7 +213,7 @@ function layoutEWC(data: BracketData): BracketLayout {
   }
 
   // ── Semifinals (col 4) ───────────────────────────────────────────────────────
-  const sfMatches = sorted(br['semifinal'] ?? [])
+  const sfMatches = sorted(br['semifinal'] ?? br['winners_r2'] ?? [])
   const sfNodes: MatchNode[] = []
   for (let i = 0; i < sfMatches.length; i++) {
     const gi1 = i * 2, gi2 = i * 2 + 1

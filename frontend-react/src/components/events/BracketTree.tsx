@@ -10,8 +10,6 @@ interface Props {
   onFullscreen?: () => void
 }
 
-// ─── SVG Connector layer ──────────────────────────────────────────────────────
-
 function ConnectorPath({ c }: { c: Connector }) {
   const midX = Math.round((c.fromX + c.toX) / 2)
   const d = `M ${c.fromX} ${c.fromY} H ${midX} V ${c.toY} H ${c.toX}`
@@ -19,7 +17,7 @@ function ConnectorPath({ c }: { c: Connector }) {
     <path
       d={d}
       fill="none"
-      stroke={c.isLoser ? '#3f3f46' : '#3f3f46'}
+      stroke={c.isLoser ? '#3f3f46' : '#52525b'}
       strokeWidth={c.isLoser ? 1 : 1.5}
       strokeDasharray={c.isLoser ? '4 3' : undefined}
       strokeLinecap="round"
@@ -50,8 +48,6 @@ function ConnectorLayer({
     </svg>
   )
 }
-
-// ─── Column labels ────────────────────────────────────────────────────────────
 
 function ColLabel({ label, x }: { label: string; x: number }) {
   return (
@@ -123,8 +119,6 @@ function ZoomControls({
   )
 }
 
-// ─── BracketTree ──────────────────────────────────────────────────────────────
-
 export default function BracketTree({ data, isFullscreen, onFullscreen }: Props) {
   const layout = computeBracketLayout(data)
   const LABEL_H = 28  // height reserved for column labels above the canvas
@@ -134,7 +128,7 @@ export default function BracketTree({ data, isFullscreen, onFullscreen }: Props)
   const lastPos = useRef({ x: 0, y: 0 })
   const viewportRef = useRef<HTMLDivElement>(null)
 
-  // Reset pan/zoom when data changes
+  // Reset pan/zoom when data changes // this does not work as of May 25th, 2026 need to fix
   useEffect(() => { setTransform({ x: 0, y: 0, scale: ZOOM_DEFAULT }) }, [data.tournament_id])
 
   const stepZoom = useCallback((delta: number) => {

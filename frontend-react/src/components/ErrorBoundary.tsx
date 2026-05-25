@@ -8,9 +8,6 @@ interface State {
   crashed: boolean;
 }
 
-// Error boundaries must be class components — React's hook system can't catch
-// render errors. This wraps the whole app so any crash shows a message
-// instead of a blank white screen.
 class ErrorBoundary extends Component<Props, State> {
   state: State = { crashed: false };
 

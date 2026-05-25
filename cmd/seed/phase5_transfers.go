@@ -1,11 +1,5 @@
 package main
 
-// phase5_transfers.go — seeds all 5 eras of player transfer data.
-// Every team name in from_team/to_team is resolved to a DB Team record.
-// If a team can't be found in any alias CSV, it gets auto-created and flagged
-// for manual review. At the end, a report CSV is written so you can audit
-// which teams were auto-created and which resolved cleanly.
-
 import (
 	"encoding/csv"
 	"log"
@@ -67,9 +61,6 @@ func seedTransfers(db *gorm.DB, teamLookup map[string]uint, playerLookup map[str
 	writeTransferReport(report)
 }
 
-// resolveTransferTeam looks up rawName in the combined teamLookup.
-// "Free Agent" → returns 0 (stored as null from_team_id / to_team_id).
-// Unknown names → auto-created Team record marked needs_manual_review = true.
 func resolveTransferTeam(
 	rawName string,
 	teamLookup map[string]uint,
@@ -96,7 +87,6 @@ func resolveTransferTeam(
 		}
 	}
 
-	// Not in any alias CSV — auto-create so no transfer row loses its team.
 	t := database.Team{
 		Name:               rawName,
 		Abbreviation:       makeAbbr(rawName),

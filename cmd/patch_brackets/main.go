@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// bracketSlugAliases mirrors the alias table in phase6_bracket_patches.go.
 var bracketSlugAliases = map[string]string{
 	"cdl-2021-stage-1-major": "cdl-major-1-tournament-2021",
 	"cdl-2021-stage-2-major": "cdl-major-2-tournament-2021",
@@ -162,9 +161,6 @@ func applyBracketCSV(db *gorm.DB, teamLookup map[string]uint, tournamentBySlug m
 			continue
 		}
 
-		// Match not found — this is unexpected for the early-round rows (they should
-		// already exist from phase 2/3). Log a warning and insert with a dedup key so
-		// re-runs remain safe.
 		log.Printf("WARN: no existing match for %s [%s pos=%d] %s vs %s (%d-%d) — inserting",
 			dbSlug, r.CanonicalRound, r.Position, r.Team1Name, r.Team2Name, r.Team1Score, r.Team2Score)
 		var winnerID *uint

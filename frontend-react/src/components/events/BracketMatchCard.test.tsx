@@ -14,10 +14,10 @@ function wrap(ui: React.ReactElement) {
 }
 
 describe('BracketMatchCard', () => {
-  it('renders both team abbreviations', () => {
+  it('renders both team names', () => {
     wrap(<BracketMatchCard match={bracketMatchComplete} />)
-    expect(screen.getByText('OTX')).toBeInTheDocument()
-    expect(screen.getByText('ATL')).toBeInTheDocument()
+    expect(screen.getByText('OpTic Texas')).toBeInTheDocument()
+    expect(screen.getByText('Atlanta FaZe')).toBeInTheDocument()
   })
 
   it('renders both team scores', () => {

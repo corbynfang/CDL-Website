@@ -38,8 +38,8 @@ describe('BracketCanvas', () => {
 
   it('renders match cards for each round', () => {
     wrap(<BracketCanvas data={sampleBracketData} activeRound={null} />)
-    // Both matches in sampleBracketData should render — OTX appears in both
-    const otxEls = screen.getAllByText('OTX')
+    // Both matches in sampleBracketData should render — OpTic Texas appears in both
+    const otxEls = screen.getAllByText('OpTic Texas')
     expect(otxEls.length).toBeGreaterThanOrEqual(2)
   })
 

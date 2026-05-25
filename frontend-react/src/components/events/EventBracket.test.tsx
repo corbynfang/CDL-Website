@@ -57,9 +57,9 @@ describe('EventBracket', () => {
     expect(screen.queryByRole('button', { name: /all rounds/i })).not.toBeInTheDocument()
   })
 
-  it('renders match team abbreviations in the bracket', () => {
+  it('renders match team names in the bracket', () => {
     wrap(<EventBracket data={sampleBracketData} loading={false} error={null} />)
-    expect(screen.getAllByText('OTX').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('OpTic Texas').length).toBeGreaterThan(0)
   })
 
   // ── Format-aware behaviour ──────────────────────────────────────────────────
@@ -97,8 +97,8 @@ describe('EventBracket', () => {
 
   it('EWC renders match cards in combined tree', () => {
     wrap(<EventBracket data={ewcBracketData} loading={false} error={null} />)
-    // Match abbreviations rendered by BracketMatchCard
-    expect(screen.getAllByText('OTX').length).toBeGreaterThan(0)
+    // Match team names rendered by BracketMatchCard
+    expect(screen.getAllByText('OpTic Texas').length).toBeGreaterThan(0)
   })
 
   it('EWC tree shows zoom controls', () => {
@@ -112,6 +112,6 @@ describe('EventBracket', () => {
     // Should NOT show the generic "no bracket matches" empty state
     expect(screen.queryByText(/no bracket matches/i)).not.toBeInTheDocument()
     // Match cards from group stage are rendered
-    expect(screen.getAllByText('OTX').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('OpTic Texas').length).toBeGreaterThan(0)
   })
 })

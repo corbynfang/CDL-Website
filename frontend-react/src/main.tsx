@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
- 
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     registrations.forEach((registration) => {
@@ -20,10 +20,8 @@ if ('caches' in window) {
   });
 }
 
-// Register new service worker after clearing old ones
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Small delay to ensure old service workers are unregistered
     setTimeout(() => {
       navigator.serviceWorker.register('/sw.js');
     }, 100);

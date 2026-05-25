@@ -30,7 +30,7 @@ export default function BracketMatchCard({ match }: Props) {
         )}
 
         <span className={`text-[11px] flex-1 truncate ${won ? 'text-white font-bold tracking-wide' : 'text-zinc-400'}`}>
-          {abbr}
+          {name}
         </span>
 
         <span className={`text-[11px] font-mono font-bold tabular-nums min-w-[18px] text-right ${
