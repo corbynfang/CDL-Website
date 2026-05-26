@@ -12,8 +12,11 @@ const TeamDetail    = lazy(() => import("./components/TeamDetail"));
 const Stats         = lazy(() => import("./components/Stats"));
 const Transfers     = lazy(() => import("./components/Transfers"));
 const MatchDetail   = lazy(() => import("./components/MatchDetail"));
-const EventsPage    = lazy(() => import("./components/EventsPage"));
+const EventsPage      = lazy(() => import("./components/EventsPage"));
 const EventDetailPage = lazy(() => import("./components/EventDetailPage"));
+const PrivacyPage     = lazy(() => import("./components/legal/PrivacyPage"));
+const TermsPage       = lazy(() => import("./components/legal/TermsPage"));
+const DisclaimerPage  = lazy(() => import("./components/legal/DisclaimerPage"));
 
 function App() {
   return (
@@ -51,6 +54,9 @@ function App() {
             <Route path="events/:slug" element={
               <Suspense><EventDetailPage /></Suspense>
             } />
+            <Route path="privacy"    element={<Suspense><PrivacyPage /></Suspense>} />
+            <Route path="terms"      element={<Suspense><TermsPage /></Suspense>} />
+            <Route path="disclaimer" element={<Suspense><DisclaimerPage /></Suspense>} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

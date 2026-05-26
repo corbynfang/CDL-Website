@@ -48,10 +48,19 @@ const Layout = () => {
       </main>
 
       <footer className="border-t border-[#1a1a1a] mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-3">
           <p className="text-center text-[#737373] text-xs tracking-wider">
-            CDLYTICS · CDL STATISTICS & ANALYTICS
+            CDLYTICS · INDEPENDENT CDL STATISTICS &amp; ANALYTICS
           </p>
+          <p className="text-center text-[#4a4a4a] text-xs">
+            Not affiliated with, endorsed by, or sponsored by Activision, Call of Duty League, Esports World Cup, or any listed team.
+            All trademarks belong to their respective owners.
+          </p>
+          <div className="flex justify-center gap-6 text-[10px] uppercase tracking-widest text-[#4a4a4a]">
+            <Link to="/privacy"    className="hover:text-[#737373] transition-colors">Privacy</Link>
+            <Link to="/terms"      className="hover:text-[#737373] transition-colors">Terms</Link>
+            <Link to="/disclaimer" className="hover:text-[#737373] transition-colors">Disclaimer</Link>
+          </div>
         </div>
       </footer>
     </div>
