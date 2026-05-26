@@ -24,7 +24,6 @@ WORKDIR /app
 
 COPY --from=builder /app/main .
 COPY --from=builder /app/seeder .
-COPY database/ ./database/
 
 RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup && \
