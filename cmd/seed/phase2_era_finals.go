@@ -94,6 +94,13 @@ func seedEraFinals(
 			}
 			// Match is kept as FirstOrCreate — we need m.ID immediately for child rows.
 			db.Where("breaking_point_match_id = ?", bpID).FirstOrCreate(&m)
+			// If a previous seeder run placed this match in the fallback tournament
+			// (because findTournamentForMatch used strict timestamp comparison and
+			// the match ran after the CSV end-time), correct the tournament now.
+			if tournamentID != 0 && m.TournamentID != tournamentID {
+				db.Model(&m).Update("tournament_id", tournamentID)
+				m.TournamentID = tournamentID
+			}
 			matchByBPID[s.MatchID] = m.ID
 			seriesSeeded++
 

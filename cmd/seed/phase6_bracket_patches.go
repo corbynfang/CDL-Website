@@ -52,6 +52,14 @@ func seedBracketPatches(
 	teamLookup map[string]uint,
 	tournamentBySlug map[string]uint,
 ) {
+	// Remove any stub matches that a previous Phase 6 run inserted because it
+	// couldn't find the correct Phase 2 match (due to the tournament-date bug).
+	// These stubs have no match_maps or player stats, so deleting them is safe.
+	// Phase 2 now corrects tournament_id in-place, so on re-seed Phase 6 will
+	// find and UPDATE the real match instead of inserting a new stub.
+	result := db.Where("liquipedia_url LIKE ?", "bracket_patch:%").Delete(&database.Match{})
+	log.Printf("[bracket_patches] purged %d stale bracket-patch stub matches", result.RowsAffected)
+
 	var totalUpdated, totalInserted, totalSkipped int
 
 	for _, path := range bracketPatchCSVs {

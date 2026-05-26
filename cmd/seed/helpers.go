@@ -1,9 +1,5 @@
 package main
 
-// helpers.go — utility functions shared across all seeder phases.
-// Anything that isn't tied to a specific phase lives here: date parsers,
-// string helpers, DB resolution helpers, and the tournament-date lookup logic.
-
 import (
 	"strconv"
 	"strings"
@@ -13,9 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ─── Date/time parsers ────────────────────────────────────────────────────────
-
-// parseISOTime parses era_finals series timestamps: "2024-12-06T20:00:00+00:00"
 func parseISOTime(s string) time.Time {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -30,8 +23,6 @@ func parseISOTime(s string) time.Time {
 	return time.Time{}
 }
 
-// parseFlexDate parses dates from event_aliases and enriched files.
-// Handles: "2021-08-19 2:00 pm", "2024-08-15 14:00", "2022-12-15"
 func parseFlexDate(s string) time.Time {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -49,7 +40,6 @@ func parseFlexDate(s string) time.Time {
 	return time.Time{}
 }
 
-// parseTransferDate parses transfer CSV dates: "Oct 8 2025"
 func parseTransferDate(s string) time.Time {
 	s = strings.TrimSpace(s)
 	for _, f := range []string{"Jan 2 2006", "Jan 02 2006"} {
@@ -60,7 +50,7 @@ func parseTransferDate(s string) time.Time {
 	return time.Time{}
 }
 
-// parseDurationString converts "11:14" (mm:ss) from enriched match maps to total seconds.
+
 func parseDurationString(s string) int {
 	parts := strings.SplitN(s, ":", 2)
 	if len(parts) != 2 {
@@ -71,7 +61,6 @@ func parseDurationString(s string) int {
 	return m*60 + sec
 }
 
-// ─── String/number helpers ────────────────────────────────────────────────────
 
 func atoi(s string) int {
 	v, _ := strconv.Atoi(strings.TrimSpace(s))
@@ -91,7 +80,6 @@ func min(a, b int) int {
 	return b
 }
 
-// makeAbbr generates an up-to-10-char abbreviation from capital letters in a team name.
 func makeAbbr(name string) string {
 	var b strings.Builder
 	for _, w := range strings.Fields(name) {
@@ -109,8 +97,6 @@ func makeAbbr(name string) string {
 	return r
 }
 
-// normalizeHeaders converts CSV header rows to a lowercase snake_case lookup map.
-// Handles MW3's mixed-case headers ("Rank", "K/D") alongside other seasons' snake_case.
 func normalizeHeaders(row []string) map[string]int {
 	m := map[string]int{}
 	for i, h := range row {
@@ -122,7 +108,6 @@ func normalizeHeaders(row []string) map[string]int {
 	return m
 }
 
-// mergeInto adds all entries from src into dst without overwriting existing keys.
 func mergeInto(dst, src map[string]uint) {
 	for k, v := range src {
 		if _, exists := dst[k]; !exists {
@@ -131,10 +116,6 @@ func mergeInto(dst, src map[string]uint) {
 	}
 }
 
-// ─── Bracket round mapping ────────────────────────────────────────────────────
-
-// rawRoundToDBRound converts source-provider round name values to short snake_case identifiers
-// stored in matches.bracket_round. Unknown values are snake_cased automatically.
 func rawRoundToDBRound(raw string) string {
 	switch raw {
 	case "Major Qualifier":
@@ -168,10 +149,6 @@ func rawRoundToDBRound(raw string) string {
 	}
 }
 
-// ─── DB resolution helpers ────────────────────────────────────────────────────
-
-// resolvePlayer returns the DB player ID for a gamertag.
-// If the tag isn't in the lookup yet, it creates a minimal Player record and caches it.
 func resolvePlayer(tag string, lookup map[string]uint, db *gorm.DB) uint {
 	tag = strings.TrimSpace(tag)
 	if tag == "" {
@@ -217,17 +194,19 @@ func ensureUnknownTeam(db *gorm.DB, name string, teamLookup map[string]uint) uin
 	return t.ID
 }
 
-// findTournamentForMatch returns the tournament ID whose date range contains matchTime.
-// Iterates the eventRanges slice built from event_aliases_clean.csv.
 func findTournamentForMatch(ranges []eventRange, bySlug map[string]uint, gameCode string, matchTime time.Time) uint {
 	if matchTime.IsZero() {
 		return 0
 	}
+
+	matchDay := matchTime.UTC().Truncate(24 * time.Hour)
 	for _, r := range ranges {
 		if r.GameCode != gameCode {
 			continue
 		}
-		if !matchTime.Before(r.StartDate) && !matchTime.After(r.EndDate) {
+		startDay := r.StartDate.UTC().Truncate(24 * time.Hour)
+		endDay := r.EndDate.UTC().Truncate(24 * time.Hour)
+		if !matchDay.Before(startDay) && !matchDay.After(endDay) {
 			if id, ok := bySlug[r.Slug]; ok {
 				return id
 			}
@@ -236,11 +215,8 @@ func findTournamentForMatch(ranges []eventRange, bySlug map[string]uint, gameCod
 	return 0
 }
 
-// fallbackTournamentIDs caches catch-all tournament IDs by season so we don't create duplicates.
 var fallbackTournamentIDs = map[uint]uint{}
 
-// ensureFallbackTournament creates a catch-all tournament for matches whose date
-// doesn't fall within any known event range. Every era gets at most one.
 func ensureFallbackTournament(db *gorm.DB, seasonID uint, gameCode string) uint {
 	if id, ok := fallbackTournamentIDs[seasonID]; ok {
 		return id
@@ -259,8 +235,6 @@ func ensureFallbackTournament(db *gorm.DB, seasonID uint, gameCode string) uint 
 
 var unaffiliatedTeamID uint
 
-// ensureUnaffiliatedTeam returns (or creates) a placeholder team used when a player appears
-// in a stats CSV but their team can't be determined from match data.
 func ensureUnaffiliatedTeam(db *gorm.DB, teamLookup map[string]uint) uint {
 	if unaffiliatedTeamID != 0 {
 		return unaffiliatedTeamID
@@ -276,8 +250,6 @@ func ensureUnaffiliatedTeam(db *gorm.DB, teamLookup map[string]uint) uint {
 	return t.ID
 }
 
-// dominantTeam returns the team ID a player appeared with most in a given season.
-// Falls back to any season if the player had no matches in the target season.
 func dominantTeam(db *gorm.DB, playerID uint, seasonID uint) uint {
 	type result struct {
 		TeamID uint
