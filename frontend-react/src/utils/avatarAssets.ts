@@ -9,7 +9,6 @@ for (const [path, mod] of Object.entries(avatarModules)) {
   avatarMap[key] = mod.default;
 }
 
-// Gamertags whose DB spelling differs from the avatar filename.
 export const avatarNicknames: Record<string, string> = {
   'hicksy':   'hicksey',
   'mercules': 'merc',
@@ -17,11 +16,7 @@ export const avatarNicknames: Record<string, string> = {
   'purj':     'purj_',
   'reeal':    'real',
   'lyynnz':   'lynz',
-  // Note: '04' avatar — 04.webp (old) and New04.webp (current) both exist.
-  // Delete src/assets/avatars/04.webp to make this nickname active.
   '04':       'new04',
-
-  // No public photo available — explicitly use the placeholder.
   '5aldx':    'unknown',
   'felony':   'unknown',
   'hamza':    'unknown',

@@ -3,7 +3,6 @@ export type EventStatus = 'upcoming' | 'live' | 'completed'
 const FEATURED_TYPES  = new Set(['major_tournament', 'championship', 'international_major'])
 const BRACKET_TYPES   = new Set(['major_tournament', 'championship', 'international_major', 'kickoff'])
 const HIDDEN_TYPES    = new Set(['season_summary', 'unknown'])
-
 export const isFeatured  = (type: string) => FEATURED_TYPES.has(type)
 export const hasBracket  = (type: string) => BRACKET_TYPES.has(type)
 export const isHidden    = (type: string) => HIDDEN_TYPES.has(type)

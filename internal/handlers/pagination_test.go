@@ -1,19 +1,5 @@
 package handlers
 
-// pagination_test.go — tests for parsePagination and buildMeta.
-//
-// These are pure functions (no database, no HTTP) so the tests are simple:
-// call the function, check the return value. This is the easiest kind of Go
-// test to write and a good place to start learning.
-//
-// Key concepts shown here:
-//   - Table-driven tests: define all inputs/outputs in a slice, loop once.
-//     This is the standard Go idiom — one test function handles many cases.
-//   - t.Run: creates a named subtest so failures say "TestParsePagination/page_2"
-//     instead of just "TestParsePagination".
-//   - t.Helper(): when a helper function calls t.Fatal/Errorf, the error message
-//     points to the caller's line, not inside the helper — much easier to debug.
-
 import (
 	"net/http"
 	"net/http/httptest"
@@ -23,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// newCtxWithQuery builds a Gin context with query string params — reusable across tests.
 func newCtxWithQuery(t *testing.T, rawQuery string) (*gin.Context, *httptest.ResponseRecorder) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
@@ -34,9 +19,7 @@ func newCtxWithQuery(t *testing.T, rawQuery string) (*gin.Context, *httptest.Res
 }
 
 func TestParsePagination(t *testing.T) {
-	// Table-driven tests:
-	// Each row is one scenario. The struct fields are: the URL query string,
-	// and the three expected return values. We loop and call t.Run for each.
+
 	tests := []struct {
 		name           string
 		query          string

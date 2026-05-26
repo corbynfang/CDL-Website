@@ -17,7 +17,7 @@ function ConnectorPath({ c }: { c: Connector }) {
     <path
       d={d}
       fill="none"
-      stroke={c.isLoser ? '#3f3f46' : '#52525b'}
+      stroke={c.isLoser ? '#3f3f46' : '#3f3f46'}
       strokeWidth={c.isLoser ? 1 : 1.5}
       strokeDasharray={c.isLoser ? '4 3' : undefined}
       strokeLinecap="round"
@@ -128,7 +128,6 @@ export default function BracketTree({ data, isFullscreen, onFullscreen }: Props)
   const lastPos = useRef({ x: 0, y: 0 })
   const viewportRef = useRef<HTMLDivElement>(null)
 
-  // Reset pan/zoom when data changes // this does not work as of May 25th, 2026 need to fix
   useEffect(() => { setTransform({ x: 0, y: 0, scale: ZOOM_DEFAULT }) }, [data.tournament_id])
 
   const stepZoom = useCallback((delta: number) => {
@@ -168,7 +167,6 @@ export default function BracketTree({ data, isFullscreen, onFullscreen }: Props)
     )
   }
 
-  // Column label row height
   const innerTop = LABEL_H + 8  // canvas content starts below labels
 
   return (

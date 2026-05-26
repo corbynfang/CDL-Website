@@ -5,7 +5,6 @@ import (
 	"os"
 )
 
-// eraFiles groups the three CSV paths that belong to one CDL game era.
 type eraFiles struct {
 	gameCode   string
 	seriesFile string
@@ -40,7 +39,6 @@ func main() {
 	issues = append(issues, validateEventAliases("database/event_aliases_clean.csv")...)
 	issues = append(issues, validateBranding("database/cdl_team_branding_by_season.csv")...)
 
-	// Phase 2 — era finals (15 files: series + maps + stats × 5 eras)
 	for _, era := range eras {
 		filesChecked += 3
 		issues = append(issues, validateSeriesCSV(era.seriesFile)...)
@@ -49,13 +47,11 @@ func main() {
 		issues = append(issues, crossReferenceEra(era)...)
 	}
 
-	// Phase 5 — transfer CSVs
 	for _, f := range transferFiles {
 		filesChecked++
 		issues = append(issues, validateTransferCSV(f)...)
 	}
 
-	// Print every issue with its file and line number
 	errors, warns := 0, 0
 	for _, iss := range issues {
 		fmt.Println(iss)

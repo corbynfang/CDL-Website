@@ -1,8 +1,5 @@
 package handlers
 
-// stats_test.go — API contract tests for GetTopKDPlayers and GetAllPlayersKDStats.
-// Each test checks required fields and computed values, not fragile row counts.
-
 import (
 	"encoding/json"
 	"net/http"
@@ -25,8 +22,6 @@ var statPlayerCols = []string{
 	"player_id", "gamertag", "avatar_url", "team_abbr",
 	"season_kills", "season_deaths", "season_assists",
 }
-
-// ── GetTopKDPlayers ───────────────────────────────────────────────────────────
 
 func TestGetTopKDPlayers_ResponseShape(t *testing.T) {
 	mock := setupMockDB(t)
@@ -100,8 +95,6 @@ func TestGetTopKDPlayers_EmptyResults(t *testing.T) {
 	assert.NotNil(t, body.Players, "players must be [] not null")
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
-
-// ── GetAllPlayersKDStats ──────────────────────────────────────────────────────
 
 func TestGetAllPlayersKDStats_ResponseShape(t *testing.T) {
 	mock := setupMockDB(t)

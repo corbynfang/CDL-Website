@@ -1,9 +1,5 @@
 package handlers
 
-// stats.go — leaderboard and aggregate stats handlers.
-// These all query player_tournament_stats (season-level aggregates) rather than
-// player_match_stats (per-match), so they reflect full-season performance.
-
 import (
 	"log"
 	"net/http"

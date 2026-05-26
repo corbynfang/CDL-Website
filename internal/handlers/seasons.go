@@ -1,9 +1,5 @@
 package handlers
 
-// seasons.go — handlers for the /seasons endpoints.
-// Seasons are the top-level container: each game era (BO6, MW3, etc.) is one Season.
-// Everything else (tournaments, matches, teams) nests under a season.
-
 import (
 	"log"
 	"net/http"
