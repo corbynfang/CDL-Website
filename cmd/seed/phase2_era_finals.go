@@ -101,6 +101,21 @@ func seedEraFinals(
 				db.Model(&m).Update("tournament_id", tournamentID)
 				m.TournamentID = tournamentID
 			}
+			if team1ID != 0 && m.Team1ID != team1ID {
+				log.Printf("[%s] correcting team1_id match %d: %d→%d", era.GameCode, bpID, m.Team1ID, team1ID)
+				db.Model(&m).Update("team1_id", team1ID)
+				m.Team1ID = team1ID
+			}
+			if team2ID != 0 && m.Team2ID != team2ID {
+				log.Printf("[%s] correcting team2_id match %d: %d→%d", era.GameCode, bpID, m.Team2ID, team2ID)
+				db.Model(&m).Update("team2_id", team2ID)
+				m.Team2ID = team2ID
+			}
+			if winnerID != nil && m.WinnerID != nil && *m.WinnerID != *winnerID {
+				log.Printf("[%s] correcting winner_id match %d: %d→%d", era.GameCode, bpID, *m.WinnerID, *winnerID)
+				db.Model(&m).Update("winner_id", winnerID)
+				m.WinnerID = winnerID
+			}
 			matchByBPID[s.MatchID] = m.ID
 			seriesSeeded++
 

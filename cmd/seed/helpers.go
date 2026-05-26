@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -8,6 +10,15 @@ import (
 	"github.com/corbynfang/CDL-Website/internal/database"
 	"gorm.io/gorm"
 )
+
+var tzSuffixRE = regexp.MustCompile(`(?i)\s+(P[SD]T|E[SD]T|C[SD]T|M[SD]T)$`)
+
+var tzOffsets = map[string]int{
+	"PST": -8 * 3600, "PDT": -7 * 3600,
+	"EST": -5 * 3600, "EDT": -4 * 3600,
+	"CST": -6 * 3600, "CDT": -5 * 3600,
+	"MST": -7 * 3600, "MDT": -6 * 3600,
+}
 
 func parseISOTime(s string) time.Time {
 	s = strings.TrimSpace(s)
@@ -24,10 +35,15 @@ func parseISOTime(s string) time.Time {
 }
 
 func parseFlexDate(s string) time.Time {
+	return parseFlexDateCtx(s, "")
+}
+
+func parseFlexDateCtx(s, ctx string) time.Time {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return time.Time{}
 	}
+
 	for _, f := range []string{
 		"2006-01-02 3:04 pm",
 		"2006-01-02 15:04",
@@ -37,6 +53,26 @@ func parseFlexDate(s string) time.Time {
 			return t
 		}
 	}
+
+	if m := tzSuffixRE.FindStringIndex(s); m != nil {
+		abbr := strings.ToUpper(strings.TrimSpace(s[m[0]:]))
+		base := strings.TrimSpace(s[:m[0]])
+		if offset, ok := tzOffsets[abbr]; ok {
+			for _, f := range []string{"2006-01-02 1504", "2006-01-02 15:04"} {
+				if t, err := time.Parse(f, base); err == nil {
+					loc := time.FixedZone(abbr, offset)
+					local := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, loc)
+					return local.UTC()
+				}
+			}
+		}
+	}
+
+	label := s
+	if ctx != "" {
+		label = ctx + ": " + s
+	}
+	log.Printf("[parseFlexDate] WARN: unrecognised date format %q", label)
 	return time.Time{}
 }
 
@@ -170,8 +206,6 @@ func resolvePlayer(tag string, lookup map[string]uint, db *gorm.DB) uint {
 	return p.ID
 }
 
-// ensureUnknownTeam creates a minimal Team record for a name not in the lookup.
-// Used when enriched data references a team that isn't in any alias CSV.
 func ensureUnknownTeam(db *gorm.DB, name string, teamLookup map[string]uint) uint {
 	name = strings.TrimSpace(name)
 	if name == "" {

@@ -62,12 +62,13 @@ func seedEnrichedMatches(
 			winnerID = &wid
 		}
 
+		matchDate := parseFlexDateCtx(s.MatchDatetime, s.SeriesMatchID)
 		dedupKey := "enriched:" + s.SeriesMatchID
 		m := database.Match{
 			TournamentID:  tournamentID,
 			Team1ID:       team1ID,
 			Team2ID:       team2ID,
-			MatchDate:     parseFlexDate(s.MatchDatetime),
+			MatchDate:     matchDate,
 			Format:        s.SeriesFormat,
 			Team1Score:    s.Team1MapWins,
 			Team2Score:    s.Team2MapWins,
@@ -77,6 +78,13 @@ func seedEnrichedMatches(
 		}
 		// Match is kept as FirstOrCreate — we need m.ID immediately for child rows.
 		db.Where("liquipedia_url = ?", dedupKey).FirstOrCreate(&m)
+		// If previously seeded before PST timezone parsing was supported, match_date
+		// may be zero in the DB — correct it now that parseFlexDateCtx handles it.
+		if !matchDate.IsZero() && m.MatchDate.IsZero() {
+			log.Printf("[enriched] correcting match_date for %s: 0001-01-01 → %s", s.SeriesMatchID, matchDate.UTC().Format("2006-01-02"))
+			db.Model(&m).Update("match_date", matchDate)
+			m.MatchDate = matchDate
+		}
 		seriesSeeded++
 
 		for _, mr := range mapsByID[s.SeriesMatchID] {
