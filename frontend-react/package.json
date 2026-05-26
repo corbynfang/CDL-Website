@@ -14,7 +14,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
     "@types/react-router-dom": "^5.3.3",
-    "axios": "^1.10.0",
+    "axios": "^1.16.1",
+    "caniuse-lite": "1.0.30001793",
     "dom-accessibility-api": "^0.5.16",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

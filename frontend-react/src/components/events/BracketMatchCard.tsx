@@ -29,11 +29,11 @@ export default function BracketMatchCard({ match }: Props) {
           </div>
         )}
 
-        <span className={`text-[11px] flex-1 truncate ${won ? 'text-white font-bold tracking-wide' : 'text-zinc-400'}`}>
+        <span className={`text-[12px] flex-1 truncate ${won ? 'text-white font-bold tracking-wide' : 'text-zinc-400'}`}>
           {name}
         </span>
 
-        <span className={`text-[11px] font-mono font-bold tabular-nums min-w-[18px] text-right ${
+        <span className={`text-[12px] font-mono font-bold tabular-nums min-w-[18px] text-right ${
           won ? 'text-white' : complete ? 'text-zinc-600' : 'text-zinc-700'
         }`}>
           {complete ? score : '–'}
@@ -45,7 +45,7 @@ export default function BracketMatchCard({ match }: Props) {
   return (
     <Link
       to={`/matches/${match.id}`}
-      className="block w-[220px] rounded border border-[#1e1e1e] bg-[#0f0f0f] hover:border-[#2e2e2e] hover:bg-[#141414] transition-all overflow-hidden"
+      className="block w-[260px] rounded border border-[#1e1e1e] bg-[#0f0f0f] hover:border-[#2e2e2e] hover:bg-[#141414] transition-all overflow-hidden"
     >
       <TeamRow name={match.team1_name} abbr={match.team1_abbr} logo={match.team1_logo} score={match.team1_score} won={team1Won} />
       <div className="h-px bg-[#1e1e1e]" />

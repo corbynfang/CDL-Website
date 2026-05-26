@@ -1,12 +1,10 @@
 import type { BracketData, BracketMatch } from '../services/api'
 import { formatRound } from '../utils/eventUtils'
 
-export const CARD_W = 220
+export const CARD_W = 260
 export const CARD_H = 90   // two team rows + divider + padding
-export const COL_STRIDE = 320  // CARD_W + 100px gap for SVG connectors
-const PAD = 40
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+export const COL_STRIDE = 380  // CARD_W + 120px gap for SVG connectors
+const PAD = 24
 
 export interface MatchNode {
   match: BracketMatch
@@ -89,26 +87,10 @@ function colLabels(nodes: MatchNode[]) {
   return [...map.entries()].sort(([a], [b]) => a - b).map(([col, label]) => ({ col, x: col * COL_STRIDE, label }))
 }
 
-// ─── EWC Group Stage + Single Elimination ─────────────────────────────────────
-//
-// Column layout (0-5):
-//   0 opening_match  1 winners+elim  2 decider  3 QF  4 SF  5 GF+3P
-//
-// Within each group band (height = BAND):
-//   Opening M1 at (col 0, bandTop + OPEN_Y)
-//   Opening M2 at (col 0, bandTop + OPEN_Y + OPEN_GAP)
-//   Winners match at (col 1, bandTop + OPEN_Y)      ← same y as M1
-//   Elim match    at (col 1, bandTop + OPEN_Y + OPEN_GAP) ← same y as M2
-//   Decider match at (col 2, midpoint of winners+elim centers)
-//   QF            at (col 3, midpoint of winners+decider centers)
-
-const EWC_BAND = 320
+export const EWC_BAND = 320
+export const EWC_X_OFFSET = 80
 const EWC_OPEN_Y = 50
 const EWC_OPEN_GAP = 160
-
-// winners center = OPEN_Y + CARD_H/2 = 50+45 = 95
-// elim center    = OPEN_Y + OPEN_GAP + CARD_H/2 = 255
-// decider top    = (95+255)/2 - 45 = 175-45 = 130
 const EWC_DECIDER_Y = Math.round((EWC_OPEN_Y + CARD_H / 2 + EWC_OPEN_Y + EWC_OPEN_GAP + CARD_H / 2) / 2 - CARD_H / 2)
 
 // QF top = midpoint of winners center (95) and decider center (175) - 45 = 135-45 = 90
@@ -123,10 +105,8 @@ function layoutEWC(data: BracketData): BracketLayout {
   const br = data.bracket
   const GROUPS = ['a', 'b', 'c', 'd'] as const
 
-  // map from group index → QF node (filled below)
   const qfByGroup: (MatchNode | null)[] = [null, null, null, null]
 
-  // ── Group stage ─────────────────────────────────────────────────────────────
   for (let gi = 0; gi < GROUPS.length; gi++) {
     const g = GROUPS[gi]
     const bandTop = gi * EWC_BAND
@@ -182,10 +162,9 @@ function layoutEWC(data: BracketData): BracketLayout {
     if (eNode && dNode) {
       eNode.feedsInto.push(dNode.match.id)
     }
-    // wNode→QF and dNode→QF wired after QF nodes are placed
+
   }
 
-  // ── Quarterfinals (col 3) ────────────────────────────────────────────────────
   const qfMatches = sorted(br['quarterfinal'] ?? br['winners_r1'] ?? [])
   for (let i = 0; i < qfMatches.length; i++) {
     const m = qfMatches[i]
@@ -212,7 +191,6 @@ function layoutEWC(data: BracketData): BracketLayout {
     if (dNode) dNode.feedsInto.push(qfN.match.id)
   }
 
-  // ── Semifinals (col 4) ───────────────────────────────────────────────────────
   const sfMatches = sorted(br['semifinal'] ?? br['winners_r2'] ?? [])
   const sfNodes: MatchNode[] = []
   for (let i = 0; i < sfMatches.length; i++) {
@@ -228,7 +206,6 @@ function layoutEWC(data: BracketData): BracketLayout {
     if (qf2) qf2.feedsInto.push(n.match.id)
   }
 
-  // ── Grand Finals + Third Place (col 5) ───────────────────────────────────────
   const gfMatches = sorted(br['grand_finals'] ?? [])
   const tpMatches = sorted(br['third_place_match'] ?? [])
 
@@ -242,10 +219,12 @@ function layoutEWC(data: BracketData): BracketLayout {
 
     if (gfMatches.length > 0) {
       gfNode = mkNode(gfMatches[0], 'grand_finals', 5, gfY, 'final')
+      gfNode.roundLabel = 'Grand Final'
       nodes.push(gfNode); nodeById.set(gfMatches[0].id, gfNode)
     }
     if (tpMatches.length > 0) {
       tpNode = mkNode(tpMatches[0], 'third_place_match', 5, gfY + CARD_H + 40, 'final')
+      tpNode.roundLabel = '3rd Place Match'
       nodes.push(tpNode); nodeById.set(tpMatches[0].id, tpNode)
     }
   } else if (sfNodes.length === 1) {
@@ -261,19 +240,20 @@ function layoutEWC(data: BracketData): BracketLayout {
     if (tpNode) sfN.loserFeedsInto = tpNode.match.id
   }
 
+  // Shift every node right to make room for the group A–D labels on the left
+  for (const n of nodes) n.x += EWC_X_OFFSET
+
   const connectors = buildConnectors(nodes, nodeById)
   const { canvasWidth, canvasHeight } = dimensions(nodes)
-  return { nodes, connectors, canvasWidth, canvasHeight, colLabels: colLabels(nodes) }
-}
 
-// ─── CDL Double Elimination ────────────────────────────────────────────────────
-//
-// Column layout:
-//   0: winners_r1 (4)   1: elim_r1 (2)   2: winners_r2 (2)   3: elim_r2 (2)
-//   4: winners_finals   5: elim_r3        6: elim_finals       7: grand_finals
-//
-// Winner bracket occupies top region; loser bracket below it.
-// Vertical positions are derived from bracket_position and winner/loser region split.
+  // Static labels — one per column, only for columns that have data
+  const presentCols = new Set(nodes.map(n => n.col))
+  const ewcColLabels = ['Opening', 'Winners', 'Decider', 'Quarterfinal', 'Semifinal', 'Grand Final']
+    .map((label, i) => ({ col: i, x: i * COL_STRIDE + EWC_X_OFFSET, label }))
+    .filter(cl => presentCols.has(cl.col))
+
+  return { nodes, connectors, canvasWidth, canvasHeight, colLabels: ewcColLabels }
+}
 
 const CDL_ROUND_COL: Record<string, number> = {
   winners_r1: 0,
@@ -330,13 +310,8 @@ function layoutCDLDoubleElim(data: BracketData): BracketLayout {
   const nodes: MatchNode[] = []
   const nodeById = new Map<number, MatchNode>()
 
-  // Assign y position for each match based on its bracket_position
-  // WR bracket positions in col 0 are 1-4 (top to bottom)
-  // Derived rounds are spaced to center on their feeders
-
   function wrY(pos: number, count: number): number {
-    // Center the count matches within the WR block height
-    const blockH = (4 - 1) * ROW_H  // same height as 4 WR1 matches
+    const blockH = (4 - 1) * ROW_H
     const groupH = blockH / count
     return WR_TOP + (pos - 1) * groupH + Math.round(groupH / 2 - CARD_H / 2)
   }

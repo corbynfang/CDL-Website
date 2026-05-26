@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import type { BracketData } from '../../services/api'
-import { computeBracketLayout, CARD_W } from '../../lib/bracketLayout'
+import { computeBracketLayout, CARD_W, EWC_BAND, EWC_X_OFFSET } from '../../lib/bracketLayout'
 import type { Connector } from '../../lib/bracketLayout'
 import BracketMatchCard from './BracketMatchCard'
 
@@ -17,8 +17,8 @@ function ConnectorPath({ c }: { c: Connector }) {
     <path
       d={d}
       fill="none"
-      stroke={c.isLoser ? '#3f3f46' : '#3f3f46'}
-      strokeWidth={c.isLoser ? 1 : 1.5}
+      stroke={c.isLoser ? '#3f3f46' : '#71717a'}
+      strokeWidth={c.isLoser ? 1 : 2}
       strokeDasharray={c.isLoser ? '4 3' : undefined}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -55,10 +55,10 @@ function ColLabel({ label, x }: { label: string; x: number }) {
       className="absolute top-0 flex flex-col items-center"
       style={{ left: x, width: CARD_W }}
     >
-      <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-600 whitespace-nowrap">
+      <span className="text-[11px] uppercase tracking-[0.12em] text-zinc-400 whitespace-nowrap font-medium">
         {label}
       </span>
-      <div className="mt-1 w-full h-px bg-[#1e1e1e]" />
+      <div className="mt-1.5 w-full h-px bg-[#2a2a2a]" />
     </div>
   )
 }
@@ -66,7 +66,7 @@ function ColLabel({ label, x }: { label: string; x: number }) {
 interface Transform { x: number; y: number; scale: number }
 
 const ZOOM_STEPS = [0.4, 0.5, 0.6, 0.75, 0.9, 1.0]
-const ZOOM_DEFAULT = 0.75
+const ZOOM_DEFAULT = 0.9
 
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)) }
 
@@ -119,8 +119,11 @@ function ZoomControls({
   )
 }
 
+const EWC_GROUPS = ['A', 'B', 'C', 'D'] as const
+
 export default function BracketTree({ data, isFullscreen, onFullscreen }: Props) {
   const layout = computeBracketLayout(data)
+  const isEWC  = data.event_format === 'ewc_group_stage_single_elim'
   const LABEL_H = 28  // height reserved for column labels above the canvas
 
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, scale: ZOOM_DEFAULT })
@@ -207,6 +210,31 @@ export default function BracketTree({ data, isFullscreen, onFullscreen }: Props)
 
         {/* Cards + SVG connectors */}
         <div className="relative" style={{ height: layout.canvasHeight }}>
+          {/* EWC group dividers — thin lines separating each group band */}
+          {isEWC && [1, 2, 3].map(i => (
+            <div
+              key={i}
+              className="absolute bg-[#1e1e1e]"
+              style={{ left: 0, top: i * EWC_BAND, width: layout.canvasWidth, height: 1 }}
+            />
+          ))}
+
+          {/* EWC group labels — rotated text in the left margin */}
+          {isEWC && EWC_GROUPS.map((g, i) => (
+            <div
+              key={g}
+              className="absolute flex items-center justify-center"
+              style={{ left: 0, top: i * EWC_BAND, width: EWC_X_OFFSET - 8, height: EWC_BAND }}
+            >
+              <span
+                className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 select-none"
+                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+              >
+                Group {g}
+              </span>
+            </div>
+          ))}
+
           <ConnectorLayer
             connectors={layout.connectors}
             canvasWidth={layout.canvasWidth}
@@ -217,8 +245,13 @@ export default function BracketTree({ data, isFullscreen, onFullscreen }: Props)
             <div
               key={n.match.id}
               className="absolute"
-              style={{ left: n.x, top: n.y, width: CARD_W }}
+              style={{ left: n.x, top: isEWC ? n.y - 20 : n.y, width: CARD_W }}
             >
+              {isEWC && (
+                <div className="text-[9px] uppercase tracking-[0.15em] text-zinc-500 mb-1.5 select-none whitespace-nowrap">
+                  {n.roundLabel}
+                </div>
+              )}
               <BracketMatchCard match={n.match} />
             </div>
           ))}
