@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -55,7 +55,7 @@ func seedSeasonStats(db *gorm.DB, cfg seasonStatCfg, seasonID uint, teamLookup m
 
 	// A virtual "Season Stats" tournament holds all aggregate rows.
 	// It's not a real event — just a DB container so PlayerTournamentStats has a tournament_id.
-	summaryTournament := database.Tournament{
+	summaryTournament := models.Tournament{
 		SeasonID:       seasonID,
 		Name:           cfg.Name + " — Season Stats",
 		Slug:           cfg.GameCode + "-season-stats",
@@ -64,7 +64,7 @@ func seedSeasonStats(db *gorm.DB, cfg seasonStatCfg, seasonID uint, teamLookup m
 	}
 	db.Where("slug = ? AND season_id = ?", summaryTournament.Slug, seasonID).FirstOrCreate(&summaryTournament)
 
-	var statsBatch []database.PlayerTournamentStats
+	var statsBatch []models.PlayerTournamentStats
 
 	for _, rec := range records[1:] {
 		gamertag := get(rec, "player")
@@ -92,7 +92,7 @@ func seedSeasonStats(db *gorm.DB, cfg seasonStatCfg, seasonID uint, teamLookup m
 		}
 
 		rank := atoi(get(rec, "rank"))
-		statsBatch = append(statsBatch, database.PlayerTournamentStats{
+		statsBatch = append(statsBatch, models.PlayerTournamentStats{
 			PlayerID:        playerID,
 			TeamID:          teamID,
 			TournamentID:    summaryTournament.ID,

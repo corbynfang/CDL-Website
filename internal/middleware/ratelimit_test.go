@@ -1,4 +1,4 @@
-package handlers
+package middleware
 
 import (
 	"fmt"
@@ -47,7 +47,6 @@ func TestRateLimit_BlocksAfterBurst(t *testing.T) {
 }
 
 func TestRateLimit_DifferentIPsHaveIndependentBuckets(t *testing.T) {
-
 	ipA := "192.0.2.20"
 	ipB := "192.0.2.21"
 
@@ -61,22 +60,19 @@ func TestRateLimit_DifferentIPsHaveIndependentBuckets(t *testing.T) {
 
 func TestRateLimit_ExtractsFirstIPFromXForwardedFor(t *testing.T) {
 	clientIP := "192.0.2.30"
-	edge1 := fmt.Sprintf("%s, 13.32.0.1",  clientIP)  // same client, edge node 1
-	edge2 := fmt.Sprintf("%s, 13.32.0.99", clientIP)  // same client, edge node 2
+	edge1 := fmt.Sprintf("%s, 13.32.0.1", clientIP)
+	edge2 := fmt.Sprintf("%s, 13.32.0.99", clientIP)
 
 	for i := 0; i < 20; i++ {
 		fireRequest(edge1)
 	}
 
-	// 21st request through a different edge node must still be blocked —
-	// because it's the same underlying client IP
 	code := fireRequest(edge2)
 	assert.Equal(t, http.StatusTooManyRequests, code,
 		"same client through different CloudFront edge must share the same bucket")
 }
 
 func TestRateLimit_UniqueIPsPerTest(t *testing.T) {
-	// Sanity check: 5 different IPs all get fresh buckets
 	for i := 0; i < 5; i++ {
 		ip := fmt.Sprintf("10.0.%d.1", i)
 		code := fireRequest(ip)

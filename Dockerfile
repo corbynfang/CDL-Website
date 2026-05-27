@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o main ./cmd/main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o seeder ./cmd/seed/
 
 # Stage 2: minimal runtime image (~15MB)
-FROM alpine:3.20
+FROM alpine:3.21
 
 RUN apk add --no-cache ca-certificates
 

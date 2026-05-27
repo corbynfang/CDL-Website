@@ -10,7 +10,7 @@ package main
 import (
 	"log"
 
-	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -58,9 +58,9 @@ func seedEraFinals(
 		seriesSeeded := 0
 
 		// Collect child records across all matches in this era, then batch insert once.
-		var matchMapsBatch []database.MatchMap
-		var playerMapStatsBatch []database.PlayerMapStats
-		var playerMatchStatsBatch []database.PlayerMatchStats
+		var matchMapsBatch []models.MatchMap
+		var playerMapStatsBatch []models.PlayerMapStats
+		var playerMatchStatsBatch []models.PlayerMatchStats
 
 		for _, s := range seriesRows {
 			matchTime := parseISOTime(s.MatchDatetime)
@@ -79,7 +79,7 @@ func seedEraFinals(
 			}
 
 			bpID := s.MatchID
-			m := database.Match{
+			m := models.Match{
 				TournamentID:         tournamentID,
 				Team1ID:              team1ID,
 				Team2ID:              team2ID,
@@ -124,7 +124,7 @@ func seedEraFinals(
 				if wid := teamLookup[mr.WinnerName]; wid != 0 {
 					mapWinnerID = &wid
 				}
-				matchMapsBatch = append(matchMapsBatch, database.MatchMap{
+				matchMapsBatch = append(matchMapsBatch, models.MatchMap{
 					MatchID:     m.ID,
 					MapNumber:   mr.MapNumber,
 					MapName:     mr.MapName,
@@ -163,7 +163,7 @@ func seedEraFinals(
 				}
 				teamID := teamLookup[teamName]
 
-				playerMapStatsBatch = append(playerMapStatsBatch, database.PlayerMapStats{
+				playerMapStatsBatch = append(playerMapStatsBatch, models.PlayerMapStats{
 					MatchID:              m.ID,
 					MapNumber:            st.MapNumber,
 					PlayerID:             playerID,
@@ -206,7 +206,7 @@ func seedEraFinals(
 				if agg.Deaths > 0 {
 					kd = float64(agg.Kills) / float64(agg.Deaths)
 				}
-				playerMatchStatsBatch = append(playerMatchStatsBatch, database.PlayerMatchStats{
+				playerMatchStatsBatch = append(playerMatchStatsBatch, models.PlayerMatchStats{
 					MatchID:      m.ID,
 					PlayerID:     agg.PlayerID,
 					TeamID:       agg.TeamID,

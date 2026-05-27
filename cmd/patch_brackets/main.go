@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -136,7 +137,7 @@ func applyBracketCSV(db *gorm.DB, teamLookup map[string]uint, tournamentBySlug m
 			continue
 		}
 
-		var existing database.Match
+		var existing models.Match
 		err := db.Where(`
 			tournament_id = ? AND (
 				(team1_id = ? AND team2_id = ? AND team1_score = ? AND team2_score = ?) OR
@@ -168,7 +169,7 @@ func applyBracketCSV(db *gorm.DB, teamLookup map[string]uint, tournamentBySlug m
 			winnerID = &wid
 		}
 		dedupKey := fmt.Sprintf("bracket_patch:%s:%s:%d", dbSlug, r.CanonicalRound, r.Position)
-		m := database.Match{
+		m := models.Match{
 			TournamentID:    tournamentID,
 			Team1ID:         team1ID,
 			Team2ID:         team2ID,

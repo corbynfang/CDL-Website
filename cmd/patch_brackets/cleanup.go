@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -300,15 +301,15 @@ func runTorontoKoiRebrand() {
 	database.ConnectDatabase()
 	db := database.DB
 
-	var ultra database.Team
+	var ultra models.Team
 	if err := db.Where("name = ?", torontoUltraName).First(&ultra).Error; err != nil {
 		log.Fatalf("Toronto Ultra not found: %v", err)
 	}
 	log.Printf("[toronto] Ultra: id=%d franchise_id=%v abbr=%s", ultra.ID, ultra.FranchiseID, ultra.Abbreviation)
 
-	var koi database.Team
+	var koi models.Team
 	if err := db.Where("name = ?", torontoKoiName).First(&koi).Error; err != nil {
-		koi = database.Team{
+		koi = models.Team{
 			Name:               torontoKoiName,
 			Abbreviation:       "TK",
 			FranchiseID:        ultra.FranchiseID,

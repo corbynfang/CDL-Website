@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"testing"
@@ -11,14 +11,12 @@ func TestNormalizeDoubleElimRoundKey(t *testing.T) {
 		raw  string
 		want string
 	}{
-		// Clear aliases fixed
 		{"winners_final", "winners_finals"},
 		{"grand_final", "grand_finals"},
 		{"losers_round_1", "elim_r1"},
 		{"losers_round_2", "elim_r2"},
 		{"losers_round_3", "elim_r3"},
 		{"losers_final", "elim_finals"},
-		// Already-canonical values pass through unchanged
 		{"winners_r1", "winners_r1"},
 		{"winners_r2", "winners_r2"},
 		{"winners_r3", "winners_r3"},
@@ -26,15 +24,13 @@ func TestNormalizeDoubleElimRoundKey(t *testing.T) {
 		{"elim_r1", "elim_r1"},
 		{"elim_r2", "elim_r2"},
 		{"elim_r3", "elim_r3"},
-		{"elim_r4", "elim_r4"}, // CW 2021 extra rounds pass through
+		{"elim_r4", "elim_r4"},
 		{"elim_r5", "elim_r5"},
 		{"elim_finals", "elim_finals"},
 		{"grand_finals", "grand_finals"},
-		// Ambiguous group-stage values pass through — not classified into any bucket
 		{"round_1", "round_1"},
 		{"qualification_match", "qualification_match"},
 		{"losers_bracket", "losers_bracket"},
-		// Anything unknown passes through
 		{"some_future_round", "some_future_round"},
 		{"", ""},
 	}
@@ -51,7 +47,7 @@ func TestNormalizeEWCRoundKey(t *testing.T) {
 	assert.Equal(t, "semifinal", normalizeEWCRoundKey("semifinal"))
 	assert.Equal(t, "opening_match", normalizeEWCRoundKey("opening_match"))
 	assert.Equal(t, "winners_r1", normalizeEWCRoundKey("winners_r1"))
-	assert.Equal(t, "grand_finals", normalizeEWCRoundKey("grand_finals")) // already canonical
+	assert.Equal(t, "grand_finals", normalizeEWCRoundKey("grand_finals"))
 	assert.Equal(t, "", normalizeEWCRoundKey(""))
 }
 
@@ -61,12 +57,10 @@ func TestDetectBracketFormat(t *testing.T) {
 		tournamentType   string
 		want             bracketFormat
 	}{
-		// tournament_format column takes precedence over tournament_type
 		{"standard_cdl_double_elim", "international_major", bracketFmtStandardCDLDoubleElim},
 		{"cold_war_stage_double_elim", "major_tournament", bracketFmtColdWarStageDoubleElim},
 		{"cdl_major_group_stage_bracket", "major_tournament", bracketFmtCDLMajorGroupBracket},
 		{"ewc_group_stage_single_elim", "major_tournament", bracketFmtEWCGroupBracket},
-		// Empty tournament_format falls back to tournament_type
 		{"", "major_tournament", bracketFmtStandardCDLDoubleElim},
 		{"", "championship", bracketFmtStandardCDLDoubleElim},
 		{"", "kickoff", bracketFmtStandardCDLDoubleElim},
@@ -86,11 +80,11 @@ func TestDetectBracketFormat(t *testing.T) {
 }
 
 func TestFormatName(t *testing.T) {
-	assert.Equal(t, "standard_cdl_double_elim", formatName(bracketFmtStandardCDLDoubleElim))
-	assert.Equal(t, "cold_war_stage_double_elim", formatName(bracketFmtColdWarStageDoubleElim))
-	assert.Equal(t, "cdl_major_group_stage_bracket", formatName(bracketFmtCDLMajorGroupBracket))
-	assert.Equal(t, "ewc_group_stage_single_elim", formatName(bracketFmtEWCGroupBracket))
-	assert.Equal(t, "unknown", formatName(bracketFmtUnknown))
+	assert.Equal(t, "standard_cdl_double_elim", FormatName(bracketFmtStandardCDLDoubleElim))
+	assert.Equal(t, "cold_war_stage_double_elim", FormatName(bracketFmtColdWarStageDoubleElim))
+	assert.Equal(t, "cdl_major_group_stage_bracket", FormatName(bracketFmtCDLMajorGroupBracket))
+	assert.Equal(t, "ewc_group_stage_single_elim", FormatName(bracketFmtEWCGroupBracket))
+	assert.Equal(t, "unknown", FormatName(bracketFmtUnknown))
 }
 
 func TestBracketKeysFor(t *testing.T) {
@@ -152,17 +146,16 @@ func TestRoundNormalizerFor(t *testing.T) {
 		norm := roundNormalizerFor(bracketFmtColdWarStageDoubleElim)
 		assert.Equal(t, "winners_finals", norm("winners_final"))
 		assert.Equal(t, "grand_finals", norm("grand_final"))
-		assert.Equal(t, "elim_r4", norm("elim_r4")) // canonical, passes through
+		assert.Equal(t, "elim_r4", norm("elim_r4"))
 	})
 	t.Run("CDL major group bracket applies double-elim normalizer", func(t *testing.T) {
 		norm := roundNormalizerFor(bracketFmtCDLMajorGroupBracket)
 		assert.Equal(t, "winners_finals", norm("winners_final"))
 		assert.Equal(t, "elim_r1", norm("losers_round_1"))
-		// Group-stage keys pass through unchanged (routing handled by the handler)
 		assert.Equal(t, "round_1", norm("round_1"))
 		assert.Equal(t, "losers_bracket", norm("losers_bracket"))
 	})
-	t.Run("EWC applies EWC normalizer — only grand_final remapped", func(t *testing.T) {
+	t.Run("EWC applies EWC normalizer", func(t *testing.T) {
 		norm := roundNormalizerFor(bracketFmtEWCGroupBracket)
 		assert.Equal(t, "grand_finals", norm("grand_final"))
 		assert.Equal(t, "opening_match", norm("opening_match"))
@@ -189,10 +182,9 @@ func TestRoundRouting_CDLMajorGroupBracket(t *testing.T) {
 		assert.True(t, inBracket, "%q should route to bracket", r)
 	}
 
-	// Aliased forms also land in bracket after normalization
 	for raw, canonical := range map[string]string{
-		"winners_final": "winners_finals",
-		"grand_final":   "grand_finals",
+		"winners_final":  "winners_finals",
+		"grand_final":    "grand_finals",
 		"losers_round_1": "elim_r1",
 		"losers_final":   "elim_finals",
 	} {
@@ -202,13 +194,11 @@ func TestRoundRouting_CDLMajorGroupBracket(t *testing.T) {
 		assert.True(t, inBracket, "%q → %q should route to bracket", raw, canonical)
 	}
 
-	// Group-stage keys do NOT land in bracket (handler sends them to group_stage)
 	groupRounds := []string{"round_1", "qualification_match", "losers_bracket"}
 	for _, r := range groupRounds {
 		_, inBracket := keys[norm(r)]
-		assert.False(t, inBracket, "%q should NOT be in bracket (goes to group_stage)", r)
+		assert.False(t, inBracket, "%q should NOT be in bracket", r)
 	}
-
 	assert.True(t, hasGroupStage(bracketFmtCDLMajorGroupBracket))
 }
 
@@ -222,22 +212,19 @@ func TestRoundRouting_EWC(t *testing.T) {
 		assert.True(t, inBracket, "%q should route to bracket", r)
 	}
 
-	// grand_final (singular) normalizes to grand_finals and lands in bracket
 	normalized := norm("grand_final")
 	assert.Equal(t, "grand_finals", normalized)
 	_, inBracket := keys[normalized]
 	assert.True(t, inBracket, "grand_final → grand_finals should be in bracket")
 
-	// Group-stage rounds do NOT land in bracket
 	groupRounds := []string{
 		"opening_match", "winners_match", "decider_match", "elimination_match",
 		"group_play_a_winners_round_1", "group_play_b_lower_qualifier_round",
 	}
 	for _, r := range groupRounds {
 		_, inBracket := keys[norm(r)]
-		assert.False(t, inBracket, "%q should NOT be in bracket (goes to group_stage)", r)
+		assert.False(t, inBracket, "%q should NOT be in bracket", r)
 	}
-
 	assert.True(t, hasGroupStage(bracketFmtEWCGroupBracket))
 }
 
@@ -245,15 +232,13 @@ func TestRoundRouting_StandardCDL_DropsUnclassified(t *testing.T) {
 	keys := bracketKeysFor(bracketFmtStandardCDLDoubleElim)
 	norm := roundNormalizerFor(bracketFmtStandardCDLDoubleElim)
 
-	// Standard CDL has no group_stage — unclassified rounds are silently dropped
 	assert.False(t, hasGroupStage(bracketFmtStandardCDLDoubleElim))
 
 	for _, r := range []string{"round_1", "qualification_match", "losers_bracket"} {
 		_, inBracket := keys[norm(r)]
-		assert.False(t, inBracket, "%q should be dropped (no group_stage for this format)", r)
+		assert.False(t, inBracket, "%q should be dropped", r)
 	}
 
-	// elim_r4/r5 are also NOT in standard CDL bracket
 	for _, r := range []string{"elim_r4", "elim_r5"} {
 		_, inBracket := keys[norm(r)]
 		assert.False(t, inBracket, "%q should NOT be in standard CDL bracket", r)

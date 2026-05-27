@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -85,21 +86,21 @@ func CloseDatabase() {
 func AutoMigrate() {
 	err := DB.AutoMigrate(
 		// Franchise must come before Team (FK dependency)
-		&Franchise{},
-		&Season{},
-		&Team{},
-		&Player{},
-		&TeamRoster{},
-		&Tournament{},
-		&Match{},
+		&models.Franchise{},
+		&models.Season{},
+		&models.Team{},
+		&models.Player{},
+		&models.TeamRoster{},
+		&models.Tournament{},
+		&models.Match{},
 		// MatchMap and PlayerMapStats depend on Match and Team
-		&MatchMap{},
-		&PlayerMapStats{},
-		&PlayerMatchStats{},
-		&PlayerTournamentStats{},
-		&TeamTournamentStats{},
-		&Coach{},
-		&PlayerTransfer{},
+		&models.MatchMap{},
+		&models.PlayerMapStats{},
+		&models.PlayerMatchStats{},
+		&models.PlayerTournamentStats{},
+		&models.TeamTournamentStats{},
+		&models.Coach{},
+		&models.PlayerTransfer{},
 	)
 
 	if err != nil {

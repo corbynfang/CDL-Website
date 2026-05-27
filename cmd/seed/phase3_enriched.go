@@ -8,7 +8,7 @@ package main
 import (
 	"log"
 
-	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -33,9 +33,9 @@ func seedEnrichedMatches(
 	}
 
 	seriesSeeded := 0
-	var matchMapsBatch []database.MatchMap
-	var playerMapStatsBatch []database.PlayerMapStats
-	var playerMatchStatsBatch []database.PlayerMatchStats
+	var matchMapsBatch []models.MatchMap
+	var playerMapStatsBatch []models.PlayerMapStats
+	var playerMatchStatsBatch []models.PlayerMatchStats
 
 	for _, s := range seriesRows {
 		if s.Source == "bo6_season_stats_breakingpoint" {
@@ -64,7 +64,7 @@ func seedEnrichedMatches(
 
 		matchDate := parseFlexDateCtx(s.MatchDatetime, s.SeriesMatchID)
 		dedupKey := "enriched:" + s.SeriesMatchID
-		m := database.Match{
+		m := models.Match{
 			TournamentID:  tournamentID,
 			Team1ID:       team1ID,
 			Team2ID:       team2ID,
@@ -92,7 +92,7 @@ func seedEnrichedMatches(
 			if wid := teamLookup[mr.MapWinner]; wid != 0 {
 				mapWinnerID = &wid
 			}
-			matchMapsBatch = append(matchMapsBatch, database.MatchMap{
+			matchMapsBatch = append(matchMapsBatch, models.MatchMap{
 				MatchID:     m.ID,
 				MapNumber:   mr.MapNumber,
 				MapName:     mr.MapName,
@@ -125,7 +125,7 @@ func seedEnrichedMatches(
 				teamID = ensureUnknownTeam(db, st.Team, teamLookup)
 			}
 
-			playerMapStatsBatch = append(playerMapStatsBatch, database.PlayerMapStats{
+			playerMapStatsBatch = append(playerMapStatsBatch, models.PlayerMapStats{
 				MatchID:         m.ID,
 				MapNumber:       st.MapNumber,
 				PlayerID:        playerID,
@@ -156,7 +156,7 @@ func seedEnrichedMatches(
 			if agg.Deaths > 0 {
 				kd = float64(agg.Kills) / float64(agg.Deaths)
 			}
-			playerMatchStatsBatch = append(playerMatchStatsBatch, database.PlayerMatchStats{
+			playerMatchStatsBatch = append(playerMatchStatsBatch, models.PlayerMatchStats{
 				MatchID:     m.ID,
 				PlayerID:    agg.PlayerID,
 				TeamID:      agg.TeamID,

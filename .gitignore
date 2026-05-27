@@ -13,6 +13,8 @@ frontend-react/node_modules/
 frontend-react/dist/
 frontend-react/.env
 frontend-react/.DS_Store
+# npm lockfile — project uses bun, package-lock.json should never be committed
+frontend-react/package-lock.json
 
 # ── Terraform ─────────────────────────────────────────────────────────────────
 infrastructure/.terraform/

@@ -139,8 +139,8 @@ fi
 # ── Step 5: Build and upload frontend ────────────────────────────────────────
 echo "==> Building React frontend..."
 cd "$FRONTEND_DIR"
-npm ci
-npm run build
+bun install --frozen-lockfile
+bun run build
 
 echo "==> Syncing frontend to S3..."
 aws s3 sync dist/ "s3://${S3_BUCKET}/" \

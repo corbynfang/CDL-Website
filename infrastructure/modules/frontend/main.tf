@@ -1,5 +1,3 @@
-# --- S3 Bucket (holds the compiled Svelte files) ---
-
 resource "aws_s3_bucket" "frontend" {
   bucket = "${var.prefix}-frontend-${data.aws_caller_identity.current.account_id}"
   tags   = merge(var.tags, { Name = "${var.prefix}-frontend" })

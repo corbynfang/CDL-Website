@@ -1,4 +1,5 @@
-package handlers
+package services
+
 type bracketFormat int
 
 const (
@@ -30,8 +31,7 @@ func detectBracketFormat(tournamentFormat, tournamentType string) bracketFormat 
 	}
 }
 
-// formatName returns the event_format string included in the bracket API response.
-func formatName(f bracketFormat) string {
+func FormatName(f bracketFormat) string {
 	switch f {
 	case bracketFmtStandardCDLDoubleElim:
 		return "standard_cdl_double_elim"
@@ -101,8 +101,6 @@ func normalizeDoubleElimRoundKey(raw string) string {
 	}
 }
 
-// normalizeEWCRoundKey normalizes EWC bracket_round values.
-// Only grand_final → grand_finals needs mapping; all other EWC keys are clean.
 func normalizeEWCRoundKey(raw string) string {
 	if raw == "grand_final" {
 		return "grand_finals"
@@ -110,19 +108,13 @@ func normalizeEWCRoundKey(raw string) string {
 	return raw
 }
 
-// ewcGroupRoundTypes are the group-stage round names used in EWC 2024 data that
-// lack a group_play_X_ prefix. EWC 2025 data already has the full prefixed form.
 var ewcGroupRoundTypes = map[string]bool{
-	"opening_match":    true,
-	"winners_match":    true,
-	"decider_match":    true,
+	"opening_match":     true,
+	"winners_match":     true,
+	"decider_match":     true,
 	"elimination_match": true,
 }
 
-// ewcGroupKey adds a group_play_X_ prefix to legacy EWC group-stage round keys
-// using bracket_position to identify the group (1→a, 2→b, 3→c, 4→d).
-// Already-prefixed keys (EWC 2025+) pass through unchanged.
-// This makes EWC 2024 group data compatible with EWCGroupStageView's prefix-based grouping.
 func ewcGroupKey(key string, position int) string {
 	if !ewcGroupRoundTypes[key] {
 		return key
@@ -133,8 +125,6 @@ func ewcGroupKey(key string, position int) string {
 	return "group_play_" + string(rune('a'+position-1)) + "_" + key
 }
 
-// roundNormalizerFor returns the round key normalizer for the given bracket format.
-// Formats without a dedicated normalizer get an identity function.
 func roundNormalizerFor(f bracketFormat) func(string) string {
 	switch f {
 	case bracketFmtStandardCDLDoubleElim, bracketFmtColdWarStageDoubleElim,

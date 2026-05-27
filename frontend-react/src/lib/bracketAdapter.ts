@@ -1,17 +1,3 @@
-/**
- * bracketAdapter.ts
- *
- * Converts CDLytics BracketMatch data into the shape used by the bracket
- * connector/renderer layer. Types are defined inline — no external library dependency.
- *
- * PROTOTYPE STATUS:
- * - CDL_MAJOR_1_2023_FIXTURE is hardcoded fixture data for prototyping only.
- * - Real nextMatchId / nextLooserMatchId must come from the backend before this
- *   can be used in production. Do not infer these from bracket_position.
- * - adaptBracketMatch() is the generic utility for when the backend provides
- *   relationship data; it is not called for the fixture.
- */
-
 import type { BracketMatch } from '../services/api'
 
 export interface ParticipantType {
@@ -128,39 +114,6 @@ function makeMatch(
     ],
   }
 }
-
-/**
- * Fixture: CDL Major I 2023 — 8-team double elimination.
- *
- * Teams (CDL 2023 season):
- *   OTX  OpTic Texas
- *   ATL  Atlanta FaZe
- *   LAT  Los Angeles Thieves
- *   NYS  New York Subliners
- *   BOS  Boston Breach
- *   MIA  Miami Heretics
- *   SEA  Seattle Surge
- *   MNR  Minnesota RØKKR
- *
- * Bracket structure:
- *   Upper: UBR1 (4) → UBSF (2) → UBF (1) → GF (1)
- *   Lower: LBR1 (2) → LBQF (2) → LBSF (1) → LBF (1) → [GF is in upper]
- *
- * nextMatchId wiring (manually authored):
- *   ubr1m1 → ubr2m1 (W), lbr1m1 (L)
- *   ubr1m2 → ubr2m1 (W), lbr1m2 (L)
- *   ubr1m3 → ubr2m2 (W), lbr1m1 (L)
- *   ubr1m4 → ubr2m2 (W), lbr1m2 (L)
- *   ubr2m1 → ubf    (W), lbr2m1 (L)
- *   ubr2m2 → ubf    (W), lbr2m2 (L)
- *   ubf    → gf     (W), lbf    (L)
- *   lbr1m1 → lbr2m1 (W)
- *   lbr1m2 → lbr2m2 (W)
- *   lbr2m1 → lbsf   (W)
- *   lbr2m2 → lbsf   (W)
- *   lbsf   → lbf    (W)
- *   lbf    → gf     (W)
- */
 
 export const CDL_MAJOR_1_2023_FIXTURE: PrototypeBracketData = {
   upper: [

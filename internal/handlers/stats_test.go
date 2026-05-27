@@ -28,8 +28,9 @@ func TestGetTopKDPlayers_ResponseShape(t *testing.T) {
 	mock.ExpectQuery(`SELECT.*FROM player_tournament_stats`).WillReturnRows(
 		sqlmock.NewRows(statPlayerCols).AddRow(1, "Scump", "", "OTX", 500, 400, 50))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetTopKDPlayers(c)
+	h.GetTopKDPlayers(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body statsEnvelope
@@ -52,8 +53,9 @@ func TestGetTopKDPlayers_KDCalculated(t *testing.T) {
 	mock.ExpectQuery(`SELECT.*FROM player_tournament_stats`).WillReturnRows(
 		sqlmock.NewRows(statPlayerCols).AddRow(2, "Cellium", "", "ATL", 100, 50, 10))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetTopKDPlayers(c)
+	h.GetTopKDPlayers(c)
 
 	var body statsEnvelope
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
@@ -68,13 +70,13 @@ func TestGetTopKDPlayers_ZeroDeathsReturnsZeroNotPanic(t *testing.T) {
 	mock.ExpectQuery(`SELECT.*FROM player_tournament_stats`).WillReturnRows(
 		sqlmock.NewRows(statPlayerCols).AddRow(3, "Ghost", "", "ATL", 100, 0, 0))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetTopKDPlayers(c)
+	h.GetTopKDPlayers(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body statsEnvelope
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
-	// calculateKD returns 0 when deaths == 0 — documents the current contract (not Inf, not panic)
 	assert.Equal(t, float64(0), body.Players[0]["season_kd"],
 		"0 deaths → season_kd = 0 (not Inf, not crash)")
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -85,8 +87,9 @@ func TestGetTopKDPlayers_EmptyResults(t *testing.T) {
 	mock.ExpectQuery(`SELECT.*FROM player_tournament_stats`).
 		WillReturnRows(sqlmock.NewRows(statPlayerCols))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetTopKDPlayers(c)
+	h.GetTopKDPlayers(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body statsEnvelope
@@ -101,8 +104,9 @@ func TestGetAllPlayersKDStats_ResponseShape(t *testing.T) {
 	mock.ExpectQuery(`SELECT.*FROM player_tournament_stats`).WillReturnRows(
 		sqlmock.NewRows(statPlayerCols).AddRow(5, "Shotzzy", "", "OTX", 200, 150, 20))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetAllPlayersKDStats(c)
+	h.GetAllPlayersKDStats(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body statsEnvelope
@@ -111,7 +115,6 @@ func TestGetAllPlayersKDStats_ResponseShape(t *testing.T) {
 
 	p := body.Players[0]
 	assert.Contains(t, p, "season_kd", "season_kd required")
-	// GetAllPlayersKDStats exposes season_kd_plus_minus; GetTopKDPlayers does not.
 	assert.Contains(t, p, "season_kd_plus_minus",
 		"season_kd_plus_minus is exclusive to GetAllPlayersKDStats")
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -123,8 +126,9 @@ func TestGetAllPlayersKDStats_KDPlusMinus(t *testing.T) {
 	mock.ExpectQuery(`SELECT.*FROM player_tournament_stats`).WillReturnRows(
 		sqlmock.NewRows(statPlayerCols).AddRow(6, "Simp", "", "ATL", 150, 100, 5))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetAllPlayersKDStats(c)
+	h.GetAllPlayersKDStats(c)
 
 	var body statsEnvelope
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
@@ -139,9 +143,9 @@ func TestGetAllPlayersKDStats_SeasonFilter(t *testing.T) {
 	mock.ExpectQuery(`SELECT.*FROM player_tournament_stats`).WillReturnRows(
 		sqlmock.NewRows(statPlayerCols).AddRow(7, "aBeZy", "", "ATL", 80, 60, 8))
 
-	// ?season_id=3 should be accepted without error
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "season_id=3")
-	GetAllPlayersKDStats(c)
+	h.GetAllPlayersKDStats(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body statsEnvelope
@@ -155,8 +159,9 @@ func TestGetAllPlayersKDStats_EmptyResults(t *testing.T) {
 	mock.ExpectQuery(`SELECT.*FROM player_tournament_stats`).
 		WillReturnRows(sqlmock.NewRows(statPlayerCols))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetAllPlayersKDStats(c)
+	h.GetAllPlayersKDStats(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body statsEnvelope

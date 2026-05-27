@@ -8,6 +8,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,6 +30,13 @@ func setupMockDB(t *testing.T) sqlmock.Sqlmock {
 	database.DB = gormDB
 	t.Cleanup(func() { sqlDB.Close() })
 	return mock
+}
+
+// newTestHandler creates a Handler wired to database.DB.
+// Must be called after setupMockDB or setupPGTx if DB access is needed.
+func newTestHandler(t *testing.T) *Handler {
+	t.Helper()
+	return New(database.DB)
 }
 
 func newCtx(params gin.Params, rawQuery string) (*gin.Context, *httptest.ResponseRecorder) {
@@ -55,7 +63,7 @@ func TestCalculateKD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, calculateKD(tt.kills, tt.deaths))
+			assert.Equal(t, tt.want, services.CalculateKD(tt.kills, tt.deaths))
 		})
 	}
 }
@@ -86,8 +94,9 @@ func TestValidateID(t *testing.T) {
 }
 
 func TestGetTeam_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "notanumber"}}, "")
-	GetTeam(c)
+	h.GetTeam(c)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	var body map[string]string
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
@@ -99,8 +108,9 @@ func TestGetTeam_NotFound(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "teams"`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "999"}}, "")
-	GetTeam(c)
+	h.GetTeam(c)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -114,8 +124,9 @@ func TestGetTeam_Success(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "teams"`).
 		WillReturnRows(rows)
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
-	GetTeam(c)
+	h.GetTeam(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var team map[string]interface{}
@@ -126,8 +137,9 @@ func TestGetTeam_Success(t *testing.T) {
 }
 
 func TestGetPlayer_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "bad"}}, "")
-	GetPlayer(c)
+	h.GetPlayer(c)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	var body map[string]string
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
@@ -139,8 +151,9 @@ func TestGetPlayer_NotFound(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "players"`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "gamertag"}))
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
-	GetPlayer(c)
+	h.GetPlayer(c)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -154,8 +167,9 @@ func TestGetPlayer_Success(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "players"`).
 		WillReturnRows(rows)
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "7"}}, "")
-	GetPlayer(c)
+	h.GetPlayer(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var player map[string]interface{}
@@ -168,7 +182,6 @@ func TestGetPlayer_Success(t *testing.T) {
 func TestGetTeams_ScopeAll_Success(t *testing.T) {
 	// scope=all triggers a simple GORM query (SELECT * FROM teams ORDER BY name ASC)
 	// that sqlmock can match with a straightforward regex.
-	// The default scope runs complex raw SQL with subqueries that's harder to mock.
 	mock := setupMockDB(t)
 	rows := sqlmock.NewRows([]string{"id", "name", "abbreviation", "is_active"}).
 		AddRow(1, "Atlanta FaZe", "ATL", true).
@@ -176,8 +189,9 @@ func TestGetTeams_ScopeAll_Success(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "teams"`).
 		WillReturnRows(rows)
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "scope=all")
-	GetTeams(c)
+	h.GetTeams(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var teams []map[string]interface{}
@@ -191,8 +205,9 @@ func TestGetTeams_ScopeAll_Empty(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "teams"`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "scope=all")
-	GetTeams(c)
+	h.GetTeams(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -203,8 +218,9 @@ func TestGetActiveSeason_NotFound(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "seasons"`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetActiveSeason(c)
+	h.GetActiveSeason(c)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	var body map[string]string

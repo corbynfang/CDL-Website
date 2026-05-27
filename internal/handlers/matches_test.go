@@ -13,6 +13,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,8 +28,9 @@ type matchDetailBody struct {
 // ── GetMatch ──────────────────────────────────────────────────────────────────
 
 func TestGetMatch_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "bad"}}, "")
-	GetMatch(c)
+	h.GetMatch(c)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
@@ -37,8 +39,9 @@ func TestGetMatch_NotFound(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "matches"`).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}))
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "999"}}, "")
-	GetMatch(c)
+	h.GetMatch(c)
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -49,8 +52,9 @@ func TestGetMatch_ResponseShape(t *testing.T) {
 	pgMatchEnv(t)
 	pgMatch(t, 42)
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "42"}}, "")
-	GetMatch(c)
+	h.GetMatch(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body matchDetailBody
@@ -73,13 +77,14 @@ func TestGetMatch_MapShape(t *testing.T) {
 	setupPGTx(t)
 	pgMatchEnv(t)
 	pgMatch(t, 5)
-	require.NoError(t, database.DB.Create(&database.MatchMap{
+	require.NoError(t, database.DB.Create(&models.MatchMap{
 		MatchID: 5, MapNumber: 1, MapName: "Skyline", Mode: "Hardpoint",
 		Score1: 250, Score2: 200, Played: true, DurationSec: 480,
 	}).Error)
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "5"}}, "")
-	GetMatch(c)
+	h.GetMatch(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body matchDetailBody
@@ -102,13 +107,14 @@ func TestGetMatch_EmptyStatArrays(t *testing.T) {
 	setupPGTx(t)
 	pgMatchEnv(t)
 	pgMatch(t, 7)
-	require.NoError(t, database.DB.Create(&database.MatchMap{
+	require.NoError(t, database.DB.Create(&models.MatchMap{
 		MatchID: 7, MapNumber: 1, MapName: "Rewind", Mode: "Search and Destroy",
 		Score1: 6, Score2: 4, Played: true,
 	}).Error)
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "7"}}, "")
-	GetMatch(c)
+	h.GetMatch(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body matchDetailBody
@@ -127,8 +133,9 @@ func TestGetMatch_EmptyStatArrays(t *testing.T) {
 // ── GetTournamentStats ────────────────────────────────────────────────────────
 
 func TestGetTournamentStats_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "xyz"}}, "")
-	GetTournamentStats(c)
+	h.GetTournamentStats(c)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
@@ -153,8 +160,9 @@ func TestGetTournamentStats_ResponseShape(t *testing.T) {
 		sqlmock.NewRows([]string{"id", "name", "abbreviation", "is_active", "is_cdl_franchise", "created_at", "updated_at"}).
 			AddRow(1, "OpTic Texas", "OTX", true, true, now, now))
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "99"}}, "")
-	GetTournamentStats(c)
+	h.GetTournamentStats(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body []map[string]any
@@ -174,8 +182,9 @@ func TestGetTournamentStats_EmptyResults(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "player_tournament_stats"`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "player_id"}))
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
-	GetTournamentStats(c)
+	h.GetTournamentStats(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body []map[string]any

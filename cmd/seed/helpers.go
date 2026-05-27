@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -200,7 +200,7 @@ func resolvePlayer(tag string, lookup map[string]uint, db *gorm.DB) uint {
 			return id
 		}
 	}
-	p := database.Player{Gamertag: tag}
+	p := models.Player{Gamertag: tag}
 	db.Where("gamertag = ?", tag).FirstOrCreate(&p)
 	lookup[tag] = p.ID
 	return p.ID
@@ -214,7 +214,7 @@ func ensureUnknownTeam(db *gorm.DB, name string, teamLookup map[string]uint) uin
 	if id, ok := teamLookup[name]; ok {
 		return id
 	}
-	t := database.Team{
+	t := models.Team{
 		Name:               name,
 		Abbreviation:       makeAbbr(name),
 		IsCDLFranchise:     false,
@@ -256,7 +256,7 @@ func ensureFallbackTournament(db *gorm.DB, seasonID uint, gameCode string) uint 
 		return id
 	}
 	slug := gameCode + "-unmatched"
-	t := database.Tournament{
+	t := models.Tournament{
 		SeasonID:       seasonID,
 		Name:           gameCode + " Unmatched Matches",
 		Slug:           slug,
@@ -277,7 +277,7 @@ func ensureUnaffiliatedTeam(db *gorm.DB, teamLookup map[string]uint) uint {
 		unaffiliatedTeamID = id
 		return id
 	}
-	t := database.Team{Name: "Unaffiliated", Abbreviation: "UNK", Source: "system"}
+	t := models.Team{Name: "Unaffiliated", Abbreviation: "UNK", Source: "system"}
 	db.Where("name = ?", "Unaffiliated").FirstOrCreate(&t)
 	unaffiliatedTeamID = t.ID
 	teamLookup["Unaffiliated"] = t.ID

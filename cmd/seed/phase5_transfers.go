@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -37,7 +37,7 @@ func seedTransfers(db *gorm.DB, teamLookup map[string]uint, playerLookup map[str
 				toPtr = &toID
 			}
 
-			xfer := database.PlayerTransfer{
+			xfer := models.PlayerTransfer{
 				PlayerID:        playerID,
 				FromTeamID:      fromPtr,
 				ToTeamID:        toPtr,
@@ -87,7 +87,7 @@ func resolveTransferTeam(
 		}
 	}
 
-	t := database.Team{
+	t := models.Team{
 		Name:               rawName,
 		Abbreviation:       makeAbbr(rawName),
 		IsCDLFranchise:     false,

@@ -1,14 +1,4 @@
-package handlers
-
-// ratelimit.go — per-IP rate limiting middleware using a token bucket algorithm.
-//
-// Each IP gets a bucket of 20 tokens that refills at 2 tokens/second.
-// An event detail page fires ~5 requests on first open; 20-token burst covers
-// ~4 rapid page loads before the bucket empties. Scrapers that sustain >2 req/s
-// will still be blocked within a few seconds.
-//
-// A background goroutine cleans up limiters for IPs not seen in 5 minutes
-// so the map doesn't grow forever.
+package middleware
 
 import (
 	"net/http"
@@ -33,8 +23,6 @@ func init() {
 	go cleanupVisitors()
 }
 
-// cleanupVisitors removes IPs that haven't made a request in 5 minutes.
-// Without this the map would grow by one entry per unique IP forever.
 func cleanupVisitors() {
 	for {
 		time.Sleep(time.Minute)
@@ -62,11 +50,6 @@ func getVisitor(ip string) *rate.Limiter {
 	return v.limiter
 }
 
-// RateLimit is a Gin middleware that returns 429 when an IP exceeds the limit.
-// Uses c.ClientIP() which respects the trusted-proxy list set in main.go —
-// that makes XFF safe to read because only trusted infrastructure (the ALB)
-// can inject the header. Never parse XFF manually: a caller who hits the ALB
-// directly could forge any IP and rotate through unlimited fresh buckets.
 func RateLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()

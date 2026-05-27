@@ -1,18 +1,19 @@
 package handlers
 
-// handlers.go — shared utilities used across all handler files.
-// This is the only file in the handlers package that doesn't own specific routes.
+// handlers.go — Handler struct, constructor, and shared HTTP utilities.
+// Business logic lives in internal/services. Handlers parse params, call services, return JSON.
 //
 // Handler file structure:
-//   handlers.go   — this file: shared helpers (validateID, getContext, etc.)
+//   handlers.go   — this file: Handler struct, New constructor, HTTP helpers
 //   seasons.go    — GetSeasons, GetSeason, GetActiveSeason
 //   teams.go      — GetTeams, GetTeam, GetTeamPlayers, GetTeamStats
 //   franchises.go — GetFranchises, GetFranchise
 //   players.go    — GetPlayers, GetPlayer, GetPlayerStats, GetPlayerKDStats,
 //                   GetPlayerMatches, GetPlayerFranchiseCareer
-//   matches.go    — GetMatch, GetTournaments, GetTournament, GetTournamentBracket
+//   matches.go    — GetMatch, GetTournaments, GetTournament, GetTournamentBracket,
+//                   GetTournamentMatches, GetTournamentTeams, GetTournamentStats
 //   transfers.go  — GetTransfers
-//   stats.go      — GetTopKDPlayers, GetTopKDPlayersNew, GetAllPlayersKDStats, GetDatabaseValidation
+//   stats.go      — GetTopKDPlayers, GetAllPlayersKDStats, GetDatabaseValidation
 
 import (
 	"context"
@@ -20,9 +21,44 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/corbynfang/CDL-Website/internal/services"
+	"github.com/corbynfang/CDL-Website/internal/store"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+// Handler holds all service instances. Routes are registered as methods on *Handler.
+type Handler struct {
+	players    *services.PlayerService
+	teams      *services.TeamService
+	seasons    *services.SeasonService
+	franchises *services.FranchiseService
+	matches    *services.MatchService
+	transfers  *services.TransferService
+	stats      *services.StatsService
+}
+
+// New wires up all stores and services from a single DB connection.
+func New(db *gorm.DB) *Handler {
+	playerStore := store.NewGormPlayerStore(db)
+	seasonStore := store.NewGormSeasonStore(db)
+	teamStore := store.NewGormTeamStore(db)
+	franchiseStore := store.NewGormFranchiseStore(db)
+	matchStore := store.NewGormMatchStore(db)
+	tournamentStore := store.NewGormTournamentStore(db)
+	transferStore := store.NewGormTransferStore(db)
+	statsStore := store.NewGormStatsStore(db)
+
+	return &Handler{
+		players:    services.NewPlayerService(playerStore),
+		teams:      services.NewTeamService(teamStore, seasonStore),
+		seasons:    services.NewSeasonService(seasonStore),
+		franchises: services.NewFranchiseService(franchiseStore),
+		matches:    services.NewMatchService(matchStore, tournamentStore),
+		transfers:  services.NewTransferService(transferStore),
+		stats:      services.NewStatsService(statsStore),
+	}
+}
 
 func validateID(id string) (int, error) {
 	return strconv.Atoi(id)
@@ -33,22 +69,13 @@ func getContext(seconds int) (context.Context, context.CancelFunc) {
 }
 
 // noCacheHeaders prevents browsers from caching API responses.
-// Used on leaderboard endpoints where staleness is most visible.
 func noCacheHeaders(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 	c.Header("Pragma", "no-cache")
 	c.Header("Expires", "0")
 }
 
-func calculateKD(kills, deaths int) float64 {
-	if deaths == 0 {
-		return 0
-	}
-	return float64(kills) / float64(deaths)
-}
-
-// PaginationMeta is included in every paginated response so the frontend
-// knows how many total pages exist and which page it's on.
+// PaginationMeta is included in every paginated response.
 type PaginationMeta struct {
 	Page       int `json:"page"`
 	Limit      int `json:"limit"`
@@ -56,9 +83,7 @@ type PaginationMeta struct {
 	TotalPages int `json:"total_pages"`
 }
 
-// parsePagination reads ?page and ?limit from the request, applies safe
-// defaults, caps the limit, and returns the offset + a partial meta struct.
-// The caller must set meta.Total before sending the response.
+// parsePagination reads ?page and ?limit from the request, applies safe defaults.
 func parsePagination(c *gin.Context) (page, limit, offset int) {
 	page = 1
 	limit = 25
@@ -78,16 +103,10 @@ func parsePagination(c *gin.Context) (page, limit, offset int) {
 	return
 }
 
-// buildMeta constructs the final PaginationMeta given a total row count.
 func buildMeta(page, limit, total int) PaginationMeta {
 	pages := int(math.Ceil(float64(total) / float64(limit)))
 	if pages < 1 {
 		pages = 1
 	}
 	return PaginationMeta{Page: page, Limit: limit, Total: total, TotalPages: pages}
-}
-
-// applyPagination applies LIMIT/OFFSET to a GORM query chain.
-func applyPagination(q *gorm.DB, limit, offset int) *gorm.DB {
-	return q.Limit(limit).Offset(offset)
 }

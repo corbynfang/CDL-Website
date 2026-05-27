@@ -1,13 +1,5 @@
 package handlers
 
-// pg_helpers_test.go — shared setup for integration-style handler tests.
-//
-// TestMain starts a single PostgreSQL testcontainer for the whole package.
-// Tests that require it call setupPGTx, which wraps each test in a transaction
-// that is rolled back on cleanup — zero shared state between tests.
-//
-// If Docker is unavailable, pgDB stays nil and setupPGTx skips the test.
-
 import (
 	"context"
 	"log"
@@ -16,6 +8,7 @@ import (
 	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	tcpg "github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -66,15 +59,15 @@ func runTests(m *testing.M) int {
 	}
 
 	if err = db.AutoMigrate(
-		&database.Franchise{},
-		&database.Player{},
-		&database.Season{},
-		&database.Team{},
-		&database.Tournament{},
-		&database.Match{},
-		&database.MatchMap{},
-		&database.PlayerMapStats{},
-		&database.PlayerMatchStats{},
+		&models.Franchise{},
+		&models.Player{},
+		&models.Season{},
+		&models.Team{},
+		&models.Tournament{},
+		&models.Match{},
+		&models.MatchMap{},
+		&models.PlayerMapStats{},
+		&models.PlayerMatchStats{},
 	); err != nil {
 		log.Println("gorm: automigrate failed:", err)
 		return m.Run()
@@ -102,11 +95,9 @@ func setupPGTx(t *testing.T) {
 	})
 }
 
-// --- fixture helpers -----------------------------------------------------------
-
 func pgSeason(t *testing.T) {
 	t.Helper()
-	require.NoError(t, database.DB.Create(&database.Season{
+	require.NoError(t, database.DB.Create(&models.Season{
 		ID: 1, Name: "BO6 Season 2025", GameTitle: "Black Ops 6", GameCode: "BO6",
 		StartDate: time.Now(),
 	}).Error)
@@ -114,7 +105,7 @@ func pgSeason(t *testing.T) {
 
 func pgTournament(t *testing.T) {
 	t.Helper()
-	require.NoError(t, database.DB.Create(&database.Tournament{
+	require.NoError(t, database.DB.Create(&models.Tournament{
 		ID: 1, SeasonID: 1, Name: "CDL Major 1 2025", Slug: "cdl-major-1-2025",
 		TournamentType: "major", StartDate: time.Now(),
 	}).Error)
@@ -122,17 +113,16 @@ func pgTournament(t *testing.T) {
 
 func pgTeams(t *testing.T) {
 	t.Helper()
-	require.NoError(t, database.DB.Create(&database.Team{
+	require.NoError(t, database.DB.Create(&models.Team{
 		ID: 1, Name: "OpTic Texas", Abbreviation: "OTX",
 		PrimaryColor: "#000", SecondaryColor: "#0f0",
 	}).Error)
-	require.NoError(t, database.DB.Create(&database.Team{
+	require.NoError(t, database.DB.Create(&models.Team{
 		ID: 2, Name: "Atlanta FaZe", Abbreviation: "ATL",
 		PrimaryColor: "#000", SecondaryColor: "#f00",
 	}).Error)
 }
 
-// pgMatchEnv inserts the standard season + tournament + two teams used by all GetMatch tests.
 func pgMatchEnv(t *testing.T) {
 	t.Helper()
 	pgSeason(t)
@@ -140,11 +130,10 @@ func pgMatchEnv(t *testing.T) {
 	pgTeams(t)
 }
 
-// pgMatch inserts a Match with tournament_id=1, team1_id=1, team2_id=2, winner_id=1.
 func pgMatch(t *testing.T, matchID uint) {
 	t.Helper()
 	winnerID := uint(1)
-	require.NoError(t, database.DB.Create(&database.Match{
+	require.NoError(t, database.DB.Create(&models.Match{
 		ID:              matchID,
 		TournamentID:    1,
 		Team1ID:         1,

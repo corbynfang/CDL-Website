@@ -1,16 +1,5 @@
 package handlers
 
-// players_test.go — tests for GetPlayers and GetPlayer handlers.
-//
-// Key concepts shown here:
-//   - Mock database: we never touch a real database. sqlmock intercepts the
-//     SQL that GORM generates and returns rows we control.
-//   - ExpectQuery vs ExpectExec: SELECT → ExpectQuery, INSERT/UPDATE/DELETE → ExpectExec.
-//   - GetPlayers runs TWO queries (COUNT then SELECT), so we set up two expectations
-//     in the exact order they fire.
-//   - Response shape: GetPlayers returns { data: [...], pagination: {...} }, so we
-//     unmarshal into a struct that matches that shape.
-
 import (
 	"encoding/json"
 	"net/http"
@@ -19,14 +8,12 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// paginatedBody is the shape GetPlayers returns.
-// Unexported fields use any because the exact player fields don't matter for
-// these tests — we just care that the envelope is correct.
 type paginatedBody struct {
 	Data       []map[string]any `json:"data"`
 	Pagination struct {
@@ -37,20 +24,11 @@ type paginatedBody struct {
 	} `json:"pagination"`
 }
 
-// ── GetPlayers ───────────────────────────────────────────────────────────────
-
 func TestGetPlayers_DefaultPagination(t *testing.T) {
 	mock := setupMockDB(t)
-
-	// GetPlayers runs COUNT first, then SELECT.
-	// We must register expectations in the same order the handler fires them.
-
-	// Expectation 1: COUNT query — returns 2 total players.
-	// sqlmock.NewRows defines column names; AddRow adds one result row.
 	mock.ExpectQuery(`SELECT count\(\*\) FROM "players"`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
-	// Expectation 2: paginated SELECT — returns the two player rows.
 	playerRows := sqlmock.NewRows([]string{"id", "gamertag", "first_name", "last_name",
 		"country", "role", "is_active", "liquipedia_url", "twitter_handle", "avatar_url"}).
 		AddRow(1, "Scump", "Seth", "Abner", "US", "flex", true, "", "", "").
@@ -58,34 +36,29 @@ func TestGetPlayers_DefaultPagination(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "players"`).
 		WillReturnRows(playerRows)
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetPlayers(c)
+	h.GetPlayers(c)
 
-	// Check HTTP status
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	// Unmarshal the response into our typed struct
 	var body paginatedBody
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
 
-	// The data array should have 2 players
 	assert.Len(t, body.Data, 2)
 	assert.Equal(t, "Scump", body.Data[0]["gamertag"])
 
-	// Pagination metadata should reflect defaults and the COUNT result
-	assert.Equal(t, 1,  body.Pagination.Page)
+	assert.Equal(t, 1, body.Pagination.Page)
 	assert.Equal(t, 25, body.Pagination.Limit)
-	assert.Equal(t, 2,  body.Pagination.Total)
-	assert.Equal(t, 1,  body.Pagination.TotalPages)
+	assert.Equal(t, 2, body.Pagination.Total)
+	assert.Equal(t, 1, body.Pagination.TotalPages)
 
-	// Verify sqlmock got exactly the queries we expected — no more, no fewer
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetPlayers_SecondPage(t *testing.T) {
 	mock := setupMockDB(t)
 
-	// 30 total players, page 2, limit 25 → only 5 players on page 2
 	mock.ExpectQuery(`SELECT count\(\*\) FROM "players"`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(30))
 
@@ -95,25 +68,23 @@ func TestGetPlayers_SecondPage(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "players"`).
 		WillReturnRows(playerRows)
 
-	// ?page=2 is passed via the query string
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "page=2&limit=25")
-	GetPlayers(c)
+	h.GetPlayers(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body paginatedBody
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
 
-	// Page 2 of 2 (ceil(30/25) = 2)
-	assert.Equal(t, 2,  body.Pagination.Page)
+	assert.Equal(t, 2, body.Pagination.Page)
 	assert.Equal(t, 30, body.Pagination.Total)
-	assert.Equal(t, 2,  body.Pagination.TotalPages)
+	assert.Equal(t, 2, body.Pagination.TotalPages)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetPlayers_WithSearch(t *testing.T) {
 	mock := setupMockDB(t)
 
-	// When search is provided, both COUNT and SELECT include WHERE gamertag ILIKE
 	mock.ExpectQuery(`SELECT count\(\*\) FROM "players" WHERE`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
@@ -123,8 +94,9 @@ func TestGetPlayers_WithSearch(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "players" WHERE`).
 		WillReturnRows(playerRows)
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "search=scump")
-	GetPlayers(c)
+	h.GetPlayers(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body paginatedBody
@@ -139,23 +111,21 @@ func TestGetPlayers_WithSearch(t *testing.T) {
 func TestGetPlayers_EmptyResults(t *testing.T) {
 	mock := setupMockDB(t)
 
-	// Search that matches nobody — count=0, data=[]
 	mock.ExpectQuery(`SELECT count\(\*\) FROM "players"`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(`SELECT \* FROM "players"`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "gamertag"}))
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "search=zzznobody")
-	GetPlayers(c)
+	h.GetPlayers(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body paginatedBody
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
 
-	// Empty data, but pagination still present
 	assert.Len(t, body.Data, 0)
 	assert.Equal(t, 0, body.Pagination.Total)
-	// buildMeta guarantees TotalPages is never 0
 	assert.Equal(t, 1, body.Pagination.TotalPages)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -163,14 +133,13 @@ func TestGetPlayers_EmptyResults(t *testing.T) {
 func TestGetPlayers_CountDBError(t *testing.T) {
 	mock := setupMockDB(t)
 
-	// Simulate a database failure on the COUNT query
 	mock.ExpectQuery(`SELECT count\(\*\) FROM "players"`).
-		WillReturnError(assert.AnError) // assert.AnError is a generic sentinel error
+		WillReturnError(assert.AnError)
 
+	h := newTestHandler(t)
 	c, w := newCtx(nil, "")
-	GetPlayers(c)
+	h.GetPlayers(c)
 
-	// Handler should return 500 when the DB fails
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	var body map[string]string
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
@@ -180,18 +149,14 @@ func TestGetPlayers_CountDBError(t *testing.T) {
 // ── GetPlayerMatches ──────────────────────────────────────────────────────────
 
 func TestGetPlayerMatches_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "notanumber"}}, "")
-	GetPlayerMatches(c)
+	h.GetPlayerMatches(c)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestGetPlayerMatches_EmptyResponse(t *testing.T) {
 	mock := setupMockDB(t)
-
-	// GetPlayerMatches now JOINs matches for date-based ordering.
-	// GORM emits SELECT "player_match_stats".* FROM "player_match_stats"
-	// JOIN matches ON ... WHERE player_match_stats.player_id = ? ...
-	// Zero rows returned → no preload queries fire.
 	mock.ExpectQuery(`SELECT .+ FROM "player_match_stats" JOIN matches`).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "match_id", "player_id", "team_id",
@@ -200,8 +165,9 @@ func TestGetPlayerMatches_EmptyResponse(t *testing.T) {
 			"created_at", "updated_at",
 		}))
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
-	GetPlayerMatches(c)
+	h.GetPlayerMatches(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body map[string]interface{}
@@ -212,82 +178,10 @@ func TestGetPlayerMatches_EmptyResponse(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-// ── sortEventsByRecentMatch ───────────────────────────────────────────────────
-
-// TestSortEventsByRecentMatch_DateOverMatchID proves that EWC 2025 (real date,
-// low match IDs 252-275) is sorted above CDL Major 1 2023 (zero date, high match
-// IDs 1240+). The old match_id-based sort would place CDL 2023 first; the new
-// date-based sort must place EWC 2025 first.
-func TestSortEventsByRecentMatch_DateOverMatchID(t *testing.T) {
-	events := []gin.H{
-		{
-			"event":         "CDL Major 1 2023",
-			"tournament_id": uint(14),
-			"matches": []gin.H{
-				// High match_id but zero date (stored as Go zero-time).
-				{"match_id": uint(1266), "date": "0001-01-01T00:00:00Z"},
-				{"match_id": uint(1259), "date": "0001-01-01T00:00:00Z"},
-			},
-		},
-		{
-			"event":         "Esports World Cup 2025",
-			"tournament_id": uint(52),
-			"matches": []gin.H{
-				// Low match_id but real date — must appear first.
-				{"match_id": uint(275), "date": "2025-07-26T18:30:00Z"},
-				{"match_id": uint(263), "date": "2025-07-24T19:30:00Z"},
-			},
-		},
-	}
-
-	sortEventsByRecentMatch(events)
-
-	require.Len(t, events, 2)
-	assert.Equal(t, "Esports World Cup 2025", events[0]["event"],
-		"EWC 2025 must be first despite lower match_ids (275 < 1266)")
-	assert.Equal(t, "CDL Major 1 2023", events[1]["event"],
-		"CDL Major 1 2023 must be second because its matches have zero dates")
-}
-
-// TestSortEventsByRecentMatch_RealDatesOrdered verifies that among multiple
-// tournaments with real dates the most recent one comes first.
-func TestSortEventsByRecentMatch_RealDatesOrdered(t *testing.T) {
-	events := []gin.H{
-		{
-			"event":   "EWC 2024",
-			"matches": []gin.H{{"match_id": uint(1202), "date": "2024-08-17T00:00:00Z"}},
-		},
-		{
-			"event":   "EWC 2025",
-			"matches": []gin.H{{"match_id": uint(275), "date": "2025-07-26T18:30:00Z"}},
-		},
-	}
-
-	sortEventsByRecentMatch(events)
-
-	assert.Equal(t, "EWC 2025", events[0]["event"])
-	assert.Equal(t, "EWC 2024", events[1]["event"])
-}
-
-// TestSortEventsByRecentMatch_EmptyEventsSink ensures events with no matches
-// sink to the bottom regardless of the other event's dates.
-func TestSortEventsByRecentMatch_EmptyEventsSink(t *testing.T) {
-	events := []gin.H{
-		{"event": "Empty Event", "matches": []gin.H{}},
-		{"event": "EWC 2025", "matches": []gin.H{{"match_id": uint(275), "date": "2025-07-26T18:30:00Z"}}},
-	}
-
-	sortEventsByRecentMatch(events)
-
-	assert.Equal(t, "EWC 2025", events[0]["event"])
-	assert.Equal(t, "Empty Event", events[1]["event"])
-}
-
-// ── GetPlayerKDStats ──────────────────────────────────────────────────────────
-
 func TestGetPlayerKDStats_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "notanumber"}}, "")
-	GetPlayerKDStats(c)
+	h.GetPlayerKDStats(c)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
@@ -296,13 +190,13 @@ func TestGetPlayerKDStats_NotFound(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "players"`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "gamertag"}))
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "99"}}, "")
-	GetPlayerKDStats(c)
+	h.GetPlayerKDStats(c)
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-// playerKDBody mirrors the shape GetPlayerKDStats returns.
 type playerKDBody struct {
 	PlayerID       float64          `json:"player_id"`
 	Gamertag       string           `json:"gamertag"`
@@ -316,7 +210,6 @@ type playerKDBody struct {
 	TournamentStats []map[string]any `json:"tournament_stats"`
 }
 
-// playerTournamentStatCols lists all columns GetPlayerKDStats reads from player_tournament_stats.
 var playerTournamentStatCols = []string{
 	"id", "player_id", "team_id", "tournament_id",
 	"total_kills", "total_deaths", "total_assists", "total_damage",
@@ -330,29 +223,27 @@ func TestGetPlayerKDStats_ResponseShape(t *testing.T) {
 	mock := setupMockDB(t)
 	now := time.Now()
 
-	// 1. Player lookup
 	mock.ExpectQuery(`SELECT \* FROM "players"`).WillReturnRows(
 		sqlmock.NewRows([]string{"id", "gamertag", "avatar_url", "is_active", "created_at", "updated_at"}).
 			AddRow(1, "Shotzzy", "", true, now, now))
 
-	// 2. Tournament stats (one row with mode-specific columns)
 	mock.ExpectQuery(`SELECT \* FROM "player_tournament_stats"`).WillReturnRows(
 		sqlmock.NewRows(playerTournamentStatCols).AddRow(
-			1, 1, 1, 5, // id, player_id, team_id, tournament_id
-			120, 80, 10, 50000, // kills, deaths, assists, damage
-			1.50, 1.63, 10, 40, // kd_ratio, kda_ratio, overall_maps, plus_minus
-			60, 40, 1.50, 5, // hp_kills, hp_deaths, hp_kd_ratio, hp_maps
-			30, 20, 1.50, 3, // snd_kills, snd_deaths, snd_kd_ratio, snd_maps
-			1.20, 2, // control_kd_ratio, control_maps
+			1, 1, 1, 5,
+			120, 80, 10, 50000,
+			1.50, 1.63, 10, 40,
+			60, 40, 1.50, 5,
+			30, 20, 1.50, 3,
+			1.20, 2,
 		))
 
-	// 3. Tournament preload
 	mock.ExpectQuery(`SELECT \* FROM "tournaments"`).WillReturnRows(
 		sqlmock.NewRows([]string{"id", "name", "slug", "tournament_type", "start_date", "is_lan", "created_at", "updated_at"}).
 			AddRow(5, "CDL Major 1 2025", "cdl-major-1-2025", "major", now, true, now, now))
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
-	GetPlayerKDStats(c)
+	h.GetPlayerKDStats(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body playerKDBody
@@ -378,7 +269,6 @@ func TestGetPlayerKDStats_ControlKDZeroWhenNoControlMaps(t *testing.T) {
 		sqlmock.NewRows([]string{"id", "gamertag", "avatar_url", "is_active", "created_at", "updated_at"}).
 			AddRow(2, "Simp", "", true, now, now))
 
-	// control_maps = 0 → handler skips adding to ctlKDSum, ctlMapsTotal stays 0
 	mock.ExpectQuery(`SELECT \* FROM "player_tournament_stats"`).WillReturnRows(
 		sqlmock.NewRows(playerTournamentStatCols).AddRow(
 			2, 2, 1, 5,
@@ -386,43 +276,42 @@ func TestGetPlayerKDStats_ControlKDZeroWhenNoControlMaps(t *testing.T) {
 			1.43, 1.50, 8, 30,
 			50, 30, 1.67, 4,
 			25, 18, 1.39, 2,
-			0.0, 0, // control_kd_ratio=0, control_maps=0
+			0.0, 0,
 		))
 
 	mock.ExpectQuery(`SELECT \* FROM "tournaments"`).WillReturnRows(
 		sqlmock.NewRows([]string{"id", "name", "slug", "tournament_type", "start_date", "is_lan", "created_at", "updated_at"}).
 			AddRow(5, "CDL Major 1 2025", "cdl-major-1-2025", "major", now, true, now, now))
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "2"}}, "")
-	GetPlayerKDStats(c)
+	h.GetPlayerKDStats(c)
 
 	var body playerKDBody
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
-	// Documents current contract: control_kd_ratio is 0, not null, when no control maps played.
-	// The frontend must distinguish 0 from "no data" — currently it does not.
+
 	assert.Equal(t, float64(0), body.ControlKDRatio,
 		"control_kd_ratio = 0 when no control maps (not null)")
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
-
-// ── GetPlayerMatches — with data ──────────────────────────────────────────────
 
 func TestGetPlayerMatches_ResponseShape(t *testing.T) {
 	setupPGTx(t)
 	pgMatchEnv(t)
 	pgMatch(t, 10)
 
-	require.NoError(t, database.DB.Create(&database.Player{
+	require.NoError(t, database.DB.Create(&models.Player{
 		ID: 1, Gamertag: "Shotzzy", IsActive: true,
 	}).Error)
-	require.NoError(t, database.DB.Create(&database.PlayerMatchStats{
+	require.NoError(t, database.DB.Create(&models.PlayerMatchStats{
 		MatchID: 10, PlayerID: 1, TeamID: 1,
 		MapsPlayed: 3, TotalKills: 24, TotalDeaths: 16, TotalAssists: 3,
 		KDRatio: 1.50, KDARatio: 1.69, ADR: 850,
 	}).Error)
 
+	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
-	GetPlayerMatches(c)
+	h.GetPlayerMatches(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var body map[string]any
@@ -448,35 +337,3 @@ func TestGetPlayerMatches_ResponseShape(t *testing.T) {
 		assert.Contains(t, match, field, "match entry must contain %s", field)
 	}
 }
-
-// ── sortEventsByRecentMatch ───────────────────────────────────────────────────
-
-func TestSortEventsByRecentMatch_OrdersByRecentMatchFirst(t *testing.T) {
-	// Sort is now date-based: event with the most recent RFC3339 date comes first.
-	events := []gin.H{
-		{"event": "B", "matches": []gin.H{{"match_id": uint(5), "date": "2024-08-01T00:00:00Z"}}},
-		{"event": "A", "matches": []gin.H{{"match_id": uint(10), "date": "2025-07-26T00:00:00Z"}}},
-	}
-	sortEventsByRecentMatch(events)
-	assert.Equal(t, "A", events[0]["event"])
-	assert.Equal(t, "B", events[1]["event"])
-}
-
-func TestSortEventsByRecentMatch_EmptyMatchesLastRight(t *testing.T) {
-	events := []gin.H{
-		{"event": "empty", "matches": []gin.H{}},
-		{"event": "has-match", "matches": []gin.H{{"match_id": uint(1), "date": "2025-01-01T00:00:00Z"}}},
-	}
-	sortEventsByRecentMatch(events)
-	assert.Equal(t, "has-match", events[0]["event"])
-	assert.Equal(t, "empty", events[1]["event"])
-}
-
-func TestSortEventsByRecentMatch_StableOnSingleEvent(t *testing.T) {
-	events := []gin.H{
-		{"event": "only", "matches": []gin.H{{"match_id": uint(7), "date": "2025-07-26T00:00:00Z"}}},
-	}
-	sortEventsByRecentMatch(events)
-	assert.Equal(t, "only", events[0]["event"])
-}
-

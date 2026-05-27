@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -57,7 +57,7 @@ func seedBracketPatches(
 	// These stubs have no match_maps or player stats, so deleting them is safe.
 	// Phase 2 now corrects tournament_id in-place, so on re-seed Phase 6 will
 	// find and UPDATE the real match instead of inserting a new stub.
-	result := db.Where("liquipedia_url LIKE ?", "bracket_patch:%").Delete(&database.Match{})
+	result := db.Where("liquipedia_url LIKE ?", "bracket_patch:%").Delete(&models.Match{})
 	log.Printf("[bracket_patches] purged %d stale bracket-patch stub matches", result.RowsAffected)
 
 	var totalUpdated, totalInserted, totalSkipped int
@@ -105,7 +105,7 @@ func applyBracketCSV(
 		// Match by team pair + scores in either orientation.
 		// Scores are more reliable than dates because source data sometimes has
 		// off-by-one-day differences due to timezone handling in the era_finals seeder.
-		var existing database.Match
+		var existing models.Match
 		err := db.Where(`
 			tournament_id = ? AND (
 				(team1_id = ? AND team2_id = ? AND team1_score = ? AND team2_score = ?) OR
@@ -131,7 +131,7 @@ func applyBracketCSV(
 			winnerID = &wid
 		}
 		dedupKey := fmt.Sprintf("bracket_patch:%s:%s:%d", dbSlug, r.CanonicalRound, r.Position)
-		m := database.Match{
+		m := models.Match{
 			TournamentID:    tournamentID,
 			Team1ID:         team1ID,
 			Team2ID:         team2ID,
