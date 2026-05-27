@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ── Bun (not always in PATH when run outside a login shell) ───────────────────
+export PATH="$HOME/.bun/bin:$PATH"
+
 # ── Config ────────────────────────────────────────────────────────────────────
 REGION="us-east-1"
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
