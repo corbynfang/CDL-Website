@@ -298,4 +298,81 @@ export interface PlayerMapStats {
   first_blood_count: number;
   first_death_count: number;
   source: string;
+}
+
+export interface PlayerKDTournamentEntry {
+  tournament_id: number;
+  tournament_name: string;
+  kills: number;
+  deaths: number;
+  assists: number;
+  kd_ratio: number;
+  maps_played: number;
+}
+
+export interface PlayerKDResponse {
+  player_id: number;
+  gamertag: string;
+  avatar_url: string;
+  total_kills: number;
+  total_deaths: number;
+  total_assists: number;
+  avg_kd: number;
+  hp_kd_ratio: number;
+  snd_kd_ratio: number;
+  control_kd_ratio: number;
+  tournament_stats: PlayerKDTournamentEntry[];
+}
+
+export interface MatchHistoryResult {
+  match_id: number;
+  date: string;
+  opponent: string;
+  opponent_abbr: string;
+  result: string;
+  kd: number | null;
+  kills: number;
+  deaths: number;
+}
+
+export interface MatchHistoryEvent {
+  event: string;
+  year: number;
+  tournament_id: number;
+  matches: MatchHistoryResult[];
+}
+
+export interface PlayerMatchHistory {
+  player_id: number;
+  events: MatchHistoryEvent[];
+  total: number;
+}
+
+export interface PlayerEraStats {
+  team_id: number;
+  team_name: string;
+  game_code: string;
+  season_name: string;
+  matches: number;
+  maps: number;
+  kills: number;
+  deaths: number;
+  kd: number;
+}
+
+export interface PlayerFranchiseEntry {
+  franchise_key: string;
+  franchise_name: string;
+  eras: PlayerEraStats[];
+  total_matches: number;
+  total_maps: number;
+  total_kills: number;
+  total_deaths: number;
+  career_kd: number;
+}
+
+export interface PlayerCareerResponse {
+  player_id: number;
+  gamertag: string;
+  franchises: PlayerFranchiseEntry[];
 } 

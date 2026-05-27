@@ -3,7 +3,17 @@ import { useParams, Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { getPlayerAvatar } from "../utils/avatarAssets";
 import { getKdColorClass } from "../utils/kdUtils";
-import type { Player } from "../types";
+import type {
+  Player,
+  PlayerKDResponse,
+  PlayerMatchHistory,
+  PlayerCareerResponse,
+  MatchHistoryEvent,
+  MatchHistoryResult,
+  PlayerKDTournamentEntry,
+  PlayerFranchiseEntry,
+  PlayerEraStats,
+} from "../types";
 
 const TABS = [
   { id: "last5", label: "Last 5" },
@@ -35,13 +45,13 @@ const PlayerDetail = () => {
   const { data: player, loading: playerLoading, error: playerError } = useApi<Player>(
     `/api/v1/players/${id}`
   );
-  const { data: stats, loading: statsLoading } = useApi<any>(
+  const { data: stats, loading: statsLoading } = useApi<PlayerKDResponse>(
     `/api/v1/players/${id}/kd`
   );
-  const { data: matchesData, loading: matchesLoading } = useApi<any>(
+  const { data: matchesData, loading: matchesLoading } = useApi<PlayerMatchHistory>(
     `/api/v1/players/${id}/matches`
   );
-  const { data: careerData } = useApi<any>(
+  const { data: careerData } = useApi<PlayerCareerResponse>(
     `/api/v1/players/${id}/franchise-career`
   );
 
@@ -66,16 +76,17 @@ const PlayerDetail = () => {
     );
   }
 
-  const events = matchesData?.events || [];
-  const allMatches = (events.flatMap((e: any) => e.matches || []) as any[])
+  const events: MatchHistoryEvent[] = matchesData?.events || [];
+  const allMatches: MatchHistoryResult[] = events
+    .flatMap((e) => e.matches || [])
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const last5Matches = allMatches.slice(0, 5);
-  const tournamentStats = stats?.tournament_stats || [];
+  const tournamentStats: PlayerKDTournamentEntry[] = stats?.tournament_stats || [];
 
   const overallKD = stats?.avg_kd || 0;
-  const hpKD = stats?.hp_kd_ratio || stats?.ewc_hp_kd_ratio || 0;
-  const sndKD = stats?.snd_kd_ratio || stats?.ewc_snd_kd_ratio || 0;
-  const ctlKD = stats?.control_kd_ratio || stats?.ewc_control_kd_ratio || 0;
+  const hpKD = stats?.hp_kd_ratio || 0;
+  const sndKD = stats?.snd_kd_ratio || 0;
+  const ctlKD = stats?.control_kd_ratio || 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -218,7 +229,7 @@ const PlayerDetail = () => {
               </h3>
               {last5Matches.length > 0 ? (
                 <div className="space-y-2">
-                  {last5Matches.map((match: any, i: number) => (
+                  {last5Matches.map((match, i: number) => (
                     <Link
                       key={i}
                       to={match.match_id ? `/matches/${match.match_id}` : "#"}
@@ -269,7 +280,7 @@ const PlayerDetail = () => {
             <div>
               {events.length > 0 ? (
                 <div className="space-y-8">
-                  {events.map((event: any, ei: number) => (
+                  {events.map((event, ei: number) => (
                     <div key={ei}>
                       <h3 className="text-xs uppercase tracking-widest text-[#737373] mb-4">
                         {event.event} {event.year}
@@ -290,7 +301,7 @@ const PlayerDetail = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {event.matches.map((match: any, mi: number) => (
+                              {event.matches.map((match, mi: number) => (
                                 <tr
                                   key={mi}
                                   className="border-b border-[#1a1a1a] hover:bg-[#0a0a0a] transition-colors cursor-pointer"
@@ -343,7 +354,7 @@ const PlayerDetail = () => {
               </h3>
               {tournamentStats.length > 0 ? (
                 <div className="space-y-2">
-                  {tournamentStats.map((t: any, i: number) => (
+                  {tournamentStats.map((t, i: number) => (
                     <div key={i} className="bg-[#0a0a0a] border border-[#1a1a1a] p-5">
                       <div className="flex justify-between items-start mb-4">
                         <div>
@@ -351,7 +362,7 @@ const PlayerDetail = () => {
                             {t.tournament_name || "Tournament"}
                           </p>
                           <p className="text-[#737373] text-xs mt-0.5">
-                            {t.matches || 0} matches · {t.maps_played || 0} maps
+                            {t.maps_played || 0} maps
                           </p>
                         </div>
                         <div className="text-right">
@@ -389,14 +400,11 @@ const PlayerDetail = () => {
               <h3 className="text-xs uppercase tracking-widest text-[#737373] mb-5">Events</h3>
               {tournamentStats.length > 0 ? (
                 <div className="space-y-2">
-                  {tournamentStats.map((t: any, i: number) => (
+                  {tournamentStats.map((t, i: number) => (
                     <div key={i} className="flex items-center justify-between bg-[#0a0a0a] border border-[#1a1a1a] p-4">
                       <div>
                         <p className="font-grotesk font-semibold text-white text-sm">
                           {t.tournament_name || "Tournament"}
-                        </p>
-                        <p className="text-[#737373] text-xs mt-0.5">
-                          {t.matches || 0} matches played
                         </p>
                       </div>
                       <div className="text-right">
@@ -419,9 +427,9 @@ const PlayerDetail = () => {
               <h3 className="text-xs uppercase tracking-widest text-[#737373] mb-5">
                 Career by Franchise
               </h3>
-              {careerData?.franchises?.length > 0 ? (
+              {careerData?.franchises && careerData.franchises.length > 0 ? (
                 <div className="space-y-6">
-                  {careerData.franchises.map((franchise: any, fi: number) => (
+                  {careerData.franchises.map((franchise: PlayerFranchiseEntry, fi: number) => (
                     <div key={fi} className="bg-[#0a0a0a] border border-[#1a1a1a]">
                       {/* Franchise header */}
                       <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a1a1a]">
@@ -443,7 +451,7 @@ const PlayerDetail = () => {
 
                       {/* Era breakdown */}
                       <div className="divide-y divide-[#111111]">
-                        {franchise.eras.map((era: any, ei: number) => (
+                        {franchise.eras.map((era: PlayerEraStats, ei: number) => (
                           <div key={ei} className="flex items-center justify-between px-5 py-3">
                             <div>
                               <p className="text-[#a3a3a3] text-xs font-medium">{era.team_name}</p>

@@ -1,47 +1,4 @@
-// Fixtures for PlayerDetail component tests.
-// Shapes mirror what the Go backend actually returns (see players.go GetPlayerKDStats / GetPlayerMatches).
-
-export interface PlayerKDResponse {
-  player_id: number
-  gamertag: string
-  avatar_url: string
-  total_kills: number
-  total_deaths: number
-  total_assists: number
-  avg_kd: number
-  hp_kd_ratio: number
-  snd_kd_ratio: number
-  control_kd_ratio: number
-  tournament_stats: Array<{
-    tournament_id: number
-    tournament_name: string
-    kills: number
-    deaths: number
-    assists: number
-    kd_ratio: number
-    maps_played: number
-  }>
-}
-
-export interface PlayerMatchesResponse {
-  player_id: number
-  events: Array<{
-    event: string
-    year: number
-    tournament_id: number
-    matches: Array<{
-      match_id: number
-      date: string
-      opponent: string
-      opponent_abbr: string
-      result: string
-      kd: number | null
-      kills: number
-      deaths: number
-    }>
-  }>
-  total: number
-}
+import type { PlayerKDResponse, PlayerMatchHistory } from '../../types'
 
 export const playerFixture = {
   id: 1,
@@ -79,15 +36,12 @@ export const playerKDFixture: PlayerKDResponse = {
   ],
 }
 
-// Backend returns 0 (not null) for control_kd_ratio when no Control maps played.
-// This fixture documents that contract so tests can assert the current (buggy) display.
 export const playerKDNoControlFixture: PlayerKDResponse = {
   ...playerKDFixture,
   control_kd_ratio: 0,
 }
 
-// 6 total matches across 2 events — last5 should show exactly 5.
-export const playerMatchesFixture: PlayerMatchesResponse = {
+export const playerMatchesFixture: PlayerMatchHistory = {
   player_id: 1,
   events: [
     {
@@ -114,14 +68,13 @@ export const playerMatchesFixture: PlayerMatchesResponse = {
   total: 6,
 }
 
-export const playerMatchesEmptyFixture: PlayerMatchesResponse = {
+export const playerMatchesEmptyFixture: PlayerMatchHistory = {
   player_id: 1,
   events: [],
   total: 0,
 }
 
-// Null kd — documents the bug where the frontend renders "0.00" instead of "—"
-export const playerMatchesNullKDFixture: PlayerMatchesResponse = {
+export const playerMatchesNullKDFixture: PlayerMatchHistory = {
   player_id: 2,
   events: [
     {
