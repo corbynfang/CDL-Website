@@ -1,6 +1,6 @@
 # CDLytics
 
-Full-stack Call of Duty League analytics platform covering five competitive seasons (Black Ops Cold War through Black Ops 6). Built end-to-end as a solo project — backend API, React frontend, and full AWS infrastructure provisioned with Terraform.
+Full-stack Call of Duty League analytics platform covering five competitive seasons (Black Ops Cold War through Black Ops 6). Built end-to-end as a solo project ; backend API, React frontend, and full AWS infrastructure provisioned with Terraform.
 
 Live at **[cdlytics.com](https://cdlytics.com)**
 
