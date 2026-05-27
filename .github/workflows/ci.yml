@@ -26,21 +26,19 @@ jobs:
       - name: Go tests
         run: go test ./...
 
-      - name: Set up Node
-        uses: actions/setup-node@v4.4.0
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: frontend-react/package-lock.json
+          bun-version: latest
 
       - name: Install frontend dependencies
         working-directory: frontend-react
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: TypeScript type check
         working-directory: frontend-react
-        run: npx tsc --noEmit
+        run: bunx tsc --noEmit
 
       - name: Frontend tests
         working-directory: frontend-react
-        run: npx vitest run
+        run: bun run test
