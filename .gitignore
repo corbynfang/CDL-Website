@@ -61,6 +61,7 @@ logs/
 # ── Claude Code internal files ────────────────────────────────────────────────
 frontend-react/.agents/
 frontend-react/skills-lock.json
+CLAUDE.md
 
 # ── Duplicate / junk files ────────────────────────────────────────────────────
 deploy/deploy\ 2.sh
