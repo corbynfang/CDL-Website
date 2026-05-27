@@ -189,7 +189,13 @@ func (ps *PlayerService) GetMatchHistory(ctx context.Context, playerID int) (*Pl
 				result = "L"
 			}
 		}
-		resultScore := result + " " + strconv.Itoa(match.Team1Score) + ":" + strconv.Itoa(match.Team2Score)
+		var myScore, oppScore int
+		if stat.TeamID == match.Team1ID {
+			myScore, oppScore = match.Team1Score, match.Team2Score
+		} else {
+			myScore, oppScore = match.Team2Score, match.Team1Score
+		}
+		resultScore := result + " " + strconv.Itoa(myScore) + ":" + strconv.Itoa(oppScore)
 
 		eventsMap[tid].Matches = append(eventsMap[tid].Matches, MatchResult{
 			MatchID:      match.ID,

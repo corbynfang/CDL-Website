@@ -210,14 +210,21 @@ export interface PlayerKDStatsData {
   match_stats: PlayerMatchStats[];
 }
 
+// Matches KDRow in internal/store/stats.go
 export interface TopKDPlayer {
   player_id: number;
   gamertag: string;
-  team_name: string;
-  team_abbreviation: string;
-  avg_kd: number;
-  avg_kda: number;
-  matches_played: number;
+  avatar_url: string;
+  team_abbr: string;
+  season_kills: number;
+  season_deaths: number;
+  season_assists: number;
+  season_kd: number;
+}
+
+// Returned by GET /stats/all-kd-by-tournament — same as TopKDPlayer plus derived field
+export interface AllKDPlayer extends TopKDPlayer {
+  season_kd_plus_minus: number;
 }
 
 export interface PlayerTransfer {

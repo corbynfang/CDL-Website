@@ -9,6 +9,7 @@ import type {
   TeamTournamentStats,
   PlayerKDStatsData,
   TopKDPlayer,
+  AllKDPlayer,
   PlayerTransfer,
   Tournament,
   TournamentDetail,
@@ -144,16 +145,18 @@ export const playerApi = {
 
 // Stats API functions
 export const statsApi = {
-  // Get top KD players
+  // Get top KD players — backend wraps array as { timestamp, players, count }
   getTopKDPlayers: async (): Promise<TopKDPlayer[]> => {
-    const response: AxiosResponse<TopKDPlayer[]> = await api.get('/players/top-kd');
-    return response.data;
+    const response: AxiosResponse<{ players: TopKDPlayer[]; count: number; timestamp: number }> =
+      await api.get('/players/top-kd');
+    return response.data.players;
   },
 
-  // Get all player KD stats for the season and all majors
-  getAllPlayersKDStats: async (): Promise<any[]> => {
-    const response: AxiosResponse<any[]> = await api.get('/stats/all-kd-by-tournament');
-    return response.data;
+  // Get all player KD stats — backend wraps array as { timestamp, players, count }
+  getAllPlayersKDStats: async (): Promise<AllKDPlayer[]> => {
+    const response: AxiosResponse<{ players: AllKDPlayer[]; count: number; timestamp: number }> =
+      await api.get('/stats/all-kd-by-tournament');
+    return response.data.players;
   },
 };
 
