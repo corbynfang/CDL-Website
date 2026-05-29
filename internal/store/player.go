@@ -14,8 +14,17 @@ type PlayerStore interface {
 	GetByID(ctx context.Context, id int) (*models.Player, error)
 	ListMatchStats(ctx context.Context, playerID int) ([]models.PlayerMatchStats, error)
 	ListTournamentStats(ctx context.Context, playerID int) ([]models.PlayerTournamentStats, error)
+	ListModeKDSplits(ctx context.Context, playerID int) ([]ModeKDSplit, error)
 	ListMatchHistoryRows(ctx context.Context, playerID int) ([]models.PlayerMatchStats, error)
 	ListCareerRows(ctx context.Context, playerID int) ([]PlayerCareerRow, error)
+}
+
+// ModeKDSplit holds a player's kill/death totals for one game mode, aggregated
+// from per-map stats. Mode is normalised to "hp", "snd", or "control".
+type ModeKDSplit struct {
+	Mode   string
+	Kills  int
+	Deaths int
 }
 
 // PlayerCareerRow is the raw scan target for the franchise-career SQL query.
@@ -78,6 +87,31 @@ func (s *gormPlayerStore) ListTournamentStats(ctx context.Context, playerID int)
 		Order("tournament_id DESC").
 		Find(&stats).Error
 	return stats, err
+}
+
+func (s *gormPlayerStore) ListModeKDSplits(ctx context.Context, playerID int) ([]ModeKDSplit, error) {
+	var rows []ModeKDSplit
+	err := s.db.WithContext(ctx).Raw(`
+		SELECT
+			CASE
+				WHEN mm.mode IN ('Search and Destroy', 'Search & Destroy') THEN 'snd'
+				WHEN mm.mode = 'Hardpoint' THEN 'hp'
+				WHEN mm.mode = 'Control'   THEN 'control'
+				ELSE 'other'
+			END AS mode,
+			COALESCE(SUM(pms.kills), 0)  AS kills,
+			COALESCE(SUM(pms.deaths), 0) AS deaths
+		FROM player_map_stats pms
+		JOIN match_maps mm
+			ON mm.match_id = pms.match_id
+			AND mm.map_number = pms.map_number
+		WHERE pms.player_id = ?
+			AND mm.mode IS NOT NULL
+			AND mm.mode <> ''
+			AND mm.played = true
+		GROUP BY 1
+	`, playerID).Scan(&rows).Error
+	return rows, err
 }
 
 func (s *gormPlayerStore) ListMatchHistoryRows(ctx context.Context, playerID int) ([]models.PlayerMatchStats, error) {

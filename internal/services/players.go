@@ -77,23 +77,11 @@ func (ps *PlayerService) GetKDStats(ctx context.Context, playerID int) (*PlayerK
 	}
 
 	var totalKills, totalDeaths, totalAssists int
-	var totalHpK, totalHpD, totalSndK, totalSndD int
-	var ctlKDSum float64
-	var ctlMapsTotal int
-
 	entries := make([]TournamentKDEntry, 0, len(tournamentStats))
 	for _, stat := range tournamentStats {
 		totalKills += stat.TotalKills
 		totalDeaths += stat.TotalDeaths
 		totalAssists += stat.TotalAssists
-		totalHpK += stat.HpKills
-		totalHpD += stat.HpDeaths
-		totalSndK += stat.SndKills
-		totalSndD += stat.SndDeaths
-		if stat.ControlMaps > 0 {
-			ctlKDSum += stat.ControlKDRatio * float64(stat.ControlMaps)
-			ctlMapsTotal += stat.ControlMaps
-		}
 		entries = append(entries, TournamentKDEntry{
 			TournamentID:   stat.TournamentID,
 			TournamentName: stat.Tournament.Name,
@@ -105,9 +93,22 @@ func (ps *PlayerService) GetKDStats(ctx context.Context, playerID int) (*PlayerK
 		})
 	}
 
-	controlKD := 0.0
-	if ctlMapsTotal > 0 {
-		controlKD = ctlKDSum / float64(ctlMapsTotal)
+	// Mode splits come from per-map stats joined to match_maps.mode, which is
+	// populated for every era — the pre-aggregated tournament columns are not.
+	splits, err := ps.store.ListModeKDSplits(ctx, playerID)
+	if err != nil {
+		return nil, err
+	}
+	var hpK, hpD, sndK, sndD, ctlK, ctlD int
+	for _, sp := range splits {
+		switch sp.Mode {
+		case "hp":
+			hpK, hpD = sp.Kills, sp.Deaths
+		case "snd":
+			sndK, sndD = sp.Kills, sp.Deaths
+		case "control":
+			ctlK, ctlD = sp.Kills, sp.Deaths
+		}
 	}
 
 	return &PlayerKDStats{
@@ -118,9 +119,9 @@ func (ps *PlayerService) GetKDStats(ctx context.Context, playerID int) (*PlayerK
 		TotalDeaths:    totalDeaths,
 		TotalAssists:   totalAssists,
 		AvgKD:          calculateKD(totalKills, totalDeaths),
-		HpKDRatio:      calculateKD(totalHpK, totalHpD),
-		SndKDRatio:     calculateKD(totalSndK, totalSndD),
-		ControlKDRatio: controlKD,
+		HpKDRatio:      calculateKD(hpK, hpD),
+		SndKDRatio:     calculateKD(sndK, sndD),
+		ControlKDRatio: calculateKD(ctlK, ctlD),
 		Tournaments:    entries,
 	}, nil
 }
