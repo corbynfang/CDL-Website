@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { getTeamLogo } from "../utils/logoAssets";
 import { getPlayerAvatar } from "../utils/avatarAssets";
@@ -17,27 +18,30 @@ const gameLabel: Record<string, string> = {
   CW: "Black Ops Cold War",
 };
 
+type RosterScope = "current" | "used";
+
 const TeamDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [rosterScope, setRosterScope] = useState<RosterScope>("current");
 
   const { data: team, loading: teamLoading, error: teamError } = useApi<Team>(
     `/api/v1/teams/${id}`
   );
 
-  const { data: players, loading: playersLoading } = useApi<Player[]>(
-    `/api/v1/teams/${id}/players`
-  );
+  const rosterUrl =
+    rosterScope === "used"
+      ? `/api/v1/teams/${id}/players?scope=all`
+      : `/api/v1/teams/${id}/players`;
 
-  // Load franchise history once we know the franchise_key from the preloaded team.
+  const { data: players, loading: playersLoading } = useApi<Player[]>(rosterUrl);
   const franchiseKey = team?.franchise?.franchise_key ?? "";
   const { data: franchiseData } = useApi<FranchiseResponse>(
     `/api/v1/franchises/${franchiseKey}`,
     { enabled: !!franchiseKey }
   );
 
-  const loading = teamLoading || playersLoading;
-
-  if (loading) {
+  if (teamLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <p className="text-[#737373] text-sm">Loading team data...</p>
@@ -70,7 +74,7 @@ const TeamDetail = () => {
       </Link>
 
       {/* Team header */}
-      <div className="flex items-center gap-6 mb-12 pb-8 border-b border-[#1a1a1a]">
+      <div className="flex flex-wrap items-center gap-6 mb-12 pb-8 border-b border-[#1a1a1a]">
         {logo ? (
           <img src={logo} alt={team.name} className="w-24 h-24 object-contain opacity-90" />
         ) : (
@@ -89,6 +93,31 @@ const TeamDetail = () => {
             </span>
           )}
         </div>
+
+        {/* Franchise era selector — switches which game/era of this franchise
+            is shown by navigating to that era's team page. */}
+        {eras.length > 1 && (
+          <div className="w-full sm:w-auto sm:ml-auto">
+            <label
+              htmlFor="era-select"
+              className="block text-[10px] uppercase tracking-widest text-[#737373] mb-1.5"
+            >
+              Era
+            </label>
+            <select
+              id="era-select"
+              value={team.id}
+              onChange={(e) => navigate(`/teams/${e.target.value}`)}
+              className="w-full sm:w-auto bg-[#111111] border border-[#1a1a1a] px-3 py-2 text-xs text-[#a3a3a3] focus:outline-none focus:border-[#2a2a2a] uppercase tracking-wider"
+            >
+              {eras.map((era) => (
+                <option key={era.id} value={era.id}>
+                  {era.game_code ? gameLabel[era.game_code] ?? era.game_code : era.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
@@ -96,8 +125,36 @@ const TeamDetail = () => {
         <div className="md:col-span-2 space-y-8">
           {/* Roster */}
           <div>
-            <h2 className="text-xs uppercase tracking-widest text-[#737373] mb-4">Roster</h2>
-            {players && players.length > 0 ? (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h2 className="text-xs uppercase tracking-widest text-[#737373]">
+                {rosterScope === "used" ? "Players Used This Season" : "Roster"}
+              </h2>
+              <div className="inline-flex self-start bg-[#111111] border border-[#1a1a1a] p-0.5">
+                {([
+                  ["current", "Current Roster"],
+                  ["used", "Players Used"],
+                ] as const).map(([scope, label]) => {
+                  const isActive = rosterScope === scope;
+                  return (
+                    <button
+                      key={scope}
+                      type="button"
+                      onClick={() => setRosterScope(scope)}
+                      className={`px-3 py-1.5 text-[10px] uppercase tracking-widest transition-colors ${
+                        isActive
+                          ? "bg-[#1f1f1f] text-white"
+                          : "text-[#737373] hover:text-[#a3a3a3]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {playersLoading ? (
+              <p className="text-[#737373] text-sm">Loading roster...</p>
+            ) : players && players.length > 0 ? (
               <div className="space-y-1">
                 {players.map((player) => (
                   <Link
@@ -129,7 +186,11 @@ const TeamDetail = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-[#737373] text-sm">No roster data linked yet</p>
+              <p className="text-[#737373] text-sm">
+                {rosterScope === "used"
+                  ? "No players recorded for this season"
+                  : "No current roster available"}
+              </p>
             )}
           </div>
         </div>
