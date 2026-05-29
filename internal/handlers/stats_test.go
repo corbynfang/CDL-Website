@@ -10,14 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// statsEnvelope is the shape both stats handlers return.
 type statsEnvelope struct {
 	Timestamp int64            `json:"timestamp"`
 	Players   []map[string]any `json:"players"`
 	Count     int              `json:"count"`
 }
 
-// statPlayerCols are the columns returned by the aggregated stats query.
 var statPlayerCols = []string{
 	"player_id", "gamertag", "avatar_url", "team_abbr",
 	"season_kills", "season_deaths", "season_assists",

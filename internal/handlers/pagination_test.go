@@ -27,13 +27,11 @@ func TestParsePagination(t *testing.T) {
 		wantLimit      int
 		wantOffset     int
 	}{
-		// Defaults when no params supplied
 		{
 			name: "no params uses defaults",
 			query: "",
 			wantPage: 1, wantLimit: 25, wantOffset: 0,
 		},
-		// Page param
 		{
 			name: "page 2 gives offset 25",
 			query: "page=2",
@@ -44,7 +42,6 @@ func TestParsePagination(t *testing.T) {
 			query: "page=3&limit=10",
 			wantPage: 3, wantLimit: 10, wantOffset: 20,
 		},
-		// Invalid page values — all fall back to default (page=1)
 		{
 			name: "page=0 falls back to 1",
 			query: "page=0",
@@ -71,7 +68,6 @@ func TestParsePagination(t *testing.T) {
 			query: "limit=100",
 			wantPage: 1, wantLimit: 100, wantOffset: 0,
 		},
-		// Invalid limit values — all fall back to default (limit=25)
 		{
 			name: "limit=101 exceeds cap, falls back to 25",
 			query: "limit=101",
@@ -90,7 +86,6 @@ func TestParsePagination(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		// t.Run creates a subtest — if it fails you'll see which scenario broke.
 		t.Run(tt.name, func(t *testing.T) {
 			c, _ := newCtxWithQuery(t, tt.query)
 			page, limit, offset := parsePagination(c)
@@ -102,8 +97,6 @@ func TestParsePagination(t *testing.T) {
 }
 
 func TestBuildMeta(t *testing.T) {
-	// buildMeta calculates TotalPages = ceil(total / limit).
-	// Edge cases: 0 total should still give TotalPages=1 (never return 0 pages).
 	tests := []struct {
 		name       string
 		page       int

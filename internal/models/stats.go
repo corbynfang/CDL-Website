@@ -2,23 +2,19 @@ package models
 
 import "time"
 
-// PlayerMapStats holds per-player stats for a single map within a series.
-// This is the most granular stat in the database — every kill, death, damage, hill second per map.
 type PlayerMapStats struct {
 	ID        uint `json:"id" gorm:"primaryKey"`
 	MatchID   uint `json:"match_id" gorm:"not null;uniqueIndex:idx_player_map_stat_unique"`
 	MapNumber int  `json:"map_number" gorm:"not null;uniqueIndex:idx_player_map_stat_unique"`
 	PlayerID  uint `json:"player_id" gorm:"not null;uniqueIndex:idx_player_map_stat_unique;index"`
 	TeamID    uint `json:"team_id" gorm:"not null;index"`
-
-	// Core stats present across all eras
 	Kills   int     `json:"kills" gorm:"default:0"`
 	Deaths  int     `json:"deaths" gorm:"default:0"`
 	KDRatio float64 `json:"kd_ratio" gorm:"type:decimal(6,3);default:0"`
 	Damage  int     `json:"damage" gorm:"default:0"`
 	Assists int     `json:"assists" gorm:"default:0"`
 
-	BPRating float64 `json:"bp_rating" gorm:"type:decimal(10,6);default:0"`
+	BPRating float64 `json:"bp_rating" gorm:"type:decimal(10,6);default:0"` // Only used for BreakingPoint Stats if found BPRating.
 
 	HillTime             int `json:"hill_time" gorm:"default:0"`
 	SndRounds            int `json:"snd_rounds" gorm:"default:0"`

@@ -7,8 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// KDRow is the scan target and return type for both K/D leaderboard queries.
-// SeasonKD is computed by the service after scanning (the DB has no season_kd column).
 type KDRow struct {
 	PlayerID      uint    `json:"player_id"`
 	Gamertag      string  `json:"gamertag"`
@@ -20,7 +18,6 @@ type KDRow struct {
 	SeasonKD      float64 `json:"season_kd"`
 }
 
-// TableCounts holds the row counts returned by GetTableCounts.
 type TableCounts struct {
 	Players     int64
 	Teams       int64

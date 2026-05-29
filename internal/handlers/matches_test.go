@@ -1,10 +1,5 @@
 package handlers
 
-// matches_test.go — API contract tests for GetMatch and GetTournamentStats.
-// GetMatch tests use a real Postgres testcontainer (via setupPGTx) so they are
-// not brittle to GORM preload query ordering.
-// GetTournamentStats tests use sqlmock because they involve no nested preloads.
-
 import (
 	"encoding/json"
 	"net/http"
@@ -19,13 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// matchDetailBody mirrors the top-level shape GetMatch returns.
 type matchDetailBody struct {
 	Match map[string]any   `json:"match"`
 	Maps  []map[string]any `json:"maps"`
 }
-
-// ── GetMatch ──────────────────────────────────────────────────────────────────
 
 func TestGetMatch_InvalidID(t *testing.T) {
 	h := newTestHandler(t)
@@ -46,7 +38,6 @@ func TestGetMatch_NotFound(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-// TestGetMatch_ResponseShape verifies all required top-level match fields are present.
 func TestGetMatch_ResponseShape(t *testing.T) {
 	setupPGTx(t)
 	pgMatchEnv(t)
@@ -72,7 +63,6 @@ func TestGetMatch_ResponseShape(t *testing.T) {
 	assert.NotNil(t, body.Maps, "response must contain 'maps' key")
 }
 
-// TestGetMatch_MapShape verifies required fields inside a map entry.
 func TestGetMatch_MapShape(t *testing.T) {
 	setupPGTx(t)
 	pgMatchEnv(t)
@@ -101,8 +91,6 @@ func TestGetMatch_MapShape(t *testing.T) {
 	}
 }
 
-// TestGetMatch_EmptyStatArrays verifies that team1_stats and team2_stats are
-// always arrays, never null, even when no player stats exist for a map.
 func TestGetMatch_EmptyStatArrays(t *testing.T) {
 	setupPGTx(t)
 	pgMatchEnv(t)
@@ -129,8 +117,6 @@ func TestGetMatch_EmptyStatArrays(t *testing.T) {
 	assert.Len(t, team1Stats, 0)
 	assert.Len(t, team2Stats, 0)
 }
-
-// ── GetTournamentStats ────────────────────────────────────────────────────────
 
 func TestGetTournamentStats_InvalidID(t *testing.T) {
 	h := newTestHandler(t)

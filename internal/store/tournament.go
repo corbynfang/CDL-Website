@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// TournamentStore covers tournament-level DB operations used by the MatchService.
 type TournamentStore interface {
 	List(ctx context.Context, seasonID string) ([]models.Tournament, error)
 	GetBySlug(ctx context.Context, slug string) (*models.Tournament, error)

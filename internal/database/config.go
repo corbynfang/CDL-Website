@@ -82,10 +82,8 @@ func CloseDatabase() {
 	sqlDB.Close()
 }
 
-// AutoMigrate creates tables using GORM
 func AutoMigrate() {
 	err := DB.AutoMigrate(
-		// Franchise must come before Team (FK dependency)
 		&models.Franchise{},
 		&models.Season{},
 		&models.Team{},
@@ -93,7 +91,6 @@ func AutoMigrate() {
 		&models.TeamRoster{},
 		&models.Tournament{},
 		&models.Match{},
-		// MatchMap and PlayerMapStats depend on Match and Team
 		&models.MatchMap{},
 		&models.PlayerMapStats{},
 		&models.PlayerMatchStats{},

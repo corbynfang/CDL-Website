@@ -1,9 +1,5 @@
 package main
 
-// csv_readers.go — every function that opens a CSV file and returns typed rows.
-// The low-level readCSV, headerIndex, col, colBool helpers live here too.
-// No business logic — just "open file, map columns to struct fields, return slice."
-
 import (
 	"encoding/csv"
 	"log"
@@ -28,7 +24,6 @@ func readCSV(path string) [][]string {
 	return records
 }
 
-// headerIndex converts the first CSV row into a lowercase column-name → index map.
 func headerIndex(row []string) map[string]int {
 	m := map[string]int{}
 	for i, h := range row {
@@ -37,7 +32,6 @@ func headerIndex(row []string) map[string]int {
 	return m
 }
 
-// col returns the trimmed cell value for a named column, or "" if the column doesn't exist.
 func col(rec []string, h map[string]int, name string) string {
 	i, ok := h[name]
 	if !ok || i >= len(rec) {
