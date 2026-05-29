@@ -268,6 +268,51 @@ func TestGetLatestMatchRoster_NoSeasonResolvesLatestSeasonByMatchDate(t *testing
 }
 
 // DNP maps must not contribute players to the latest-match roster.
+// Regression for the "Carolina Royal Ravens MW3 era shows the BO6 roster" bug.
+// The root cause was a single team row shared across MW3 and BO6; once each
+// game-era is its own team row, the no-season default must scope each era's
+// roster to that era's own season — an MW3-era team_id never resolves to BO6.
+func TestGetLatestMatchRoster_PerEraTeamsScopeToOwnSeason(t *testing.T) {
+	db := storeTx(t)
+	ctx := context.Background()
+
+	mkSeasonAt(t, db, 1, "BO6", time.Date(2024, 9, 1, 0, 0, 0, 0, time.UTC)) // newer
+	mkSeasonAt(t, db, 2, "MW3", time.Date(2023, 9, 1, 0, 0, 0, 0, time.UTC)) // older
+	// Two distinct era rows for the same franchise name.
+	mkTeamRow(t, db, 1, "Carolina Royal Ravens", "CRR") // MW3 era
+	mkTeamRow(t, db, 2, "Carolina Royal Ravens", "CRR") // BO6 era
+	mkTeamRow(t, db, 9, "Opponent", "OPP")
+	mkTour(t, db, 1, 1, "BO6 Major")
+	mkTour(t, db, 2, 2, "MW3 Major")
+	for id, tag := range map[uint]string{1: "Gwinn", 2: "Owakening", 3: "Lyly", 4: "Vortex"} {
+		mkPlayerRow(t, db, id, tag)
+	}
+
+	// MW3-era team (id=1) plays only in the MW3 season.
+	mkMatchRow(t, db, 100, 2, 1, 9, time.Date(2024, 3, 1, 0, 0, 0, 0, time.UTC))
+	mkMapRow(t, db, 100, 1, true)
+	mkPMSRow(t, db, 100, 1, 1, 1)
+	mkPMSRow(t, db, 100, 1, 2, 1)
+
+	// BO6-era team (id=2) plays only in the BO6 season.
+	mkMatchRow(t, db, 200, 1, 2, 9, time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC))
+	mkMapRow(t, db, 200, 1, true)
+	mkPMSRow(t, db, 200, 1, 3, 2)
+	mkPMSRow(t, db, 200, 1, 4, 2)
+
+	st := NewGormTeamStore(db)
+
+	mw3, err := st.GetLatestMatchRoster(ctx, 1, "")
+	require.NoError(t, err)
+	require.Equal(t, []string{"Gwinn", "Owakening"}, gamertags(mw3),
+		"MW3-era team must return its MW3 roster, not the newer BO6 season")
+
+	bo6, err := st.GetLatestMatchRoster(ctx, 2, "")
+	require.NoError(t, err)
+	require.Equal(t, []string{"Lyly", "Vortex"}, gamertags(bo6),
+		"BO6-era team must return its own BO6 roster")
+}
+
 func TestGetLatestMatchRoster_DNPMapsExcluded(t *testing.T) {
 	db := storeTx(t)
 	ctx := context.Background()

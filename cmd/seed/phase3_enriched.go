@@ -48,8 +48,8 @@ func seedEnrichedMatches(
 			continue
 		}
 
-		team1ID := teamLookup[s.Team1Canonical]
-		team2ID := teamLookup[s.Team2Canonical]
+		team1ID := resolveTeamID(teamLookup, s.Team1Canonical, s.GameCode)
+		team2ID := resolveTeamID(teamLookup, s.Team2Canonical, s.GameCode)
 		if team1ID == 0 {
 			team1ID = ensureUnknownTeam(db, s.Team1Canonical, teamLookup)
 		}
@@ -58,7 +58,7 @@ func seedEnrichedMatches(
 		}
 
 		var winnerID *uint
-		if wid := teamLookup[s.WinnerCanonical]; wid != 0 {
+		if wid := resolveTeamID(teamLookup, s.WinnerCanonical, s.GameCode); wid != 0 {
 			winnerID = &wid
 		}
 
@@ -89,7 +89,7 @@ func seedEnrichedMatches(
 
 		for _, mr := range mapsByID[s.SeriesMatchID] {
 			var mapWinnerID *uint
-			if wid := teamLookup[mr.MapWinner]; wid != 0 {
+			if wid := resolveTeamID(teamLookup, mr.MapWinner, mr.GameCode); wid != 0 {
 				mapWinnerID = &wid
 			}
 			matchMapsBatch = append(matchMapsBatch, models.MatchMap{
@@ -120,7 +120,7 @@ func seedEnrichedMatches(
 			if playerID == 0 {
 				continue
 			}
-			teamID := teamLookup[st.Team]
+			teamID := resolveTeamID(teamLookup, st.Team, st.GameCode)
 			if teamID == 0 {
 				teamID = ensureUnknownTeam(db, st.Team, teamLookup)
 			}

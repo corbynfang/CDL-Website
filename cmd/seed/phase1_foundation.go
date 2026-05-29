@@ -57,6 +57,18 @@ func seedFranchises(db *gorm.DB) map[string]uint {
 
 func seedCDLTeams(db *gorm.DB, franchiseMap map[string]uint) map[string]uint {
 	rows := readBrandingCSV("database/cdl_team_branding_by_season.csv")
+	return seedCDLTeamRows(db, rows, franchiseMap)
+}
+
+// seedCDLTeamRows is the testable core of seedCDLTeams. Each branding row is one
+// (team, game) era, and we create one team row per era — keyed on
+// (name, game_code, source). Keying on name alone (the previous behavior) merged
+// every game-era of a franchise name into a single row: London Royal Ravens'
+// CW/VG/MW2 rows collapsed into one, and Carolina Royal Ravens' MW3/BO6 into one,
+// which both broke the era list and leaked the latest season's roster onto older
+// eras. The returned lookup carries a game-aware key per era plus a bare-name key
+// (last era wins) for callers without game context.
+func seedCDLTeamRows(db *gorm.DB, rows []brandingRow, franchiseMap map[string]uint) map[string]uint {
 	lookup := map[string]uint{}
 
 	for _, r := range rows {
@@ -87,9 +99,12 @@ func seedCDLTeams(db *gorm.DB, franchiseMap map[string]uint) map[string]uint {
 			t.FranchiseID = &franchiseID
 		}
 
-		db.Where("name = ? AND source = ?", r.CanonicalTeamName, "branding_csv").FirstOrCreate(&t)
-		lookup[r.CanonicalTeamName] = t.ID
+		db.Where("name = ? AND game_code = ? AND source = ?", r.CanonicalTeamName, r.GameCode, "branding_csv").FirstOrCreate(&t)
+
+		lookup[teamKey(r.CanonicalTeamName, r.GameCode)] = t.ID
+		lookup[r.CanonicalTeamName] = t.ID // bare fallback (last era wins)
 		if r.RawTeamName != r.CanonicalTeamName && r.RawTeamName != "" {
+			lookup[teamKey(r.RawTeamName, r.GameCode)] = t.ID
 			lookup[r.RawTeamName] = t.ID
 		}
 	}
