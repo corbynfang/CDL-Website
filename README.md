@@ -26,6 +26,38 @@ Live at **[cdlytics.com](https://cdlytics.com)**
 - **Rate limiting** with sliding-window logic and `X-Forwarded-For` parsing behind CloudFront
 - **Live event strip** surfacing in-progress events on the home page
 
+## Screenshots
+
+### Home
+
+![CDLytics home page](docs/images/home.png)
+
+The landing page is built around a single global search that resolves players, teams, and events from one box, with quick-pick chips (`Simp`, `Shotzzy`, `Scrap`, `OpTic Texas`, `EWC 2025`) for common queries. Four category cards route into Players, Teams, Events, and Stats, and a **Featured Events** strip surfaces marquee tournaments (Esports World Cup 2025 — Riyadh, CDL Major 1 2023 — Raleigh, CDL Major 3 2025 — Boca Raton) with their host cities.
+
+### Player profile
+
+![Player profile with per-mode K/D](docs/images/player-profile.png)
+
+Each player page pairs an identity card (gamertag, active status, avatar) with a **K/D Statistics** panel that breaks performance down by game mode — Overall, Hardpoint, Search & Destroy, and Control — each value color-coded above/below 1.0 with a relative bar. The mode splits are computed live by aggregating per-map kills/deaths joined to `match_maps.mode`, so they're accurate for every season (including eras that ship no pre-aggregated stats). Below, tabs for **Last 5 / Matches / Event Stats / Events / Career** drive a match log showing per-series result, K/D, kills, deaths, and date.
+
+### K/D rankings
+
+![K/D rankings leaderboard](docs/images/kd-rankings.png)
+
+The Stats page is a server-paginated, season-filterable leaderboard (the **All Seasons** dropdown scopes to any single era). Rows rank players by K/D with kills and deaths alongside, and the K/D column is color-graded so the top of the board reads at a glance.
+
+### Team page — era switching, rosters & franchise history
+
+![Boston Breach team page with era selector](docs/images/team-roster.png)
+
+Teams are modeled per era (one row per franchise per game), so a team page carries an **ERA** dropdown that re-scopes the whole view to any season the franchise played — Boston Breach here switches between Black Ops 6, Modern Warfare III, Modern Warfare II, and Vanguard. The roster shows the selected era's lineup as player cards with a **Current Roster / Players Used** toggle ("current" is the lineup from the most recent played match; "players used" expands to everyone who logged a map that era), while the **Franchise History** rail on the right lists every era with the active one marked. Because eras stay linked to one franchise, rebrands and relocations remain connected rather than fragmented.
+
+### Transfers
+
+![Transfers / roster moves](docs/images/transfers.png)
+
+The Transfers page is a chronological feed of roster moves across all five seasons. Each entry tags the move type (**SIGNING** / **RELEASE**), the from → to teams, the player's role (AR / SMG), the season, and the date — e.g. Insight and ReeaL signing to Toronto Ultra for Black Ops 6 2024-25.
+
 ## Architecture
 
 ```
