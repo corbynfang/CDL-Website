@@ -241,6 +241,12 @@ func TestGetPlayerKDStats_ResponseShape(t *testing.T) {
 		sqlmock.NewRows([]string{"id", "name", "slug", "tournament_type", "start_date", "is_lan", "created_at", "updated_at"}).
 			AddRow(5, "CDL Major 1 2025", "cdl-major-1-2025", "major", now, true, now, now))
 
+	mock.ExpectQuery(`FROM player_map_stats`).WillReturnRows(
+		sqlmock.NewRows([]string{"mode", "kills", "deaths"}).
+			AddRow("hp", 60, 40).
+			AddRow("snd", 30, 20).
+			AddRow("control", 30, 20))
+
 	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
 	h.GetPlayerKDStats(c)
@@ -282,6 +288,11 @@ func TestGetPlayerKDStats_ControlKDZeroWhenNoControlMaps(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM "tournaments"`).WillReturnRows(
 		sqlmock.NewRows([]string{"id", "name", "slug", "tournament_type", "start_date", "is_lan", "created_at", "updated_at"}).
 			AddRow(5, "CDL Major 1 2025", "cdl-major-1-2025", "major", now, true, now, now))
+
+	mock.ExpectQuery(`FROM player_map_stats`).WillReturnRows(
+		sqlmock.NewRows([]string{"mode", "kills", "deaths"}).
+			AddRow("hp", 50, 30).
+			AddRow("snd", 25, 18))
 
 	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "id", Value: "2"}}, "")
