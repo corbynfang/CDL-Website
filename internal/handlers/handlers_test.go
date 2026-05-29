@@ -32,8 +32,6 @@ func setupMockDB(t *testing.T) sqlmock.Sqlmock {
 	return mock
 }
 
-// newTestHandler creates a Handler wired to database.DB.
-// Must be called after setupMockDB or setupPGTx if DB access is needed.
 func newTestHandler(t *testing.T) *Handler {
 	t.Helper()
 	return New(database.DB)
@@ -180,8 +178,6 @@ func TestGetPlayer_Success(t *testing.T) {
 }
 
 func TestGetTeams_ScopeAll_Success(t *testing.T) {
-	// scope=all triggers a simple GORM query (SELECT * FROM teams ORDER BY name ASC)
-	// that sqlmock can match with a straightforward regex.
 	mock := setupMockDB(t)
 	rows := sqlmock.NewRows([]string{"id", "name", "abbreviation", "is_active"}).
 		AddRow(1, "Atlanta FaZe", "ATL", true).
