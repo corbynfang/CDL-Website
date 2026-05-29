@@ -88,20 +88,6 @@ const PlayerDetail = () => {
   const sndKD = stats?.snd_kd_ratio || 0;
   const ctlKD = stats?.control_kd_ratio || 0;
 
-  // Some eras (e.g. BO6) have no per-mode source, so HP/SND/Control come back 0.
-  // Hide those rows entirely rather than showing three empty 0.00 bars.
-  const hasModeSplits = hpKD > 0 || sndKD > 0 || ctlKD > 0;
-  const kdBreakdown = [
-    { label: "Overall", value: overallKD },
-    ...(hasModeSplits
-      ? [
-          { label: "Hardpoint", value: hpKD },
-          { label: "Search & Destroy", value: sndKD },
-          { label: "Control", value: ctlKD },
-        ]
-      : []),
-  ];
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Link
@@ -177,7 +163,12 @@ const PlayerDetail = () => {
           <h2 className="text-xs uppercase tracking-widest text-[#737373] mb-6">K/D Statistics</h2>
 
           <div className="space-y-5">
-            {kdBreakdown.map(({ label, value }) => (
+            {[
+              { label: "Overall", value: overallKD },
+              { label: "Hardpoint", value: hpKD },
+              { label: "Search & Destroy", value: sndKD },
+              { label: "Control", value: ctlKD },
+            ].map(({ label, value }) => (
               <div key={label}>
                 <div className="flex justify-between items-baseline mb-2">
                   <p className="text-xs text-[#737373]">{label}</p>
