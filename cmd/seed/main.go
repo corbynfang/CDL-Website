@@ -62,11 +62,14 @@ func main() {
 
 	log.Println("==> Phase 4: Season aggregate player stats")
 	for _, cfg := range seasonStatConfigs {
-		if cfg.PlayerFile == "" {
-			continue
-		}
 		seasonID := seasonByCode[cfg.GameCode]
 		if seasonID == 0 {
+			continue
+		}
+		// Eras with a pre-aggregated CSV load from it; those without one (e.g. BO6)
+		// derive their season totals from the per-map stats already seeded.
+		if cfg.PlayerFile == "" {
+			seedDerivedSeasonStats(db, cfg, seasonID)
 			continue
 		}
 		seedSeasonStats(db, cfg, seasonID, teamLookup, playerLookup)
