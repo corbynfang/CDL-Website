@@ -41,6 +41,15 @@ export const playerKDNoControlFixture: PlayerKDResponse = {
   control_kd_ratio: 0,
 }
 
+// Eras without per-mode source data (e.g. BO6, whose season stats are derived
+// from map data) return 0 for every mode split while Overall is still valid.
+export const playerKDNoModeSplitsFixture: PlayerKDResponse = {
+  ...playerKDFixture,
+  hp_kd_ratio: 0,
+  snd_kd_ratio: 0,
+  control_kd_ratio: 0,
+}
+
 export const playerMatchesFixture: PlayerMatchHistory = {
   player_id: 1,
   events: [

@@ -6,6 +6,7 @@ import {
   playerFixture,
   playerKDFixture,
   playerKDNoControlFixture,
+  playerKDNoModeSplitsFixture,
   playerMatchesFixture,
   playerMatchesEmptyFixture,
   playerMatchesNullKDFixture,
@@ -171,5 +172,16 @@ describe('PlayerDetail — Control K/D when no Control maps played', () => {
     renderPlayer()
     const values = screen.getAllByText('0.00')
     expect(values.length).toBeGreaterThan(0)
+  })
+
+  it('hides the mode-split rows when every mode K/D is 0 (e.g. BO6)', () => {
+    // Derived eras have no per-mode data; show only Overall rather than three
+    // empty 0.00 bars.
+    setupMocks({ stats: playerKDNoModeSplitsFixture })
+    renderPlayer()
+    expect(screen.getByText('Overall')).toBeInTheDocument()
+    expect(screen.queryByText('Hardpoint')).not.toBeInTheDocument()
+    expect(screen.queryByText('Search & Destroy')).not.toBeInTheDocument()
+    expect(screen.queryByText('Control')).not.toBeInTheDocument()
   })
 })
