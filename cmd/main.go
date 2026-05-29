@@ -38,41 +38,7 @@ func main() {
 
 	api := r.Group("/api/v1")
 	api.Use(middleware.RateLimit())
-	{
-		api.GET("/seasons", h.GetSeasons)
-		api.GET("/seasons/:id", h.GetSeason)
-		api.GET("/seasons/active", h.GetActiveSeason)
-
-		api.GET("/teams", h.GetTeams)
-		api.GET("/teams/:id", h.GetTeam)
-		api.GET("/teams/:id/players", h.GetTeamPlayers)
-		api.GET("/teams/:id/stats", h.GetTeamStats)
-
-		api.GET("/players", h.GetPlayers)
-		api.GET("/players/:id", h.GetPlayer)
-		api.GET("/players/:id/stats", h.GetPlayerStats)
-		api.GET("/players/:id/kd", h.GetPlayerKDStats)
-		api.GET("/players/:id/matches", h.GetPlayerMatches)
-		api.GET("/players/:id/franchise-career", h.GetPlayerFranchiseCareer)
-		api.GET("/players/top-kd", h.GetTopKDPlayers)
-
-		api.GET("/stats/all-kd-by-tournament", h.GetAllPlayersKDStats)
-
-		api.GET("/matches/:id", h.GetMatch)
-
-		api.GET("/franchises", h.GetFranchises)
-		api.GET("/franchises/:key", h.GetFranchise)
-
-		api.GET("/tournaments", h.GetTournaments)
-		api.GET("/tournaments/slug/:slug", h.GetTournamentBySlug)
-		api.GET("/tournaments/:id", h.GetTournament)
-		api.GET("/tournaments/:id/bracket", h.GetTournamentBracket)
-		api.GET("/tournaments/:id/matches", h.GetTournamentMatches)
-		api.GET("/tournaments/:id/teams", h.GetTournamentTeams)
-		api.GET("/tournaments/:id/stats", h.GetTournamentStats)
-
-		api.GET("/transfers", h.GetTransfers)
-	}
+	handlers.RegisterRoutes(api, h)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
