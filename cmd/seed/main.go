@@ -17,15 +17,30 @@ package main
 //   phase7_rosters.go    — season-aware TeamRoster stints inferred from player_map_stats
 
 import (
+	"flag"
 	"log"
+	"os"
 
 	"github.com/corbynfang/CDL-Website/internal/database"
 )
 
 func main() {
+	reset := flag.Bool("reset", false, "truncate all seeder-owned tables before seeding (clean re-seed from empty)")
+	autoYes := flag.Bool("yes", false, "skip the interactive confirmation for -reset (for non-interactive runs)")
+	flag.Parse()
+
 	database.ConnectDatabase()
 	database.AutoMigrate()
 	db := database.DB
+
+	if *reset {
+		if !confirmReset(*autoYes) {
+			os.Exit(1)
+		}
+		if err := resetSeedTables(db); err != nil {
+			log.Fatalf("reset failed: %v", err)
+		}
+	}
 
 	log.Println("==> Cleanup: removing bad player records")
 	cleanupBadPlayers(db)

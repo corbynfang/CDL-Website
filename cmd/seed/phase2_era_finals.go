@@ -64,13 +64,13 @@ func seedEraFinals(
 
 		for _, s := range seriesRows {
 			matchTime := parseISOTime(s.MatchDatetime)
-			team1ID := teamLookup[s.TeamAName]
-			team2ID := teamLookup[s.TeamBName]
+			team1ID := resolveTeamID(teamLookup, s.TeamAName, era.GameCode)
+			team2ID := resolveTeamID(teamLookup, s.TeamBName, era.GameCode)
 			if team1ID == 0 || team2ID == 0 {
 				log.Printf("[%s] WARN: unresolved team in match %d (%q vs %q)", era.GameCode, s.MatchID, s.TeamAName, s.TeamBName)
 			}
 			var winnerID *uint
-			if wid := teamLookup[s.WinnerName]; wid != 0 {
+			if wid := resolveTeamID(teamLookup, s.WinnerName, era.GameCode); wid != 0 {
 				winnerID = &wid
 			}
 			tournamentID := findTournamentForMatch(eventRanges, tournamentBySlug, era.GameCode, matchTime)
@@ -121,7 +121,7 @@ func seedEraFinals(
 
 			for _, mr := range mapsByMatchID[s.MatchID] {
 				var mapWinnerID *uint
-				if wid := teamLookup[mr.WinnerName]; wid != 0 {
+				if wid := resolveTeamID(teamLookup, mr.WinnerName, era.GameCode); wid != 0 {
 					mapWinnerID = &wid
 				}
 				matchMapsBatch = append(matchMapsBatch, models.MatchMap{
@@ -161,7 +161,7 @@ func seedEraFinals(
 				} else if st.TeamID == matchTeams.TeamBSourceID {
 					teamName = matchTeams.TeamBName
 				}
-				teamID := teamLookup[teamName]
+				teamID := resolveTeamID(teamLookup, teamName, era.GameCode)
 
 				playerMapStatsBatch = append(playerMapStatsBatch, models.PlayerMapStats{
 					MatchID:              m.ID,

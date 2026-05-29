@@ -152,6 +152,28 @@ func mergeInto(dst, src map[string]uint) {
 	}
 }
 
+// teamKey builds the lookup key for a per-(name, game) era team row. A franchise
+// can field the same name across several games (e.g. London Royal Ravens in
+// CW/VG/MW2), each of which is now its own team row, so a bare name is ambiguous.
+// The unit-separator byte keeps the key unambiguous against names with spaces.
+func teamKey(name, gameCode string) string {
+	return strings.TrimSpace(name) + "\x1f" + gameCode
+}
+
+// resolveTeamID maps a team name to its per-game era row, falling back to a
+// bare-name match for single-era, non-CDL, and auto-created "unknown" teams that
+// aren't game-split. Callers pass the game code of the row being seeded.
+func resolveTeamID(lookup map[string]uint, name, gameCode string) uint {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return 0
+	}
+	if id, ok := lookup[teamKey(name, gameCode)]; ok {
+		return id
+	}
+	return lookup[name]
+}
+
 func rawRoundToDBRound(raw string) string {
 	switch raw {
 	case "Major Qualifier":

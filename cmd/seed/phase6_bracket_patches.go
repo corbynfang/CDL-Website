@@ -60,10 +60,16 @@ func seedBracketPatches(
 	result := db.Where("liquipedia_url LIKE ?", "bracket_patch:%").Delete(&models.Match{})
 	log.Printf("[bracket_patches] purged %d stale bracket-patch stub matches", result.RowsAffected)
 
+	// Bracket rows carry no game_code, but teams are now split per (name, game)
+	// era — so a multi-era name like "London Royal Ravens" must resolve via the
+	// game of the row's tournament, else it binds to the wrong era's team row and
+	// fails to match the Phase 2 match. Build tournament_id → game_code once.
+	tourGame := tournamentGameCodes(db)
+
 	var totalUpdated, totalInserted, totalSkipped int
 
 	for _, path := range bracketPatchCSVs {
-		u, i, s := applyBracketCSV(db, teamLookup, tournamentBySlug, path)
+		u, i, s := applyBracketCSV(db, teamLookup, tournamentBySlug, tourGame, path)
 		totalUpdated += u
 		totalInserted += i
 		totalSkipped += s
@@ -73,10 +79,30 @@ func seedBracketPatches(
 		totalUpdated, totalInserted, totalSkipped)
 }
 
+// tournamentGameCodes maps each tournament_id to its season's game_code so
+// bracket rows (which lack a game_code column) can resolve teams to the right era.
+func tournamentGameCodes(db *gorm.DB) map[uint]string {
+	type row struct {
+		ID       uint
+		GameCode string
+	}
+	var rows []row
+	db.Table("tournaments").
+		Select("tournaments.id AS id, seasons.game_code AS game_code").
+		Joins("JOIN seasons ON seasons.id = tournaments.season_id").
+		Scan(&rows)
+	out := make(map[uint]string, len(rows))
+	for _, r := range rows {
+		out[r.ID] = r.GameCode
+	}
+	return out
+}
+
 func applyBracketCSV(
 	db *gorm.DB,
 	teamLookup map[string]uint,
 	tournamentBySlug map[string]uint,
+	tourGame map[uint]string,
 	path string,
 ) (updated, inserted, skipped int) {
 	rows := readBracketCSV(path)
@@ -93,9 +119,10 @@ func applyBracketCSV(
 			skipped++
 			continue
 		}
+		gameCode := tourGame[tournamentID]
 
-		team1ID := teamLookup[r.Team1Name]
-		team2ID := teamLookup[r.Team2Name]
+		team1ID := resolveTeamID(teamLookup, r.Team1Name, gameCode)
+		team2ID := resolveTeamID(teamLookup, r.Team2Name, gameCode)
 		if team1ID == 0 || team2ID == 0 {
 			log.Printf("[bracket_patches] WARN: team not found (%q or %q) — skipping", r.Team1Name, r.Team2Name)
 			skipped++
@@ -127,7 +154,7 @@ func applyBracketCSV(
 
 		// Not found — insert with a stable dedup key so re-runs are idempotent.
 		var winnerID *uint
-		if wid := teamLookup[r.WinnerName]; wid != 0 {
+		if wid := resolveTeamID(teamLookup, r.WinnerName, gameCode); wid != 0 {
 			winnerID = &wid
 		}
 		dedupKey := fmt.Sprintf("bracket_patch:%s:%s:%d", dbSlug, r.CanonicalRound, r.Position)
