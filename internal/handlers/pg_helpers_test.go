@@ -63,11 +63,16 @@ func runTests(m *testing.M) int {
 		&models.Player{},
 		&models.Season{},
 		&models.Team{},
+		&models.TeamRoster{},
 		&models.Tournament{},
 		&models.Match{},
 		&models.MatchMap{},
 		&models.PlayerMapStats{},
 		&models.PlayerMatchStats{},
+		&models.PlayerTournamentStats{},
+		&models.TeamTournamentStats{},
+		&models.Coach{},
+		&models.PlayerTransfer{},
 	); err != nil {
 		log.Println("gorm: automigrate failed:", err)
 		return m.Run()
@@ -77,8 +82,6 @@ func runTests(m *testing.M) int {
 	return m.Run()
 }
 
-// setupPGTx begins a transaction on the postgres container DB, points database.DB at it,
-// and rolls it back in t.Cleanup — giving each test a clean slate without restarting the container.
 func setupPGTx(t *testing.T) {
 	t.Helper()
 	if pgDB == nil {

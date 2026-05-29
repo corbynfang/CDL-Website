@@ -12,7 +12,6 @@ import (
 	"github.com/corbynfang/CDL-Website/internal/store"
 )
 
-// ErrInvalidSeason is returned by List when season_id is present but doesn't resolve.
 var ErrInvalidSeason = errors.New("invalid season")
 
 type TeamService struct {
@@ -30,7 +29,6 @@ func NewTeamService(teams store.TeamStore, seasons store.SeasonStore) *TeamServi
 	return &TeamService{teams: teams, seasons: seasons}
 }
 
-// List returns CDL franchise teams filtered by seasonID and scope.
 func (ts *TeamService) List(ctx context.Context, seasonID, scope string) ([]models.Team, error) {
 	if seasonID != "" {
 		id, err := strconv.Atoi(seasonID)
@@ -82,6 +80,10 @@ func (ts *TeamService) GetByID(ctx context.Context, id int) (*models.Team, error
 
 func (ts *TeamService) GetPlayers(ctx context.Context, teamID int, seasonID string) ([]models.Player, error) {
 	return ts.teams.GetPlayers(ctx, teamID, seasonID)
+}
+
+func (ts *TeamService) GetCurrentRoster(ctx context.Context, teamID int, seasonID string) ([]models.Player, error) {
+	return ts.teams.GetLatestMatchRoster(ctx, teamID, seasonID)
 }
 
 func (ts *TeamService) GetStats(ctx context.Context, teamID int) ([]models.TeamTournamentStats, error) {

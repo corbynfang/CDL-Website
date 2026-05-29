@@ -13,6 +13,8 @@ package main
 //   phase3_enriched.go   — Same tables, EWC 2024/2025 + Major 1 2023 wiki data
 //   phase4_season_stats.go — PlayerTournamentStats from *_player_stats.csv aggregates
 //   phase5_transfers.go  — PlayerTransfer + unresolved_transfer_teams.csv report
+//   phase6_bracket_patches.go — bracket_round + bracket_position backfill
+//   phase7_rosters.go    — season-aware TeamRoster stints inferred from player_map_stats
 
 import (
 	"log"
@@ -60,6 +62,9 @@ func main() {
 
 	log.Println("==> Phase 6: Bracket patches (bracket_round + bracket_position, all eras)")
 	seedBracketPatches(db, teamLookup, tournamentBySlug)
+
+	log.Println("==> Phase 7: Roster inference (season-aware stints from player_map_stats)")
+	seedRosters(db)
 
 	log.Println("==> Seeding complete.")
 }

@@ -4,7 +4,9 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
+	"github.com/corbynfang/CDL-Website/internal/models"
 	"github.com/corbynfang/CDL-Website/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -51,10 +53,33 @@ func (h *Handler) GetTeamPlayers(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
 		return
 	}
+
+	seasonID := c.Query("season_id")
+	if seasonID != "" {
+		if _, err := strconv.Atoi(seasonID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid season_id"})
+			return
+		}
+	}
+
+	// scope=current (default) → latest-match roster; scope=all → full stint union.
+	scope := c.DefaultQuery("scope", "current")
+	fetch := h.teams.GetCurrentRoster
+	switch scope {
+	case "current":
+		// default
+	case "all":
+		fetch = h.teams.GetPlayers
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid scope"})
+		return
+	}
+
 	ctx, cancel := getContext(10)
 	defer cancel()
 
-	players, err := h.teams.GetPlayers(ctx, teamID, c.Query("season_id"))
+	var players []models.Player
+	players, err = fetch(ctx, teamID, seasonID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch team players"})
 		return

@@ -43,7 +43,7 @@ type MatchMap struct {
 	Score1      int    `json:"score_1" gorm:"default:0"`
 	Score2      int    `json:"score_2" gorm:"default:0"`
 	WinnerID    *uint  `json:"winner_id"`
-	Played      bool   `json:"played" gorm:"default:true"`
+	Played      bool   `json:"played"`
 	DurationSec int    `json:"duration_sec" gorm:"default:0"`
 	Source      string `json:"source" gorm:"size:50"`
 
