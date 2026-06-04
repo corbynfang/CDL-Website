@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corbynfang/CDL-Website/internal/models"
 	"github.com/corbynfang/CDL-Website/internal/services"
 	"github.com/gin-gonic/gin"
@@ -126,4 +127,79 @@ func TestGetTeamPlayers_ScopeAllUsesStints(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "GetPlayers", f.calledMethod, "scope=all must use the stint union path")
 	assert.Equal(t, "2", f.calledSeason)
+}
+
+func TestGetTeam_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "notanumber"}}, "")
+	h.GetTeam(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var body map[string]string
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+	assert.Equal(t, "Invalid team ID", body["error"])
+}
+
+func TestGetTeam_NotFound(t *testing.T) {
+	mock := setupMockDB(t)
+	mock.ExpectQuery(`SELECT \* FROM "teams"`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "999"}}, "")
+	h.GetTeam(c)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTeam_Success(t *testing.T) {
+	mock := setupMockDB(t)
+	rows := sqlmock.NewRows([]string{"id", "name", "abbreviation", "city", "logo_url",
+		"primary_color", "secondary_color", "is_active"}).
+		AddRow(1, "Atlanta FaZe", "ATL", "Atlanta", "", "#000", "#f00", true)
+	mock.ExpectQuery(`SELECT \* FROM "teams"`).
+		WillReturnRows(rows)
+
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
+	h.GetTeam(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var team map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &team))
+	assert.Equal(t, "Atlanta FaZe", team["name"])
+	assert.Equal(t, "ATL", team["abbreviation"])
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTeams_ScopeAll_Success(t *testing.T) {
+	mock := setupMockDB(t)
+	rows := sqlmock.NewRows([]string{"id", "name", "abbreviation", "is_active"}).
+		AddRow(1, "Atlanta FaZe", "ATL", true).
+		AddRow(2, "Boston Breach", "BOS", true)
+	mock.ExpectQuery(`SELECT \* FROM "teams"`).
+		WillReturnRows(rows)
+
+	h := newTestHandler(t)
+	c, w := newCtx(nil, "scope=all")
+	h.GetTeams(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var teams []map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &teams))
+	assert.Len(t, teams, 2)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTeams_ScopeAll_Empty(t *testing.T) {
+	mock := setupMockDB(t)
+	mock.ExpectQuery(`SELECT \* FROM "teams"`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+
+	h := newTestHandler(t)
+	c, w := newCtx(nil, "scope=all")
+	h.GetTeams(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

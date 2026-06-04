@@ -10,10 +10,11 @@ package handlers
 //   franchises.go — GetFranchises, GetFranchise
 //   players.go    — GetPlayers, GetPlayer, GetPlayerStats, GetPlayerKDStats,
 //                   GetPlayerMatches, GetPlayerFranchiseCareer
-//   matches.go    — GetMatch, GetTournaments, GetTournament, GetTournamentBracket,
+//   matches.go    — GetMatch
+//   tournaments.go— GetTournaments, GetTournamentBySlug, GetTournament, GetTournamentBracket,
 //                   GetTournamentMatches, GetTournamentTeams, GetTournamentStats
 //   transfers.go  — GetTransfers
-//   stats.go      — GetTopKDPlayers, GetAllPlayersKDStats, GetDatabaseValidation
+//   stats.go      — GetTopKDPlayers, GetAllPlayersKDStats
 
 import (
 	"context"
@@ -29,13 +30,14 @@ import (
 
 // Handler holds all service instances. Routes are registered as methods on *Handler.
 type Handler struct {
-	players    *services.PlayerService
-	teams      *services.TeamService
-	seasons    *services.SeasonService
-	franchises *services.FranchiseService
-	matches    *services.MatchService
-	transfers  *services.TransferService
-	stats      *services.StatsService
+	players     *services.PlayerService
+	teams       *services.TeamService
+	seasons     *services.SeasonService
+	franchises  *services.FranchiseService
+	matches     *services.MatchService
+	tournaments *services.TournamentService
+	transfers   *services.TransferService
+	stats       *services.StatsService
 }
 
 // New wires up all stores and services from a single DB connection.
@@ -50,13 +52,14 @@ func New(db *gorm.DB) *Handler {
 	statsStore := store.NewGormStatsStore(db)
 
 	return &Handler{
-		players:    services.NewPlayerService(playerStore),
-		teams:      services.NewTeamService(teamStore, seasonStore),
-		seasons:    services.NewSeasonService(seasonStore),
-		franchises: services.NewFranchiseService(franchiseStore),
-		matches:    services.NewMatchService(matchStore, tournamentStore),
-		transfers:  services.NewTransferService(transferStore),
-		stats:      services.NewStatsService(statsStore),
+		players:     services.NewPlayerService(playerStore),
+		teams:       services.NewTeamService(teamStore, seasonStore),
+		seasons:     services.NewSeasonService(seasonStore),
+		franchises:  services.NewFranchiseService(franchiseStore),
+		matches:     services.NewMatchService(matchStore),
+		tournaments: services.NewTournamentService(tournamentStore),
+		transfers:   services.NewTransferService(transferStore),
+		stats:       services.NewStatsService(statsStore),
 	}
 }
 

@@ -38,6 +38,7 @@ func (s *gormFranchiseStore) GetTeamsByFranchiseID(ctx context.Context, franchis
 	var teams []models.Team
 	err := s.db.WithContext(ctx).
 		Where("franchise_id = ?", franchiseID).
+		Where("EXISTS (SELECT 1 FROM player_match_stats pms WHERE pms.team_id = teams.id)").
 		Order("valid_from ASC").
 		Find(&teams).Error
 	return teams, err
