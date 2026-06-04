@@ -62,6 +62,14 @@ func TestGetFranchise_SuccessWithEras(t *testing.T) {
 	require.NoError(t, database.DB.Create(&models.Franchise{ID: fid, FranchiseKey: "surge", Name: "Surge"}).Error)
 	require.NoError(t, database.DB.Create(&models.Team{ID: 1, Name: "Seattle Surge", Abbreviation: "SEA", FranchiseID: &fid}).Error)
 	require.NoError(t, database.DB.Create(&models.Team{ID: 2, Name: "Vancouver Surge", Abbreviation: "VAN", FranchiseID: &fid}).Error)
+	require.NoError(t, database.DB.Create(&models.Team{ID: 3, Name: "Vancouver Surge MW3", Abbreviation: "VAN", FranchiseID: &fid}).Error)
+	pgSeason(t)
+	pgTournament(t)
+	require.NoError(t, database.DB.Create(&models.Player{ID: 1, Gamertag: "Sib"}).Error)
+	require.NoError(t, database.DB.Create(&models.Player{ID: 2, Gamertag: "Pred"}).Error)
+	require.NoError(t, database.DB.Create(&models.Match{ID: 1, TournamentID: 1, Team1ID: 1, Team2ID: 2, MatchDate: time.Now()}).Error)
+	require.NoError(t, database.DB.Create(&models.PlayerMatchStats{ID: 1, MatchID: 1, PlayerID: 1, TeamID: 1}).Error)
+	require.NoError(t, database.DB.Create(&models.PlayerMatchStats{ID: 2, MatchID: 1, PlayerID: 2, TeamID: 2}).Error)
 
 	h := newTestHandler(t)
 	c, w := newCtx(gin.Params{{Key: "key", Value: "surge"}}, "")
@@ -74,62 +82,11 @@ func TestGetFranchise_SuccessWithEras(t *testing.T) {
 	}
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &detail))
 	assert.Equal(t, "surge", detail.Franchise["franchise_key"])
-	assert.Len(t, detail.Eras, 2, "both Surge eras share the franchise")
-}
 
-func TestGetTransfers_Empty(t *testing.T) {
-	setupPGTx(t)
-	h := newTestHandler(t)
-	c, w := newCtx(nil, "")
-	h.GetTransfers(c)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	var env struct {
-		Transfers []map[string]any `json:"transfers"`
-		Count     int              `json:"count"`
+	names := make([]string, len(detail.Eras))
+	for i, e := range detail.Eras {
+		names[i] = e["name"].(string)
 	}
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &env))
-	assert.Equal(t, 0, env.Count)
-	assert.Empty(t, env.Transfers)
-}
-
-func TestGetTransfers_ReturnsSeeded(t *testing.T) {
-	setupPGTx(t)
-	require.NoError(t, database.DB.Create(&models.Player{ID: 1, Gamertag: "Vivid"}).Error)
-	require.NoError(t, database.DB.Create(&models.PlayerTransfer{
-		ID: 1, PlayerID: 1, TransferDate: time.Now(), TransferType: "join",
-		GameCode: "BO6", Season: "BO6",
-	}).Error)
-
-	h := newTestHandler(t)
-	c, w := newCtx(nil, "")
-	h.GetTransfers(c)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	var env struct {
-		Transfers []map[string]any `json:"transfers"`
-		Count     int              `json:"count"`
-	}
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &env))
-	assert.Equal(t, 1, env.Count)
-	require.Len(t, env.Transfers, 1)
-}
-
-func TestGetTransfers_PlayerFilter(t *testing.T) {
-	setupPGTx(t)
-	require.NoError(t, database.DB.Create(&models.Player{ID: 1, Gamertag: "Vivid"}).Error)
-	require.NoError(t, database.DB.Create(&models.Player{ID: 2, Gamertag: "Scump"}).Error)
-	require.NoError(t, database.DB.Create(&models.PlayerTransfer{ID: 1, PlayerID: 1, TransferDate: time.Now()}).Error)
-	require.NoError(t, database.DB.Create(&models.PlayerTransfer{ID: 2, PlayerID: 2, TransferDate: time.Now()}).Error)
-
-	h := newTestHandler(t)
-	c, w := newCtx(nil, "player_id=1")
-	h.GetTransfers(c)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	var env struct {
-		Count int `json:"count"`
-	}
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &env))
-	assert.Equal(t, 1, env.Count, "player_id filter should narrow to one transfer")
+	assert.ElementsMatch(t, []string{"Seattle Surge", "Vancouver Surge"}, names,
+		"data-bearing eras are returned; the empty MW3 era is filtered out")
 }

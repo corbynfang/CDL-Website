@@ -348,3 +348,76 @@ func TestGetPlayerMatches_ResponseShape(t *testing.T) {
 		assert.Contains(t, match, field, "match entry must contain %s", field)
 	}
 }
+
+func TestGetPlayer_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "bad"}}, "")
+	h.GetPlayer(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var body map[string]string
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+	assert.Equal(t, "Invalid player ID", body["error"])
+}
+
+func TestGetPlayer_NotFound(t *testing.T) {
+	mock := setupMockDB(t)
+	mock.ExpectQuery(`SELECT \* FROM "players"`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "gamertag"}))
+
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
+	h.GetPlayer(c)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetPlayer_Success(t *testing.T) {
+	mock := setupMockDB(t)
+	rows := sqlmock.NewRows([]string{"id", "gamertag", "first_name", "last_name",
+		"country", "role", "is_active"}).
+		AddRow(7, "Scump", "Seth", "Abner", "US", "flex", true)
+	mock.ExpectQuery(`SELECT \* FROM "players"`).
+		WillReturnRows(rows)
+
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "7"}}, "")
+	h.GetPlayer(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var player map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &player))
+	assert.Equal(t, "Scump", player["gamertag"])
+	assert.Equal(t, "US", player["country"])
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetPlayerFranchiseCareer_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "bad"}}, "")
+	h.GetPlayerFranchiseCareer(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, "Invalid player ID", errBody(t, w.Body.Bytes()))
+}
+
+func TestGetPlayerFranchiseCareer_NotFound(t *testing.T) {
+	setupPGTx(t)
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "999"}}, "")
+	h.GetPlayerFranchiseCareer(c)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetPlayerFranchiseCareer_EmptyForExistingPlayer(t *testing.T) {
+	setupPGTx(t)
+	require.NoError(t, database.DB.Create(&models.Player{ID: 1, Gamertag: "Scump"}).Error)
+
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
+	h.GetPlayerFranchiseCareer(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var career map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &career))
+	assert.Equal(t, "Scump", career["gamertag"])
+}

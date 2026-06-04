@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/corbynfang/CDL-Website/internal/database"
+	"github.com/corbynfang/CDL-Website/internal/models"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -167,4 +170,64 @@ func TestGetAllPlayersKDStats_EmptyResults(t *testing.T) {
 	assert.Equal(t, 0, body.Count)
 	assert.NotNil(t, body.Players, "players must be [] not null")
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTeamStats_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "x"}}, "")
+	h.GetTeamStats(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, "Invalid team ID", errBody(t, w.Body.Bytes()))
+}
+
+func TestGetTeamStats_Empty(t *testing.T) {
+	setupPGTx(t)
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "999"}}, "")
+	h.GetTeamStats(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var stats []map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &stats))
+	assert.Empty(t, stats)
+}
+
+func TestGetTeamStats_ReturnsRows(t *testing.T) {
+	setupPGTx(t)
+	pgMatchEnv(t) // season 1, tournament 1, teams 1 & 2
+	placement := 1
+	require.NoError(t, database.DB.Create(&models.TeamTournamentStats{
+		TournamentID: 1, TeamID: 1, Placement: &placement,
+		MatchesPlayed: 5, MatchesWon: 4, MatchesLost: 1,
+	}).Error)
+
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
+	h.GetTeamStats(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var stats []map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &stats))
+	require.Len(t, stats, 1)
+	assert.Equal(t, float64(5), stats[0]["matches_played"])
+}
+
+func TestGetPlayerStats_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "nope"}}, "")
+	h.GetPlayerStats(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, "Invalid player ID", errBody(t, w.Body.Bytes()))
+}
+
+func TestGetPlayerStats_Empty(t *testing.T) {
+	setupPGTx(t)
+	h := newTestHandler(t)
+	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
+	h.GetPlayerStats(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var stats []map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &stats))
+	assert.Empty(t, stats)
 }

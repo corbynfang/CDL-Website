@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 
-	"github.com/corbynfang/CDL-Website/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -18,18 +17,9 @@ type KDRow struct {
 	SeasonKD      float64 `json:"season_kd"`
 }
 
-type TableCounts struct {
-	Players     int64
-	Teams       int64
-	Matches     int64
-	Tournaments int64
-	MapStats    int64
-}
-
 type StatsStore interface {
 	GetTopKDRows(ctx context.Context, limit int) ([]KDRow, error)
 	GetAllKDRows(ctx context.Context, limit int, seasonID string) ([]KDRow, error)
-	GetTableCounts(ctx context.Context) (TableCounts, error)
 }
 
 type gormStatsStore struct{ db *gorm.DB }
@@ -74,25 +64,4 @@ func (s *gormStatsStore) GetAllKDRows(ctx context.Context, limit int, seasonID s
 		Limit(limit).
 		Scan(&rows).Error
 	return rows, err
-}
-
-func (s *gormStatsStore) GetTableCounts(ctx context.Context) (TableCounts, error) {
-	var c TableCounts
-	db := s.db.WithContext(ctx)
-	if err := db.Model(&models.Player{}).Count(&c.Players).Error; err != nil {
-		return c, err
-	}
-	if err := db.Model(&models.Team{}).Count(&c.Teams).Error; err != nil {
-		return c, err
-	}
-	if err := db.Model(&models.Match{}).Count(&c.Matches).Error; err != nil {
-		return c, err
-	}
-	if err := db.Model(&models.Tournament{}).Count(&c.Tournaments).Error; err != nil {
-		return c, err
-	}
-	if err := db.Model(&models.PlayerMapStats{}).Count(&c.MapStats).Error; err != nil {
-		return c, err
-	}
-	return c, nil
 }

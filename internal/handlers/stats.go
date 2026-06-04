@@ -71,24 +71,3 @@ func (h *Handler) GetAllPlayersKDStats(c *gin.Context) {
 		"count":     len(enriched),
 	})
 }
-
-func (h *Handler) GetDatabaseValidation(c *gin.Context) {
-	ctx, cancel := getContext(10)
-	defer cancel()
-
-	counts, err := h.stats.GetTableCounts(ctx)
-	if err != nil {
-		log.Printf("GetDatabaseValidation error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate database"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"status":           "healthy",
-		"timestamp":        time.Now().Unix(),
-		"players":          counts.Players,
-		"teams":            counts.Teams,
-		"matches":          counts.Matches,
-		"tournaments":      counts.Tournaments,
-		"player_map_stats": counts.MapStats,
-	})
-}

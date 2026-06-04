@@ -39,7 +39,3 @@ func (ss *StatsService) GetAllKD(ctx context.Context, limit int, seasonID string
 	}
 	return rows, nil
 }
-
-func (ss *StatsService) GetTableCounts(ctx context.Context) (store.TableCounts, error) {
-	return ss.store.GetTableCounts(ctx)
-}
