@@ -14,7 +14,7 @@ type PlayerMapStats struct {
 	Damage  int     `json:"damage" gorm:"default:0"`
 	Assists int     `json:"assists" gorm:"default:0"`
 
-	BPRating float64 `json:"bp_rating" gorm:"type:decimal(10,6);default:0"` // Only used for BreakingPoint Stats if found BPRating.
+	BPRating float64 `json:"bp_rating" gorm:"type:decimal(10,6);default:0"` // Only used for BreakingPoint Stats if found BPRating within database.
 
 	HillTime             int `json:"hill_time" gorm:"default:0"`
 	SndRounds            int `json:"snd_rounds" gorm:"default:0"`
