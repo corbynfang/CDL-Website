@@ -51,7 +51,7 @@ func TestCreatePost_RequiresProfileSetup(t *testing.T) {
 	r := newTestRouter(New(database.DB))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, authReq(http.MethodPost, "/api/v1/matches/1/thread/posts", jsonBody(t, map[string]string{"body": "hello"}), token))
-	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
 
 func TestEditPost_OnlyOwnerCanEdit(t *testing.T) {

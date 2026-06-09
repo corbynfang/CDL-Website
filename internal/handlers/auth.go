@@ -39,7 +39,7 @@ func (h *Handler) GetMe(c *gin.Context) {
 	user, err := h.users.GetBySupabaseUID(ctx, uid)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "profile not found"})
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "profile not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch profile"})
 		}
@@ -57,7 +57,7 @@ func (h *Handler) DeleteMe(c *gin.Context) {
 	user, err := h.users.GetBySupabaseUID(ctx, uid)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "profile not found"})
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "profile not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch profile"})
 		}

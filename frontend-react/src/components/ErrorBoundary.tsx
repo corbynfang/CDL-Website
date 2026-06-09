@@ -34,6 +34,7 @@ class ErrorBoundary extends Component<Props, State> {
               The page crashed. Try refreshing.
             </p>
             <button
+              type="button"
               onClick={() => window.location.reload()}
               className="text-[#737373] hover:text-white text-sm transition-colors border border-[#1a1a1a] px-4 py-2"
             >

@@ -29,7 +29,7 @@ async function checkProfile(token: string): Promise<boolean> {
     await api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } });
     return true;
   } catch (err: unknown) {
-    if (axios.isAxiosError(err) && err.response?.status === 404) {
+    if (axios.isAxiosError(err) && err.response?.status === 422) {
       return false;
     }
     return true;

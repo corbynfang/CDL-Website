@@ -48,7 +48,7 @@ func (h *Handler) CreatePost(c *gin.Context) {
 	user, err := h.users.GetBySupabaseUID(ctx, uid)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "complete profile setup first"})
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "complete profile setup first"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
 		}
@@ -98,7 +98,7 @@ func (h *Handler) EditPost(c *gin.Context) {
 	user, err := h.users.GetBySupabaseUID(ctx, uid)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "complete profile setup first"})
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "complete profile setup first"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
 		}
@@ -144,7 +144,7 @@ func (h *Handler) DeletePost(c *gin.Context) {
 	user, err := h.users.GetBySupabaseUID(ctx, uid)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "complete profile setup first"})
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "complete profile setup first"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
 		}
