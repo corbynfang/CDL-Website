@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@hcaptcha/react-hcaptcha": "^2.0.2",
     "@supabase/supabase-js": "^2.105.4",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.16.1",

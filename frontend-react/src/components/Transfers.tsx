@@ -35,7 +35,11 @@ const formatDate = (dateString: string) => {
 };
 
 const Transfers = () => {
-  const { data: response, loading, error } = useApi<TransfersResponse>("/api/v1/transfers");
+  const {
+    data: response,
+    loading,
+    error,
+  } = useApi<TransfersResponse>("/api/v1/transfers");
 
   const transfers = response?.transfers || [];
 
@@ -58,8 +62,12 @@ const Transfers = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8">
-        <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">Roster Moves</p>
-        <h1 className="font-grotesk text-3xl font-bold text-white">TRANSFERS</h1>
+        <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">
+          Roster Moves
+        </p>
+        <h1 className="font-grotesk text-3xl font-bold text-white">
+          TRANSFERS
+        </h1>
       </div>
 
       <div className="space-y-2">
@@ -107,10 +115,14 @@ const Transfers = () => {
 
                 <div className="flex items-center gap-4 text-xs text-[#737373] md:flex-col md:items-end md:gap-1">
                   {transfer.role && (
-                    <span className="uppercase tracking-wider">{transfer.role}</span>
+                    <span className="uppercase tracking-wider">
+                      {transfer.role}
+                    </span>
                   )}
                   {transfer.season && (
-                    <span className="uppercase tracking-wider">{transfer.season}</span>
+                    <span className="uppercase tracking-wider">
+                      {transfer.season}
+                    </span>
                   )}
                   <span>{formatDate(transfer.transfer_date)}</span>
                 </div>

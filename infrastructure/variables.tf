@@ -32,3 +32,9 @@ variable "alert_email" {
   description = "Email address to receive CloudWatch 500-error alerts"
   type        = string
 }
+
+variable "supabase_url" {
+  description = "Supabase project URL (e.g. https://xxx.supabase.co)"
+  type        = string
+  default     = "https://lgnmkdvwaffzgsgmdnsl.supabase.co"
+}

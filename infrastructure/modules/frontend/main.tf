@@ -176,19 +176,18 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   # Ordered behavior: /api/* goes to the ALB, not cached.
-  # Only GET/HEAD/OPTIONS allowed — the API is read-only.
   ordered_cache_behavior {
     path_pattern               = "/api/*"
     target_origin_id           = "alb-api"
     viewer_protocol_policy     = "redirect-to-https"
-    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    allowed_methods            = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods             = ["GET", "HEAD"]
     compress                   = false
     response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
 
     forwarded_values {
       query_string = true
-      headers      = ["Origin", "Access-Control-Request-Headers", "Access-Control-Request-Method"]
+      headers      = ["Authorization", "Origin", "Access-Control-Request-Headers", "Access-Control-Request-Method"]
       cookies { forward = "none" }
     }
 

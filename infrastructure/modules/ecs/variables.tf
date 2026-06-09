@@ -24,6 +24,16 @@ variable "db_secret_arn" {
   type        = string
 }
 
+variable "jwt_secret_arn" {
+  description = "Secrets Manager ARN for SUPABASE_JWT_SECRET"
+  type        = string
+}
+
+variable "supabase_url" {
+  description = "Supabase project URL for JWKS endpoint"
+  type        = string
+}
+
 variable "target_group_arn" {
   description = "ALB target group to register the container with"
   type        = string

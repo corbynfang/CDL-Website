@@ -25,20 +25,23 @@ const TeamDetail = () => {
   const navigate = useNavigate();
   const [rosterScope, setRosterScope] = useState<RosterScope>("current");
 
-  const { data: team, loading: teamLoading, error: teamError } = useApi<Team>(
-    `/api/v1/teams/${id}`
-  );
+  const {
+    data: team,
+    loading: teamLoading,
+    error: teamError,
+  } = useApi<Team>(`/api/v1/teams/${id}`);
 
   const rosterUrl =
     rosterScope === "used"
       ? `/api/v1/teams/${id}/players?scope=all`
       : `/api/v1/teams/${id}/players`;
 
-  const { data: players, loading: playersLoading } = useApi<Player[]>(rosterUrl);
+  const { data: players, loading: playersLoading } =
+    useApi<Player[]>(rosterUrl);
   const franchiseKey = team?.franchise?.franchise_key ?? "";
   const { data: franchiseData } = useApi<FranchiseResponse>(
     `/api/v1/franchises/${franchiseKey}`,
-    { enabled: !!franchiseKey }
+    { enabled: !!franchiseKey },
   );
 
   if (teamLoading) {
@@ -53,7 +56,10 @@ const TeamDetail = () => {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <p className="text-[#737373] text-sm">Team not found</p>
-        <Link to="/teams" className="text-[#a3a3a3] hover:text-white mt-4 inline-block text-sm transition-colors">
+        <Link
+          to="/teams"
+          className="text-[#a3a3a3] hover:text-white mt-4 inline-block text-sm transition-colors"
+        >
           ← Back to Teams
         </Link>
       </div>
@@ -76,7 +82,11 @@ const TeamDetail = () => {
       {/* Team header */}
       <div className="flex flex-wrap items-center gap-6 mb-12 pb-8 border-b border-[#1a1a1a]">
         {logo ? (
-          <img src={logo} alt={team.name} className="w-24 h-24 object-contain opacity-90" />
+          <img
+            src={logo}
+            alt={team.name}
+            className="w-24 h-24 object-contain opacity-90"
+          />
         ) : (
           <div className="w-24 h-24 bg-[#1a1a1a] flex items-center justify-center text-sm font-bold text-[#737373] font-mono">
             {team.abbreviation}
@@ -84,9 +94,14 @@ const TeamDetail = () => {
         )}
         <div>
           <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">
-            {team.abbreviation} · {team.game_code ? gameLabel[team.game_code] ?? team.game_code : "CDL"}
+            {team.abbreviation} ·{" "}
+            {team.game_code
+              ? (gameLabel[team.game_code] ?? team.game_code)
+              : "CDL"}
           </p>
-          <h1 className="font-grotesk text-4xl font-bold text-white">{team.name}</h1>
+          <h1 className="font-grotesk text-4xl font-bold text-white">
+            {team.name}
+          </h1>
           {team.is_active && (
             <span className="mt-2 inline-block text-[10px] uppercase tracking-widest text-green-400 bg-green-400/10 px-2 py-0.5">
               Active
@@ -112,7 +127,9 @@ const TeamDetail = () => {
             >
               {eras.map((era) => (
                 <option key={era.id} value={era.id}>
-                  {era.game_code ? gameLabel[era.game_code] ?? era.game_code : era.name}
+                  {era.game_code
+                    ? (gameLabel[era.game_code] ?? era.game_code)
+                    : era.name}
                 </option>
               ))}
             </select>
@@ -130,10 +147,12 @@ const TeamDetail = () => {
                 {rosterScope === "used" ? "Players Used This Season" : "Roster"}
               </h2>
               <div className="inline-flex self-start bg-[#111111] border border-[#1a1a1a] p-0.5">
-                {([
-                  ["current", "Current Roster"],
-                  ["used", "Players Used"],
-                ] as const).map(([scope, label]) => {
+                {(
+                  [
+                    ["current", "Current Roster"],
+                    ["used", "Players Used"],
+                  ] as const
+                ).map(([scope, label]) => {
                   const isActive = rosterScope === scope;
                   return (
                     <button
@@ -216,19 +235,31 @@ const TeamDetail = () => {
                     }`}
                   >
                     {eraLogo ? (
-                      <img src={eraLogo} alt={era.name} className="w-8 h-8 object-contain opacity-80 flex-shrink-0" />
+                      <img
+                        src={eraLogo}
+                        alt={era.name}
+                        className="w-8 h-8 object-contain opacity-80 flex-shrink-0"
+                      />
                     ) : (
                       <div className="w-8 h-8 bg-[#1a1a1a] flex items-center justify-center text-[10px] font-bold text-[#737373] flex-shrink-0 font-mono">
                         {era.abbreviation?.slice(0, 3)}
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className={`text-xs font-semibold truncate ${isCurrent ? "text-white" : "text-[#a3a3a3]"}`}>
+                      <p
+                        className={`text-xs font-semibold truncate ${isCurrent ? "text-white" : "text-[#a3a3a3]"}`}
+                      >
                         {era.name}
-                        {isCurrent && <span className="ml-1.5 text-[9px] text-green-400">●</span>}
+                        {isCurrent && (
+                          <span className="ml-1.5 text-[9px] text-green-400">
+                            ●
+                          </span>
+                        )}
                       </p>
                       <p className="text-[10px] text-[#737373] mt-0.5">
-                        {era.game_code ? gameLabel[era.game_code] ?? era.game_code : "—"}
+                        {era.game_code
+                          ? (gameLabel[era.game_code] ?? era.game_code)
+                          : "—"}
                       </p>
                     </div>
                   </Link>

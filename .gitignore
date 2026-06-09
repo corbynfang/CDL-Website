@@ -26,7 +26,6 @@ infrastructure/.terraform.lock.hcl
 *.tfstate.backup
 *.tfvars          # never commit var files — they can contain secrets
 
-# ── Environment / secrets ─────────────────────────────────────────────────────
 .env
 .env.local
 .env.production
@@ -53,21 +52,17 @@ logs/
 /validate
 /patch_brackets
 
-# ── Database CSV files (proprietary data — share privately) ───────────────────
-# This folder contains cleaned match, transfer, and player stat CSVs that were
-# hard to collect. Keep out of the public repo until ready to share.
 /database/
 
-# ── Claude Code internal files ────────────────────────────────────────────────
 frontend-react/.agents/
 frontend-react/skills-lock.json
 CLAUDE.md
 
-# ── Duplicate / junk files ────────────────────────────────────────────────────
 deploy/deploy\ 2.sh
 "deploy/deploy 2.sh"
 
-# ── Misc ──────────────────────────────────────────────────────────────────────
+docs/
+
 tmp/
 temp/
 *.tmp

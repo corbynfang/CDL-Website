@@ -4,433 +4,433 @@ import { getTeamLogo } from "../utils/logoAssets";
 import MatchThread from "./threads/MatchThread";
 
 interface PlayerStat {
-	player_id: number;
-	gamertag: string;
-	kills: number;
-	deaths: number;
-	kd_ratio: number;
-	damage: number;
-	assists: number;
-	bp_rating: number;
-	hill_time: number;
-	snd_rounds: number;
-	plant_count: number;
-	defuse_count: number;
-	first_blood_count: number;
-	first_death_count: number;
-	non_traded_kills: number;
-	highest_streak: number;
-	data_quality_note?: string;
+  player_id: number;
+  gamertag: string;
+  kills: number;
+  deaths: number;
+  kd_ratio: number;
+  damage: number;
+  assists: number;
+  bp_rating: number;
+  hill_time: number;
+  snd_rounds: number;
+  plant_count: number;
+  defuse_count: number;
+  first_blood_count: number;
+  first_death_count: number;
+  non_traded_kills: number;
+  highest_streak: number;
+  data_quality_note?: string;
 }
 
 interface MapDetail {
-	map_number: number;
-	map_name: string;
-	mode: string;
-	score_1: number;
-	score_2: number;
-	winner_id?: number;
-	duration_sec: number;
-	played: boolean;
-	team1_stats: PlayerStat[];
-	team2_stats: PlayerStat[];
+  map_number: number;
+  map_name: string;
+  mode: string;
+  score_1: number;
+  score_2: number;
+  winner_id?: number;
+  duration_sec: number;
+  played: boolean;
+  team1_stats: PlayerStat[];
+  team2_stats: PlayerStat[];
 }
 
 interface MatchInfo {
-	id: number;
-	tournament_name: string;
-	season_name: string;
-	game_code: string;
-	team1_id: number;
-	team1_name: string;
-	team1_abbr: string;
-	team1_logo: string;
-	team2_id: number;
-	team2_name: string;
-	team2_abbr: string;
-	team2_logo: string;
-	team1_score: number;
-	team2_score: number;
-	winner_id?: number;
-	match_date: string;
-	format: string;
-	bracket_round: string;
+  id: number;
+  tournament_name: string;
+  season_name: string;
+  game_code: string;
+  team1_id: number;
+  team1_name: string;
+  team1_abbr: string;
+  team1_logo: string;
+  team2_id: number;
+  team2_name: string;
+  team2_abbr: string;
+  team2_logo: string;
+  team1_score: number;
+  team2_score: number;
+  winner_id?: number;
+  match_date: string;
+  format: string;
+  bracket_round: string;
 }
 
 interface MatchDetailResponse {
-	match: MatchInfo;
-	maps: MapDetail[];
+  match: MatchInfo;
+  maps: MapDetail[];
 }
 
 const formatDuration = (sec: number) => {
-	if (!sec) return "—";
-	const m = Math.floor(sec / 60);
-	const s = sec % 60;
-	return `${m}:${String(s).padStart(2, "0")}`;
+  if (!sec) return "—";
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 };
 
 const formatRound = (raw: string) => {
-	const map: Record<string, string> = {
-		major_qualifier: "Major Qualifier",
-		winners_r1: "Winners Round 1",
-		winners_r2: "Winners Round 2",
-		winners_r3: "Winners Round 3",
-		winners_finals: "Winners Finals",
-		elim_r1: "Elimination Round 1",
-		elim_r2: "Elimination Round 2",
-		elim_r3: "Elimination Round 3",
-		elim_r4: "Elimination Round 4",
-		elim_finals: "Elimination Finals",
-		finals: "Finals",
-		grand_finals: "Grand Finals",
-		"3rd_place": "3rd Place",
-	};
-	return (
-		map[raw] ?? raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-	);
+  const map: Record<string, string> = {
+    major_qualifier: "Major Qualifier",
+    winners_r1: "Winners Round 1",
+    winners_r2: "Winners Round 2",
+    winners_r3: "Winners Round 3",
+    winners_finals: "Winners Finals",
+    elim_r1: "Elimination Round 1",
+    elim_r2: "Elimination Round 2",
+    elim_r3: "Elimination Round 3",
+    elim_r4: "Elimination Round 4",
+    elim_finals: "Elimination Finals",
+    finals: "Finals",
+    grand_finals: "Grand Finals",
+    "3rd_place": "3rd Place",
+  };
+  return (
+    map[raw] ?? raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 };
 
 const kdColor = (kd: number) => {
-	if (kd >= 1.5) return "text-green-400";
-	if (kd >= 1.0) return "text-white";
-	if (kd >= 0.8) return "text-[#a3a3a3]";
-	return "text-[#737373]";
+  if (kd >= 1.5) return "text-green-400";
+  if (kd >= 1.0) return "text-white";
+  if (kd >= 0.8) return "text-[#a3a3a3]";
+  return "text-[#737373]";
 };
 
 const ModeIcon = ({ mode }: { mode: string }) => {
-	const icons: Record<string, string> = {
-		Hardpoint: "HP",
-		"Search and Destroy": "SND",
-		Control: "CTL",
-	};
-	return (
-		<span className="font-mono text-[10px] text-[#737373]">
-			{icons[mode] ?? mode.slice(0, 3).toUpperCase()}
-		</span>
-	);
+  const icons: Record<string, string> = {
+    Hardpoint: "HP",
+    "Search and Destroy": "SND",
+    Control: "CTL",
+  };
+  return (
+    <span className="font-mono text-[10px] text-[#737373]">
+      {icons[mode] ?? mode.slice(0, 3).toUpperCase()}
+    </span>
+  );
 };
 
 interface ScoreboardProps {
-	map: MapDetail;
-	team1Name: string;
-	team2Name: string;
-	team1ID: number;
+  map: MapDetail;
+  team1Name: string;
+  team2Name: string;
+  team1ID: number;
 }
 
 const Scoreboard = ({
-	map,
-	team1Name,
-	team2Name,
-	team1ID,
+  map,
+  team1Name,
+  team2Name,
+  team1ID,
 }: ScoreboardProps) => {
-	const team1Won = map.winner_id === team1ID;
-	const isHP = map.mode === "Hardpoint";
-	const isSND = map.mode === "Search and Destroy";
+  const team1Won = map.winner_id === team1ID;
+  const isHP = map.mode === "Hardpoint";
+  const isSND = map.mode === "Search and Destroy";
 
-	const StatHeader = ({ label }: { label: string }) => (
-		<th className="px-2 py-2 text-[#737373] text-[10px] uppercase tracking-widest font-medium text-right">
-			{label}
-		</th>
-	);
+  const StatHeader = ({ label }: { label: string }) => (
+    <th className="px-2 py-2 text-[#737373] text-[10px] uppercase tracking-widest font-medium text-right">
+      {label}
+    </th>
+  );
 
-	const PlayerRow = ({
-		p,
-		highlight,
-	}: {
-		p: PlayerStat;
-		highlight: boolean;
-	}) => (
-		<tr
-			className={`border-b border-[#111111] transition-colors ${highlight ? "bg-[#0f0f0f]" : ""}`}
-		>
-			<td className="px-3 py-2">
-				<Link
-					to={`/players/${p.player_id}`}
-					className="font-grotesk font-semibold text-white hover:text-[#a3a3a3] text-xs transition-colors"
-				>
-					{p.gamertag}
-				</Link>
-			</td>
-			<td
-				className={`px-2 py-2 text-xs font-bold font-mono text-right ${kdColor(p.kd_ratio)}`}
-			>
-				{p.kd_ratio.toFixed(2)}
-			</td>
-			<td className="px-2 py-2 text-xs font-mono text-right text-white">
-				{p.kills}
-			</td>
-			<td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
-				{p.deaths}
-			</td>
-			<td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
-				{p.damage > 0 ? p.damage.toLocaleString() : "—"}
-			</td>
-			{isHP && (
-				<td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
-					{p.hill_time > 0 ? `${p.hill_time}s` : "—"}
-				</td>
-			)}
-			{isSND && (
-				<>
-					<td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
-						{p.plant_count > 0 ? p.plant_count : "—"}
-					</td>
-					<td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
-						{p.defuse_count > 0 ? p.defuse_count : "—"}
-					</td>
-					<td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
-						{p.first_blood_count > 0 ? p.first_blood_count : "—"}
-					</td>
-				</>
-			)}
-			<td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
-				{p.bp_rating > 0 ? p.bp_rating.toFixed(2) : "—"}
-			</td>
-		</tr>
-	);
+  const PlayerRow = ({
+    p,
+    highlight,
+  }: {
+    p: PlayerStat;
+    highlight: boolean;
+  }) => (
+    <tr
+      className={`border-b border-[#111111] transition-colors ${highlight ? "bg-[#0f0f0f]" : ""}`}
+    >
+      <td className="px-3 py-2">
+        <Link
+          to={`/players/${p.player_id}`}
+          className="font-grotesk font-semibold text-white hover:text-[#a3a3a3] text-xs transition-colors"
+        >
+          {p.gamertag}
+        </Link>
+      </td>
+      <td
+        className={`px-2 py-2 text-xs font-bold font-mono text-right ${kdColor(p.kd_ratio)}`}
+      >
+        {p.kd_ratio.toFixed(2)}
+      </td>
+      <td className="px-2 py-2 text-xs font-mono text-right text-white">
+        {p.kills}
+      </td>
+      <td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
+        {p.deaths}
+      </td>
+      <td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
+        {p.damage > 0 ? p.damage.toLocaleString() : "—"}
+      </td>
+      {isHP && (
+        <td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
+          {p.hill_time > 0 ? `${p.hill_time}s` : "—"}
+        </td>
+      )}
+      {isSND && (
+        <>
+          <td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
+            {p.plant_count > 0 ? p.plant_count : "—"}
+          </td>
+          <td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
+            {p.defuse_count > 0 ? p.defuse_count : "—"}
+          </td>
+          <td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
+            {p.first_blood_count > 0 ? p.first_blood_count : "—"}
+          </td>
+        </>
+      )}
+      <td className="px-2 py-2 text-xs font-mono text-right text-[#737373]">
+        {p.bp_rating > 0 ? p.bp_rating.toFixed(2) : "—"}
+      </td>
+    </tr>
+  );
 
-	const teamTable = (
-		players: PlayerStat[],
-		teamName: string,
-		score: number,
-		won: boolean,
-	) => (
-		<div className="flex-1 min-w-0">
-			<div
-				className={`flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a] ${won ? "bg-white/[0.03]" : ""}`}
-			>
-				<span
-					className={`font-grotesk font-bold text-xs ${won ? "text-white" : "text-[#737373]"}`}
-				>
-					{teamName}
-					{won && (
-						<span className="ml-2 text-[10px] text-green-400 uppercase tracking-widest">
-							W
-						</span>
-					)}
-				</span>
-				<span
-					className={`font-mono font-bold text-lg ${won ? "text-white" : "text-[#737373]"}`}
-				>
-					{score}
-				</span>
-			</div>
-			<table className="w-full">
-				<thead>
-					<tr className="border-b border-[#1a1a1a]">
-						<th className="px-3 py-1.5 text-left text-[#737373] text-[10px] uppercase tracking-widest font-medium">
-							Player
-						</th>
-						<StatHeader label="K/D" />
-						<StatHeader label="K" />
-						<StatHeader label="D" />
-						<StatHeader label="DMG" />
-						{isHP && <StatHeader label="Hill" />}
-						{isSND && (
-							<>
-								<StatHeader label="Plants" />
-								<StatHeader label="Defuses" />
-								<StatHeader label="FB" />
-							</>
-						)}
-						<StatHeader label="Rating" />
-					</tr>
-				</thead>
-				<tbody>
-					{players.map((p, i) => (
-						<PlayerRow key={p.player_id} p={p} highlight={i % 2 === 0} />
-					))}
-				</tbody>
-			</table>
-		</div>
-	);
+  const teamTable = (
+    players: PlayerStat[],
+    teamName: string,
+    score: number,
+    won: boolean,
+  ) => (
+    <div className="flex-1 min-w-0">
+      <div
+        className={`flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a] ${won ? "bg-white/[0.03]" : ""}`}
+      >
+        <span
+          className={`font-grotesk font-bold text-xs ${won ? "text-white" : "text-[#737373]"}`}
+        >
+          {teamName}
+          {won && (
+            <span className="ml-2 text-[10px] text-green-400 uppercase tracking-widest">
+              W
+            </span>
+          )}
+        </span>
+        <span
+          className={`font-mono font-bold text-lg ${won ? "text-white" : "text-[#737373]"}`}
+        >
+          {score}
+        </span>
+      </div>
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-[#1a1a1a]">
+            <th className="px-3 py-1.5 text-left text-[#737373] text-[10px] uppercase tracking-widest font-medium">
+              Player
+            </th>
+            <StatHeader label="K/D" />
+            <StatHeader label="K" />
+            <StatHeader label="D" />
+            <StatHeader label="DMG" />
+            {isHP && <StatHeader label="Hill" />}
+            {isSND && (
+              <>
+                <StatHeader label="Plants" />
+                <StatHeader label="Defuses" />
+                <StatHeader label="FB" />
+              </>
+            )}
+            <StatHeader label="Rating" />
+          </tr>
+        </thead>
+        <tbody>
+          {players.map((p, i) => (
+            <PlayerRow key={p.player_id} p={p} highlight={i % 2 === 0} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 
-	return (
-		<div className="border border-[#1a1a1a] overflow-hidden">
-			{/* Map header */}
-			<div className="flex items-center gap-3 px-4 py-3 bg-[#0a0a0a] border-b border-[#1a1a1a]">
-				<span className="text-white font-grotesk font-bold text-sm">
-					Map {map.map_number}
-				</span>
-				<span className="text-[#737373] text-xs">·</span>
-				<span className="text-[#a3a3a3] text-xs">{map.map_name}</span>
-				<span className="text-[#737373] text-xs">·</span>
-				<ModeIcon mode={map.mode} />
-				{map.duration_sec > 0 && (
-					<>
-						<span className="text-[#737373] text-xs">·</span>
-						<span className="text-[#737373] text-xs">
-							{formatDuration(map.duration_sec)}
-						</span>
-					</>
-				)}
-			</div>
+  return (
+    <div className="border border-[#1a1a1a] overflow-hidden">
+      {/* Map header */}
+      <div className="flex items-center gap-3 px-4 py-3 bg-[#0a0a0a] border-b border-[#1a1a1a]">
+        <span className="text-white font-grotesk font-bold text-sm">
+          Map {map.map_number}
+        </span>
+        <span className="text-[#737373] text-xs">·</span>
+        <span className="text-[#a3a3a3] text-xs">{map.map_name}</span>
+        <span className="text-[#737373] text-xs">·</span>
+        <ModeIcon mode={map.mode} />
+        {map.duration_sec > 0 && (
+          <>
+            <span className="text-[#737373] text-xs">·</span>
+            <span className="text-[#737373] text-xs">
+              {formatDuration(map.duration_sec)}
+            </span>
+          </>
+        )}
+      </div>
 
-			{/* Two-team scoreboards side by side (stacked on mobile) */}
-			<div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-[#1a1a1a]">
-				{teamTable(map.team1_stats, team1Name, map.score_1, team1Won)}
-				{teamTable(map.team2_stats, team2Name, map.score_2, !team1Won)}
-			</div>
-		</div>
-	);
+      {/* Two-team scoreboards side by side (stacked on mobile) */}
+      <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-[#1a1a1a]">
+        {teamTable(map.team1_stats, team1Name, map.score_1, team1Won)}
+        {teamTable(map.team2_stats, team2Name, map.score_2, !team1Won)}
+      </div>
+    </div>
+  );
 };
 
 const MatchDetail = () => {
-	const { id } = useParams<{ id: string }>();
-	const { data, loading, error } = useApi<MatchDetailResponse>(
-		`/api/v1/matches/${id}`,
-	);
+  const { id } = useParams<{ id: string }>();
+  const { data, loading, error } = useApi<MatchDetailResponse>(
+    `/api/v1/matches/${id}`,
+  );
 
-	if (loading) {
-		return (
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-				<p className="text-[#737373] text-sm">Loading match...</p>
-			</div>
-		);
-	}
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <p className="text-[#737373] text-sm">Loading match...</p>
+      </div>
+    );
+  }
 
-	if (error || !data) {
-		return (
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-				<p className="text-[#737373] text-sm">Match not found</p>
-			</div>
-		);
-	}
+  if (error || !data) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <p className="text-[#737373] text-sm">Match not found</p>
+      </div>
+    );
+  }
 
-	const { match, maps } = data;
-	const team1Won = match.winner_id === match.team1_id;
-	const team2Won = match.winner_id === match.team2_id;
-	const team1Logo = getTeamLogo(match.team1_name);
-	const team2Logo = getTeamLogo(match.team2_name);
+  const { match, maps } = data;
+  const team1Won = match.winner_id === match.team1_id;
+  const team2Won = match.winner_id === match.team2_id;
+  const team1Logo = getTeamLogo(match.team1_name);
+  const team2Logo = getTeamLogo(match.team2_name);
 
-	const playedMaps = maps.filter((m) => m.played);
+  const playedMaps = maps.filter((m) => m.played);
 
-	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-			{/* Breadcrumb */}
-			<div className="flex items-center gap-2 text-xs text-[#737373] uppercase tracking-widest mb-10">
-				<span>{match.season_name}</span>
-				<span>·</span>
-				<span>{match.tournament_name}</span>
-				{match.bracket_round && (
-					<>
-						<span>·</span>
-						<span>{formatRound(match.bracket_round)}</span>
-					</>
-				)}
-			</div>
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs text-[#737373] uppercase tracking-widest mb-10">
+        <span>{match.season_name}</span>
+        <span>·</span>
+        <span>{match.tournament_name}</span>
+        {match.bracket_round && (
+          <>
+            <span>·</span>
+            <span>{formatRound(match.bracket_round)}</span>
+          </>
+        )}
+      </div>
 
-			{/* Match header — score + team names */}
-			<div className="bg-[#111111] border border-[#1a1a1a] p-6 mb-8">
-				<div className="flex items-center justify-between gap-4">
-					{/* Team 1 */}
-					<Link
-						to={`/teams/${match.team1_id}`}
-						className="flex flex-col items-center gap-3 flex-1 group"
-					>
-						{team1Logo ? (
-							<img
-								src={team1Logo}
-								alt={match.team1_name}
-								className="w-20 h-20 object-contain opacity-90 group-hover:opacity-100 transition-opacity"
-							/>
-						) : (
-							<div className="w-20 h-20 bg-[#1a1a1a] flex items-center justify-center text-sm font-bold text-[#737373] font-mono">
-								{match.team1_abbr}
-							</div>
-						)}
-						<div className="text-center">
-							<p
-								className={`font-grotesk font-bold text-sm ${team1Won ? "text-white" : "text-[#737373]"}`}
-							>
-								{match.team1_name}
-							</p>
-						</div>
-					</Link>
+      {/* Match header — score + team names */}
+      <div className="bg-[#111111] border border-[#1a1a1a] p-6 mb-8">
+        <div className="flex items-center justify-between gap-4">
+          {/* Team 1 */}
+          <Link
+            to={`/teams/${match.team1_id}`}
+            className="flex flex-col items-center gap-3 flex-1 group"
+          >
+            {team1Logo ? (
+              <img
+                src={team1Logo}
+                alt={match.team1_name}
+                className="w-20 h-20 object-contain opacity-90 group-hover:opacity-100 transition-opacity"
+              />
+            ) : (
+              <div className="w-20 h-20 bg-[#1a1a1a] flex items-center justify-center text-sm font-bold text-[#737373] font-mono">
+                {match.team1_abbr}
+              </div>
+            )}
+            <div className="text-center">
+              <p
+                className={`font-grotesk font-bold text-sm ${team1Won ? "text-white" : "text-[#737373]"}`}
+              >
+                {match.team1_name}
+              </p>
+            </div>
+          </Link>
 
-					{/* Score */}
-					<div className="text-center flex-shrink-0 px-6">
-						<div className="flex items-center gap-4">
-							<span
-								className={`font-mono font-black text-5xl ${team1Won ? "text-white" : "text-[#404040]"}`}
-							>
-								{match.team1_score}
-							</span>
-							<span className="text-[#404040] font-mono text-3xl">—</span>
-							<span
-								className={`font-mono font-black text-5xl ${team2Won ? "text-white" : "text-[#404040]"}`}
-							>
-								{match.team2_score}
-							</span>
-						</div>
-						<p className="text-[#737373] text-xs uppercase tracking-widest mt-2">
-							{match.format}
-						</p>
-						<p className="text-[#737373] text-xs mt-1">
-							{new Date(match.match_date).toLocaleDateString("en-US", {
-								year: "numeric",
-								month: "long",
-								day: "numeric",
-							})}
-						</p>
-					</div>
+          {/* Score */}
+          <div className="text-center flex-shrink-0 px-6">
+            <div className="flex items-center gap-4">
+              <span
+                className={`font-mono font-black text-5xl ${team1Won ? "text-white" : "text-[#404040]"}`}
+              >
+                {match.team1_score}
+              </span>
+              <span className="text-[#404040] font-mono text-3xl">—</span>
+              <span
+                className={`font-mono font-black text-5xl ${team2Won ? "text-white" : "text-[#404040]"}`}
+              >
+                {match.team2_score}
+              </span>
+            </div>
+            <p className="text-[#737373] text-xs uppercase tracking-widest mt-2">
+              {match.format}
+            </p>
+            <p className="text-[#737373] text-xs mt-1">
+              {new Date(match.match_date).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
 
-					{/* Team 2 */}
-					<Link
-						to={`/teams/${match.team2_id}`}
-						className="flex flex-col items-center gap-3 flex-1 group"
-					>
-						{team2Logo ? (
-							<img
-								src={team2Logo}
-								alt={match.team2_name}
-								className="w-20 h-20 object-contain opacity-90 group-hover:opacity-100 transition-opacity"
-							/>
-						) : (
-							<div className="w-20 h-20 bg-[#1a1a1a] flex items-center justify-center text-sm font-bold text-[#737373] font-mono">
-								{match.team2_abbr}
-							</div>
-						)}
-						<div className="text-center">
-							<p
-								className={`font-grotesk font-bold text-sm ${team2Won ? "text-white" : "text-[#737373]"}`}
-							>
-								{match.team2_name}
-							</p>
-						</div>
-					</Link>
-				</div>
-			</div>
+          {/* Team 2 */}
+          <Link
+            to={`/teams/${match.team2_id}`}
+            className="flex flex-col items-center gap-3 flex-1 group"
+          >
+            {team2Logo ? (
+              <img
+                src={team2Logo}
+                alt={match.team2_name}
+                className="w-20 h-20 object-contain opacity-90 group-hover:opacity-100 transition-opacity"
+              />
+            ) : (
+              <div className="w-20 h-20 bg-[#1a1a1a] flex items-center justify-center text-sm font-bold text-[#737373] font-mono">
+                {match.team2_abbr}
+              </div>
+            )}
+            <div className="text-center">
+              <p
+                className={`font-grotesk font-bold text-sm ${team2Won ? "text-white" : "text-[#737373]"}`}
+              >
+                {match.team2_name}
+              </p>
+            </div>
+          </Link>
+        </div>
+      </div>
 
-			{/* Map-by-map scoreboards */}
-			<div className="mb-4">
-				<p className="text-xs uppercase tracking-widest text-[#737373] mb-4">
-					Map Breakdown · {playedMaps.length} maps played
-				</p>
-				<div className="space-y-4">
-					{playedMaps.length > 0 ? (
-						playedMaps.map((map) => (
-							<Scoreboard
-								key={map.map_number}
-								map={map}
-								team1Name={match.team1_name}
-								team2Name={match.team2_name}
-								team1ID={match.team1_id}
-							/>
-						))
-					) : (
-						<div className="border border-[#1a1a1a] p-12 text-center">
-							<p className="text-[#737373] text-sm">
-								Map stats not available for this match
-							</p>
-						</div>
-					)}
-				</div>
-			</div>
+      {/* Map-by-map scoreboards */}
+      <div className="mb-4">
+        <p className="text-xs uppercase tracking-widest text-[#737373] mb-4">
+          Map Breakdown · {playedMaps.length} maps played
+        </p>
+        <div className="space-y-4">
+          {playedMaps.length > 0 ? (
+            playedMaps.map((map) => (
+              <Scoreboard
+                key={map.map_number}
+                map={map}
+                team1Name={match.team1_name}
+                team2Name={match.team2_name}
+                team1ID={match.team1_id}
+              />
+            ))
+          ) : (
+            <div className="border border-[#1a1a1a] p-12 text-center">
+              <p className="text-[#737373] text-sm">
+                Map stats not available for this match
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
-			<MatchThread matchId={match.id} />
-		</div>
-	);
+      <MatchThread matchId={match.id} />
+    </div>
+  );
 };
 
 export default MatchDetail;

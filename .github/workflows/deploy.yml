@@ -104,6 +104,8 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend-react
+        env:
+          VITE_HCAPTCHA_SITE_KEY: c5d4ea38-1ef0-4e4e-a9ba-4300d3982fbe
         run: |
           bun install --frozen-lockfile
           bun run build

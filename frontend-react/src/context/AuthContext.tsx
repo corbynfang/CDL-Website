@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
 import type { Session, User } from '@supabase/supabase-js';
@@ -15,7 +15,7 @@ interface AuthContextValue {
   needsProfileSetup: boolean;
   openAuthModal: () => void;
   closeAuthModal: () => void;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, captchaToken?: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
   completeProfileSetup: (username: string) => Promise<{ error: string | null }>;
@@ -42,9 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
+  const sessionRef = useRef<Session | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      sessionRef.current = session;
       setSession(session);
       setUser(session?.user ?? null);
       if (session) {
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      sessionRef.current = session;
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -72,10 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const interceptor = api.interceptors.request.use(async (config) => {
-      const { data: { session: fresh } } = await supabase.auth.getSession();
-      if (fresh?.access_token) {
-        config.headers.set('Authorization', `Bearer ${fresh.access_token}`);
+    const interceptor = api.interceptors.request.use((config) => {
+      const token = sessionRef.current?.access_token;
+      if (token) {
+        config.headers.set('Authorization', `Bearer ${token}`);
       }
       return config;
     });
@@ -85,8 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function openAuthModal() { setShowAuthModal(true); }
   function closeAuthModal() { setShowAuthModal(false); }
 
-  async function signUp(email: string, password: string) {
-    const { error } = await supabase.auth.signUp({ email, password });
+  async function signUp(email: string, password: string, captchaToken?: string) {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: captchaToken ? { captchaToken } : undefined,
+    });
     return { error: error?.message ?? null };
   }
 

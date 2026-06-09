@@ -15,5 +15,5 @@ export default function EventCardSkeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }

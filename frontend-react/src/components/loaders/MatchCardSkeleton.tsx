@@ -17,5 +17,5 @@ export default function MatchCardSkeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }

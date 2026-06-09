@@ -32,7 +32,7 @@ resource "aws_iam_role_policy" "read_secret" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["secretsmanager:GetSecretValue"]
-      Resource = [var.db_secret_arn]
+      Resource = [var.db_secret_arn, var.jwt_secret_arn]
     }]
   })
 }
@@ -101,10 +101,23 @@ resource "aws_ecs_task_definition" "api" {
       protocol      = "tcp"
     }]
 
-    secrets = [{
-      name      = "DATABASE_URL"
-      valueFrom = var.db_secret_arn
-    }]
+    environment = [
+      {
+        name  = "SUPABASE_URL"
+        value = var.supabase_url
+      }
+    ]
+
+    secrets = [
+      {
+        name      = "DATABASE_URL"
+        valueFrom = var.db_secret_arn
+      },
+      {
+        name      = "SUPABASE_JWT_SECRET"
+        valueFrom = var.jwt_secret_arn
+      }
+    ]
 
     logConfiguration = {
       logDriver = "awslogs"

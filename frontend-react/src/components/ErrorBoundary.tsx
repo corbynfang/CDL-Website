@@ -24,7 +24,9 @@ class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
           <div className="text-center px-4">
-            <p className="text-xs uppercase tracking-widest text-[#737373] mb-4">Error</p>
+            <p className="text-xs uppercase tracking-widest text-[#737373] mb-4">
+              Error
+            </p>
             <h1 className="font-grotesk text-2xl font-bold text-white mb-4">
               Something went wrong
             </h1>

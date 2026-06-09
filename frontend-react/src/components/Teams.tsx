@@ -20,19 +20,25 @@ const Teams = () => {
     ? `/api/v1/teams?season_id=${selectedSeasonId}`
     : "/api/v1/teams";
 
-  const { data: allTeams, loading, error } = useApi<Team[]>(teamsUrl, { cacheTtl: 5 * 60 * 1000 });
+  const {
+    data: allTeams,
+    loading,
+    error,
+  } = useApi<Team[]>(teamsUrl, { cacheTtl: 5 * 60 * 1000 });
 
   const teams = allTeams?.filter((t) => t.name !== "Unaffiliated");
 
   const selectedSeason = seasons?.find(
-    (s) => String(s.id) === selectedSeasonId
+    (s) => String(s.id) === selectedSeasonId,
   );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
         <div>
-          <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">League</p>
+          <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">
+            League
+          </p>
           <h1 className="font-grotesk text-3xl font-bold text-white">TEAMS</h1>
           {selectedSeason && (
             <p className="text-[#737373] text-sm mt-1">{selectedSeason.name}</p>

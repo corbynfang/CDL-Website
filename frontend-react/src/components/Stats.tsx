@@ -37,19 +37,23 @@ const Stats = () => {
   const { data: statsData, loading, error } = useApi<StatsResponse>(statsUrl);
 
   const players = [...(statsData?.players ?? [])].sort(
-    (a, b) => b.season_kd - a.season_kd
+    (a, b) => b.season_kd - a.season_kd,
   );
 
   const selectedSeason = seasons?.find(
-    (s) => String(s.id) === selectedSeasonId
+    (s) => String(s.id) === selectedSeasonId,
   );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
         <div>
-          <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">Leaderboard</p>
-          <h1 className="font-grotesk text-3xl font-bold text-white">K/D RANKINGS</h1>
+          <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">
+            Leaderboard
+          </p>
+          <h1 className="font-grotesk text-3xl font-bold text-white">
+            K/D RANKINGS
+          </h1>
           {selectedSeason && (
             <p className="text-[#737373] text-sm mt-1">{selectedSeason.name}</p>
           )}
@@ -125,7 +129,9 @@ const Stats = () => {
                     {player.team_abbr || "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={`font-mono font-bold text-sm ${kdColor(player.season_kd)}`}>
+                    <span
+                      className={`font-mono font-bold text-sm ${kdColor(player.season_kd)}`}
+                    >
                       {player.season_kd?.toFixed(2) ?? "0.00"}
                     </span>
                   </td>

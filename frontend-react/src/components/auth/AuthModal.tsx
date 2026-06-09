@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { useAuth } from '../../context/AuthContext';
 
 const OAUTH_PROVIDERS = [
@@ -48,9 +49,11 @@ export default function AuthModal({ onClose }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const captchaRef = useRef<HCaptcha>(null);
 
   async function handleOAuth(provider: 'github' | 'twitch' | 'google') {
     setError(null);
@@ -68,8 +71,15 @@ export default function AuthModal({ onClose }: Props) {
       if (error) { setError(error); setLoading(false); return; }
       onClose();
     } else {
-      const { error } = await signUp(email, password);
-      if (error) { setError(error); setLoading(false); return; }
+      if (!captchaToken) { setError('Please complete the captcha.'); setLoading(false); return; }
+      const { error } = await signUp(email, password, captchaToken);
+      if (error) {
+        captchaRef.current?.resetCaptcha();
+        setCaptchaToken(null);
+        setError(error);
+        setLoading(false);
+        return;
+      }
       // Profile setup happens after email confirmation + first sign-in, not here —
       // there is no session until the user clicks the confirmation link.
       setEmailSent(true);
@@ -201,14 +211,23 @@ export default function AuthModal({ onClose }: Props) {
               className="w-full bg-[#0a0a0a] border border-[#1a1a1a] text-white text-sm placeholder-[#404040] px-3 py-2.5 focus:outline-none focus:border-[#404040] transition-colors"
             />
             {emailMode === 'signup' && (
-              <p className="text-[#737373] text-xs">
-                You'll choose a username after confirming your email.
-              </p>
+              <>
+                <p className="text-[#737373] text-xs">
+                  You'll choose a username after confirming your email.
+                </p>
+                <HCaptcha
+                  ref={captchaRef}
+                  sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onExpire={() => setCaptchaToken(null)}
+                  theme="dark"
+                />
+              </>
             )}
             {error && <p className="text-red-400 text-xs">{error}</p>}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (emailMode === 'signup' && !captchaToken)}
               className="w-full py-2.5 text-xs font-grotesk font-semibold uppercase tracking-widest bg-white text-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#e0e0e0] transition-colors"
             >
               {loading ? 'Please wait…' : emailMode === 'login' ? 'Sign In' : 'Create Account'}
@@ -224,7 +243,7 @@ export default function AuthModal({ onClose }: Props) {
               </button>
               <button
                 type="button"
-                onClick={() => { setEmailMode(m => m === 'login' ? 'signup' : 'login'); setError(null); }}
+                onClick={() => { setEmailMode(m => m === 'login' ? 'signup' : 'login'); setError(null); setCaptchaToken(null); captchaRef.current?.resetCaptcha(); }}
                 className="text-[10px] uppercase tracking-widest text-[#404040] hover:text-[#737373] transition-colors"
               >
                 {emailMode === 'login' ? 'Create account' : 'Sign in instead'}

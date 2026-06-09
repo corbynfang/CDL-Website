@@ -42,17 +42,18 @@ const PlayerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("last5");
 
-  const { data: player, loading: playerLoading, error: playerError } = useApi<Player>(
-    `/api/v1/players/${id}`
-  );
+  const {
+    data: player,
+    loading: playerLoading,
+    error: playerError,
+  } = useApi<Player>(`/api/v1/players/${id}`);
   const { data: stats, loading: statsLoading } = useApi<PlayerKDResponse>(
-    `/api/v1/players/${id}/kd`
+    `/api/v1/players/${id}/kd`,
   );
-  const { data: matchesData, loading: matchesLoading } = useApi<PlayerMatchHistory>(
-    `/api/v1/players/${id}/matches`
-  );
+  const { data: matchesData, loading: matchesLoading } =
+    useApi<PlayerMatchHistory>(`/api/v1/players/${id}/matches`);
   const { data: careerData } = useApi<PlayerCareerResponse>(
-    `/api/v1/players/${id}/franchise-career`
+    `/api/v1/players/${id}/franchise-career`,
   );
 
   const loading = playerLoading || statsLoading || matchesLoading;
@@ -69,7 +70,10 @@ const PlayerDetail = () => {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <p className="text-[#737373] text-sm">Player not found</p>
-        <Link to="/players" className="text-[#a3a3a3] hover:text-white mt-4 inline-block text-sm transition-colors">
+        <Link
+          to="/players"
+          className="text-[#a3a3a3] hover:text-white mt-4 inline-block text-sm transition-colors"
+        >
           ← Back to Players
         </Link>
       </div>
@@ -81,7 +85,8 @@ const PlayerDetail = () => {
     .flatMap((e) => e.matches || [])
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const last5Matches = allMatches.slice(0, 5);
-  const tournamentStats: PlayerKDTournamentEntry[] = stats?.tournament_stats || [];
+  const tournamentStats: PlayerKDTournamentEntry[] =
+    stats?.tournament_stats || [];
 
   const overallKD = stats?.avg_kd || 0;
   const hpKD = stats?.hp_kd_ratio || 0;
@@ -109,13 +114,19 @@ const PlayerDetail = () => {
 
           <div className="bg-[#111111] border border-[#1a1a1a] p-6 space-y-4 flex-1">
             <div>
-              <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">Gamertag</p>
-              <p className="font-grotesk text-2xl font-bold text-white">{player.gamertag}</p>
+              <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">
+                Gamertag
+              </p>
+              <p className="font-grotesk text-2xl font-bold text-white">
+                {player.gamertag}
+              </p>
             </div>
 
             {(player.first_name || player.last_name) && (
               <div>
-                <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">Name</p>
+                <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">
+                  Name
+                </p>
                 <p className="text-[#a3a3a3] text-sm">
                   {player.first_name} {player.last_name}
                 </p>
@@ -124,27 +135,37 @@ const PlayerDetail = () => {
 
             {player.country && (
               <div>
-                <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">Country</p>
+                <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">
+                  Country
+                </p>
                 <p className="text-[#a3a3a3] text-sm">{player.country}</p>
               </div>
             )}
 
             {player.birthdate && (
               <div>
-                <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">Birthday</p>
-                <p className="text-[#a3a3a3] text-sm">{formatBirthdate(player.birthdate)}</p>
+                <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">
+                  Birthday
+                </p>
+                <p className="text-[#a3a3a3] text-sm">
+                  {formatBirthdate(player.birthdate)}
+                </p>
               </div>
             )}
 
             {player.role && (
               <div>
-                <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">Role</p>
+                <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">
+                  Role
+                </p>
                 <p className="text-[#a3a3a3] text-sm">{player.role}</p>
               </div>
             )}
 
             <div>
-              <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">Status</p>
+              <p className="text-xs uppercase tracking-widest text-[#737373] mb-1">
+                Status
+              </p>
               <span
                 className={`text-xs font-medium px-2 py-0.5 ${
                   player.is_active
@@ -160,7 +181,9 @@ const PlayerDetail = () => {
 
         {/* Right: KD stats */}
         <div className="bg-[#111111] border border-[#1a1a1a] p-6">
-          <h2 className="text-xs uppercase tracking-widest text-[#737373] mb-6">K/D Statistics</h2>
+          <h2 className="text-xs uppercase tracking-widest text-[#737373] mb-6">
+            K/D Statistics
+          </h2>
 
           <div className="space-y-5">
             {[
@@ -172,7 +195,9 @@ const PlayerDetail = () => {
               <div key={label}>
                 <div className="flex justify-between items-baseline mb-2">
                   <p className="text-xs text-[#737373]">{label}</p>
-                  <p className={`font-mono font-bold text-sm ${getKdColorClass(value)}`}>
+                  <p
+                    className={`font-mono font-bold text-sm ${getKdColorClass(value)}`}
+                  >
                     {value.toFixed(2)}
                   </p>
                 </div>
@@ -193,7 +218,9 @@ const PlayerDetail = () => {
               { label: "Assists", value: stats?.total_assists },
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
-                <p className="text-xs text-[#737373] uppercase tracking-wider mb-1">{label}</p>
+                <p className="text-xs text-[#737373] uppercase tracking-wider mb-1">
+                  {label}
+                </p>
                 <p className="font-mono font-bold text-white text-lg">
                   {value?.toLocaleString() || "0"}
                 </p>
@@ -239,29 +266,57 @@ const PlayerDetail = () => {
                         <div className="flex items-center gap-4">
                           <span
                             className={`font-mono font-bold text-sm w-6 text-center ${
-                              match.result?.startsWith("W") ? "text-green-400" : "text-[#737373]"
+                              match.result?.startsWith("W")
+                                ? "text-green-400"
+                                : "text-[#737373]"
                             }`}
                           >
                             {match.result?.charAt(0) || "—"}
                           </span>
                           <div>
                             <p className="text-white text-sm font-medium">
-                              vs {match.opponent_abbr || match.opponent || "Unknown"}
+                              vs{" "}
+                              {match.opponent_abbr ||
+                                match.opponent ||
+                                "Unknown"}
                             </p>
                             <p className="text-[#737373] text-xs mt-0.5">
-                              {match.date ? new Date(match.date).toLocaleDateString() : "—"}
+                              {match.date
+                                ? new Date(match.date).toLocaleDateString()
+                                : "—"}
                             </p>
                           </div>
                         </div>
                         <div className="flex gap-5 text-right items-center">
                           {[
-                            { label: "K/D", value: typeof match.kd === "number" ? match.kd.toFixed(2) : "0.00", color: getKdColorClass(match.kd) },
-                            { label: "K", value: match.kills || "0", color: "text-white" },
-                            { label: "D", value: match.deaths || "0", color: "text-white" },
+                            {
+                              label: "K/D",
+                              value:
+                                typeof match.kd === "number"
+                                  ? match.kd.toFixed(2)
+                                  : "0.00",
+                              color: getKdColorClass(match.kd),
+                            },
+                            {
+                              label: "K",
+                              value: match.kills || "0",
+                              color: "text-white",
+                            },
+                            {
+                              label: "D",
+                              value: match.deaths || "0",
+                              color: "text-white",
+                            },
                           ].map(({ label, value, color }) => (
                             <div key={label}>
-                              <p className="text-xs text-[#737373] uppercase mb-0.5">{label}</p>
-                              <p className={`font-bold text-sm font-mono ${color}`}>{value}</p>
+                              <p className="text-xs text-[#737373] uppercase mb-0.5">
+                                {label}
+                              </p>
+                              <p
+                                className={`font-bold text-sm font-mono ${color}`}
+                              >
+                                {value}
+                              </p>
                             </div>
                           ))}
                           <span className="text-[#404040] text-xs ml-2">→</span>
@@ -290,7 +345,19 @@ const PlayerDetail = () => {
                           <table className="w-full">
                             <thead>
                               <tr className="border-b border-[#1a1a1a] bg-[#0a0a0a]">
-                                {["Date", "Opp", "Result", "KD", "K", "D", "HP KD", "SND KD", "CTL KD", "Slayer", "Rating"].map((h) => (
+                                {[
+                                  "Date",
+                                  "Opp",
+                                  "Result",
+                                  "KD",
+                                  "K",
+                                  "D",
+                                  "HP KD",
+                                  "SND KD",
+                                  "CTL KD",
+                                  "Slayer",
+                                  "Rating",
+                                ].map((h) => (
                                   <th
                                     key={h}
                                     className="px-3 py-2 text-[#737373] text-xs uppercase tracking-widest font-medium text-left last:text-right"
@@ -305,30 +372,65 @@ const PlayerDetail = () => {
                                 <tr
                                   key={mi}
                                   className="border-b border-[#1a1a1a] hover:bg-[#0a0a0a] transition-colors cursor-pointer"
-                                  onClick={() => match.match_id && (window.location.href = `/matches/${match.match_id}`)}
+                                  onClick={() =>
+                                    match.match_id &&
+                                    (window.location.href = `/matches/${match.match_id}`)
+                                  }
                                 >
                                   <td className="px-3 py-2 text-[#737373] text-xs font-mono">
-                                    {match.date ? new Date(match.date).toLocaleDateString() : "—"}
+                                    {match.date
+                                      ? new Date(
+                                          match.date,
+                                        ).toLocaleDateString()
+                                      : "—"}
                                   </td>
                                   <td className="px-3 py-2 text-[#a3a3a3] text-xs font-medium">
-                                    {match.opponent_abbr || match.opponent || "—"}
+                                    {match.opponent_abbr ||
+                                      match.opponent ||
+                                      "—"}
                                   </td>
-                                  <td className={`px-3 py-2 text-xs font-bold font-mono ${match.result?.startsWith("W") ? "text-green-400" : "text-[#737373]"}`}>
+                                  <td
+                                    className={`px-3 py-2 text-xs font-bold font-mono ${match.result?.startsWith("W") ? "text-green-400" : "text-[#737373]"}`}
+                                  >
                                     {match.result || "—"}
                                   </td>
-                                  <td className={`px-3 py-2 text-xs font-bold font-mono ${getKdColorClass(match.kd)}`}>
-                                    {typeof match.kd === "number" ? match.kd.toFixed(2) : "0.00"}
+                                  <td
+                                    className={`px-3 py-2 text-xs font-bold font-mono ${getKdColorClass(match.kd)}`}
+                                  >
+                                    {typeof match.kd === "number"
+                                      ? match.kd.toFixed(2)
+                                      : "0.00"}
                                   </td>
-                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">{match.kills || "0"}</td>
-                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">{match.deaths || "0"}</td>
-                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">—</td>
-                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">—</td>
-                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">—</td>
-                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">—</td>
+                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">
+                                    {match.kills || "0"}
+                                  </td>
+                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">
+                                    {match.deaths || "0"}
+                                  </td>
+                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">
+                                    —
+                                  </td>
+                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">
+                                    —
+                                  </td>
+                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">
+                                    —
+                                  </td>
+                                  <td className="px-3 py-2 text-[#737373] text-xs font-mono">
+                                    —
+                                  </td>
                                   <td className="px-3 py-2 text-[#737373] text-xs font-mono text-right">
                                     {match.match_id ? (
-                                      <Link to={`/matches/${match.match_id}`} className="text-[#404040] hover:text-[#737373] transition-colors" onClick={(e) => e.stopPropagation()}>→</Link>
-                                    ) : "—"}
+                                      <Link
+                                        to={`/matches/${match.match_id}`}
+                                        className="text-[#404040] hover:text-[#737373] transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        →
+                                      </Link>
+                                    ) : (
+                                      "—"
+                                    )}
                                   </td>
                                 </tr>
                               ))}
@@ -336,13 +438,17 @@ const PlayerDetail = () => {
                           </table>
                         </div>
                       ) : (
-                        <p className="text-[#737373] text-sm">No matches for this event</p>
+                        <p className="text-[#737373] text-sm">
+                          No matches for this event
+                        </p>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-[#737373] text-sm">No match data available</p>
+                <p className="text-[#737373] text-sm">
+                  No match data available
+                </p>
               )}
             </div>
           )}
@@ -355,7 +461,10 @@ const PlayerDetail = () => {
               {tournamentStats.length > 0 ? (
                 <div className="space-y-2">
                   {tournamentStats.map((t, i: number) => (
-                    <div key={i} className="bg-[#0a0a0a] border border-[#1a1a1a] p-5">
+                    <div
+                      key={i}
+                      className="bg-[#0a0a0a] border border-[#1a1a1a] p-5"
+                    >
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <p className="font-grotesk font-semibold text-white text-sm">
@@ -366,8 +475,12 @@ const PlayerDetail = () => {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs text-[#737373] uppercase tracking-wider mb-0.5">K/D</p>
-                          <p className={`font-mono font-bold text-xl ${getKdColorClass(t.kd_ratio)}`}>
+                          <p className="text-xs text-[#737373] uppercase tracking-wider mb-0.5">
+                            K/D
+                          </p>
+                          <p
+                            className={`font-mono font-bold text-xl ${getKdColorClass(t.kd_ratio)}`}
+                          >
                             {t.kd_ratio?.toFixed(2) || "0.00"}
                           </p>
                         </div>
@@ -379,7 +492,9 @@ const PlayerDetail = () => {
                           { label: "Assists", value: t.assists },
                         ].map(({ label, value }) => (
                           <div key={label}>
-                            <p className="text-xs text-[#737373] uppercase tracking-wider mb-1">{label}</p>
+                            <p className="text-xs text-[#737373] uppercase tracking-wider mb-1">
+                              {label}
+                            </p>
                             <p className="font-mono font-bold text-white">
                               {value?.toLocaleString() || "0"}
                             </p>
@@ -390,25 +505,34 @@ const PlayerDetail = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-[#737373] text-sm">No event statistics available</p>
+                <p className="text-[#737373] text-sm">
+                  No event statistics available
+                </p>
               )}
             </div>
           )}
 
           {activeTab === "events" && (
             <div>
-              <h3 className="text-xs uppercase tracking-widest text-[#737373] mb-5">Events</h3>
+              <h3 className="text-xs uppercase tracking-widest text-[#737373] mb-5">
+                Events
+              </h3>
               {tournamentStats.length > 0 ? (
                 <div className="space-y-2">
                   {tournamentStats.map((t, i: number) => (
-                    <div key={i} className="flex items-center justify-between bg-[#0a0a0a] border border-[#1a1a1a] p-4">
+                    <div
+                      key={i}
+                      className="flex items-center justify-between bg-[#0a0a0a] border border-[#1a1a1a] p-4"
+                    >
                       <div>
                         <p className="font-grotesk font-semibold text-white text-sm">
                           {t.tournament_name || "Tournament"}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-[#737373] uppercase tracking-wider mb-0.5">Maps</p>
+                        <p className="text-xs text-[#737373] uppercase tracking-wider mb-0.5">
+                          Maps
+                        </p>
                         <p className="font-mono font-bold text-white text-lg">
                           {t.maps_played || 0}
                         </p>
@@ -429,57 +553,81 @@ const PlayerDetail = () => {
               </h3>
               {careerData?.franchises && careerData.franchises.length > 0 ? (
                 <div className="space-y-6">
-                  {careerData.franchises.map((franchise: PlayerFranchiseEntry, fi: number) => (
-                    <div key={fi} className="bg-[#0a0a0a] border border-[#1a1a1a]">
-                      {/* Franchise header */}
-                      <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a1a1a]">
-                        <div>
-                          <p className="font-grotesk font-bold text-white text-sm">
-                            {franchise.franchise_name}
-                          </p>
-                          <p className="text-[#737373] text-xs mt-0.5">
-                            {franchise.total_matches} matches · {franchise.total_maps} maps
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[10px] text-[#737373] uppercase tracking-widest mb-0.5">Career K/D</p>
-                          <p className="font-mono font-bold text-white text-xl">
-                            {franchise.career_kd?.toFixed(2) || "0.00"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Era breakdown */}
-                      <div className="divide-y divide-[#111111]">
-                        {franchise.eras.map((era: PlayerEraStats, ei: number) => (
-                          <div key={ei} className="flex items-center justify-between px-5 py-3">
-                            <div>
-                              <p className="text-[#a3a3a3] text-xs font-medium">{era.team_name}</p>
-                              <p className="text-[#737373] text-[10px] mt-0.5 uppercase tracking-wider">
-                                {era.season_name || era.game_code}
-                              </p>
-                            </div>
-                            <div className="flex gap-5 text-right">
-                              {[
-                                { label: "K/D", value: era.kd?.toFixed(2) || "0.00" },
-                                { label: "K", value: era.kills ?? 0 },
-                                { label: "D", value: era.deaths ?? 0 },
-                                { label: "Maps", value: era.maps ?? 0 },
-                              ].map(({ label, value }) => (
-                                <div key={label}>
-                                  <p className="text-[10px] text-[#737373] uppercase mb-0.5">{label}</p>
-                                  <p className="font-mono font-bold text-white text-xs">{value}</p>
-                                </div>
-                              ))}
-                            </div>
+                  {careerData.franchises.map(
+                    (franchise: PlayerFranchiseEntry, fi: number) => (
+                      <div
+                        key={fi}
+                        className="bg-[#0a0a0a] border border-[#1a1a1a]"
+                      >
+                        {/* Franchise header */}
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a1a1a]">
+                          <div>
+                            <p className="font-grotesk font-bold text-white text-sm">
+                              {franchise.franchise_name}
+                            </p>
+                            <p className="text-[#737373] text-xs mt-0.5">
+                              {franchise.total_matches} matches ·{" "}
+                              {franchise.total_maps} maps
+                            </p>
                           </div>
-                        ))}
+                          <div className="text-right">
+                            <p className="text-[10px] text-[#737373] uppercase tracking-widest mb-0.5">
+                              Career K/D
+                            </p>
+                            <p className="font-mono font-bold text-white text-xl">
+                              {franchise.career_kd?.toFixed(2) || "0.00"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Era breakdown */}
+                        <div className="divide-y divide-[#111111]">
+                          {franchise.eras.map(
+                            (era: PlayerEraStats, ei: number) => (
+                              <div
+                                key={ei}
+                                className="flex items-center justify-between px-5 py-3"
+                              >
+                                <div>
+                                  <p className="text-[#a3a3a3] text-xs font-medium">
+                                    {era.team_name}
+                                  </p>
+                                  <p className="text-[#737373] text-[10px] mt-0.5 uppercase tracking-wider">
+                                    {era.season_name || era.game_code}
+                                  </p>
+                                </div>
+                                <div className="flex gap-5 text-right">
+                                  {[
+                                    {
+                                      label: "K/D",
+                                      value: era.kd?.toFixed(2) || "0.00",
+                                    },
+                                    { label: "K", value: era.kills ?? 0 },
+                                    { label: "D", value: era.deaths ?? 0 },
+                                    { label: "Maps", value: era.maps ?? 0 },
+                                  ].map(({ label, value }) => (
+                                    <div key={label}>
+                                      <p className="text-[10px] text-[#737373] uppercase mb-0.5">
+                                        {label}
+                                      </p>
+                                      <p className="font-mono font-bold text-white text-xs">
+                                        {value}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               ) : (
-                <p className="text-[#737373] text-sm">No career data available</p>
+                <p className="text-[#737373] text-sm">
+                  No career data available
+                </p>
               )}
             </div>
           )}
