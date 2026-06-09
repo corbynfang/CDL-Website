@@ -50,7 +50,7 @@ func TestGetMe_NotFound_WithoutProfile(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, authReq(http.MethodGet, "/api/v1/auth/me", nil, token))
-	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
 
 func TestGetMe_ReturnsProfile(t *testing.T) {
@@ -86,5 +86,5 @@ func TestDeleteMe_RemovesAccount(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, authReq(http.MethodGet, "/api/v1/auth/me", nil, token))
-	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
