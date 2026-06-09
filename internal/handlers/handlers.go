@@ -28,7 +28,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Handler holds all service instances. Routes are registered as methods on *Handler.
 type Handler struct {
 	players     *services.PlayerService
 	teams       *services.TeamService
@@ -38,9 +37,10 @@ type Handler struct {
 	tournaments *services.TournamentService
 	transfers   *services.TransferService
 	stats       *services.StatsService
+	users       *services.UserService
+	threads     *services.ThreadService
 }
 
-// New wires up all stores and services from a single DB connection.
 func New(db *gorm.DB) *Handler {
 	playerStore := store.NewGormPlayerStore(db)
 	seasonStore := store.NewGormSeasonStore(db)
@@ -50,6 +50,8 @@ func New(db *gorm.DB) *Handler {
 	tournamentStore := store.NewGormTournamentStore(db)
 	transferStore := store.NewGormTransferStore(db)
 	statsStore := store.NewGormStatsStore(db)
+	userStore := store.NewGormUserStore(db)
+	threadStore := store.NewGormThreadStore(db)
 
 	return &Handler{
 		players:     services.NewPlayerService(playerStore),
@@ -60,6 +62,8 @@ func New(db *gorm.DB) *Handler {
 		tournaments: services.NewTournamentService(tournamentStore),
 		transfers:   services.NewTransferService(transferStore),
 		stats:       services.NewStatsService(statsStore),
+		users:       services.NewUserService(userStore),
+		threads:     services.NewThreadService(threadStore),
 	}
 }
 
@@ -71,14 +75,12 @@ func getContext(seconds int) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), time.Duration(seconds)*time.Second)
 }
 
-// noCacheHeaders prevents browsers from caching API responses.
 func noCacheHeaders(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 	c.Header("Pragma", "no-cache")
 	c.Header("Expires", "0")
 }
 
-// PaginationMeta is included in every paginated response.
 type PaginationMeta struct {
 	Page       int `json:"page"`
 	Limit      int `json:"limit"`
@@ -86,7 +88,6 @@ type PaginationMeta struct {
 	TotalPages int `json:"total_pages"`
 }
 
-// parsePagination reads ?page and ?limit from the request, applies safe defaults.
 func parsePagination(c *gin.Context) (page, limit, offset int) {
 	page = 1
 	limit = 25

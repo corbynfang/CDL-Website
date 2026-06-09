@@ -35,6 +35,6 @@ func (s *gormTransferStore) List(ctx context.Context, season, gameCode, teamID, 
 	}
 
 	var transfers []models.PlayerTransfer
-	err := query.Order("transfer_date DESC").Find(&transfers).Error
+	err := query.Order("transfer_date DESC").Limit(500).Find(&transfers).Error
 	return transfers, err
 }

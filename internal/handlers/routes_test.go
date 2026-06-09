@@ -57,6 +57,13 @@ func TestRegisterRoutes_AllRoutesPresent(t *testing.T) {
 		"GET /api/v1/tournaments/:id/teams",
 		"GET /api/v1/tournaments/:id/stats",
 		"GET /api/v1/transfers",
+		"POST /api/v1/auth/profile",
+		"GET /api/v1/auth/me",
+		"DELETE /api/v1/auth/me",
+		"GET /api/v1/matches/:id/thread",
+		"POST /api/v1/matches/:id/thread/posts",
+		"PUT /api/v1/thread/posts/:id",
+		"DELETE /api/v1/thread/posts/:id",
 	}
 
 	for _, w := range want {

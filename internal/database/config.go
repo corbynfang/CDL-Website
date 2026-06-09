@@ -73,7 +73,6 @@ func tryConnect(dsn string) error {
 	return nil
 }
 
-// CloseDatabase closes the database connection
 func CloseDatabase() {
 	sqlDB, err := DB.DB()
 	if err != nil {
@@ -98,6 +97,9 @@ func AutoMigrate() {
 		&models.TeamTournamentStats{},
 		&models.Coach{},
 		&models.PlayerTransfer{},
+		&models.User{},
+		&models.MatchThread{},
+		&models.ThreadPost{},
 	)
 
 	if err != nil {

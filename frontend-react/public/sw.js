@@ -16,20 +16,10 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Fetch event - always fetch fresh data for API calls
+// Fetch event - cache static assets, pass API calls through untouched
 self.addEventListener('fetch', (event) => {
-  // For API calls, always fetch fresh data
-  if (event.request.url.includes('/api/')) {
-    event.respondWith(
-      fetch(event.request, {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        }
-      })
-    );
+  // Let API calls and cross-origin requests pass through without SW interference
+  if (event.request.url.includes('/api/') || !event.request.url.startsWith(self.location.origin)) {
     return;
   }
 

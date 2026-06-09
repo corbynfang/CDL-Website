@@ -24,7 +24,7 @@ func (ss *StatsService) GetTopKD(ctx context.Context, limit int) ([]PlayerKDRow,
 		return nil, err
 	}
 	for i := range rows {
-		rows[i].SeasonKD = calculateKD(rows[i].SeasonKills, rows[i].SeasonDeaths)
+		rows[i].SeasonKD = CalculateKD(rows[i].SeasonKills, rows[i].SeasonDeaths)
 	}
 	return rows, nil
 }
@@ -35,7 +35,7 @@ func (ss *StatsService) GetAllKD(ctx context.Context, limit int, seasonID string
 		return nil, err
 	}
 	for i := range rows {
-		rows[i].SeasonKD = calculateKD(rows[i].SeasonKills, rows[i].SeasonDeaths)
+		rows[i].SeasonKD = CalculateKD(rows[i].SeasonKills, rows[i].SeasonDeaths)
 	}
 	return rows, nil
 }

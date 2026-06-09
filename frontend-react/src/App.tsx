@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import NotFound from "./components/NotFound";
@@ -21,6 +22,7 @@ const DisclaimerPage  = lazy(() => import("./components/legal/DisclaimerPage"));
 function App() {
   return (
     <ErrorBoundary>
+      <AuthProvider>
       <Router>
         <Routes>
           <Route path="/" element={<Layout />}>
@@ -61,6 +63,7 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

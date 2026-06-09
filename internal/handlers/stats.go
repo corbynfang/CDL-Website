@@ -41,7 +41,7 @@ func (h *Handler) GetAllPlayersKDStats(c *gin.Context) {
 
 	limit := 100
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 500 {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
 			limit = parsed
 		}
 	}

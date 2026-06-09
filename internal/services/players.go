@@ -18,7 +18,6 @@ func CalculateKD(kills, deaths int) float64 {
 	return float64(kills) / float64(deaths)
 }
 
-func calculateKD(kills, deaths int) float64 { return CalculateKD(kills, deaths) }
 
 type PlayerService struct {
 	store store.PlayerStore
@@ -88,7 +87,7 @@ func (ps *PlayerService) GetKDStats(ctx context.Context, playerID int) (*PlayerK
 			Kills:          stat.TotalKills,
 			Deaths:         stat.TotalDeaths,
 			Assists:        stat.TotalAssists,
-			KDRatio:        calculateKD(stat.TotalKills, stat.TotalDeaths),
+			KDRatio:        CalculateKD(stat.TotalKills, stat.TotalDeaths),
 			MapsPlayed:     stat.OverallMaps,
 		})
 	}
@@ -118,10 +117,10 @@ func (ps *PlayerService) GetKDStats(ctx context.Context, playerID int) (*PlayerK
 		TotalKills:     totalKills,
 		TotalDeaths:    totalDeaths,
 		TotalAssists:   totalAssists,
-		AvgKD:          calculateKD(totalKills, totalDeaths),
-		HpKDRatio:      calculateKD(hpK, hpD),
-		SndKDRatio:     calculateKD(sndK, sndD),
-		ControlKDRatio: calculateKD(ctlK, ctlD),
+		AvgKD:          CalculateKD(totalKills, totalDeaths),
+		HpKDRatio:      CalculateKD(hpK, hpD),
+		SndKDRatio:     CalculateKD(sndK, sndD),
+		ControlKDRatio: CalculateKD(ctlK, ctlD),
 		Tournaments:    entries,
 	}, nil
 }
@@ -305,7 +304,7 @@ func (ps *PlayerService) GetFranchiseCareer(ctx context.Context, playerID int) (
 			Maps:       r.Maps,
 			Kills:      r.Kills,
 			Deaths:     r.Deaths,
-			KD:         calculateKD(r.Kills, r.Deaths),
+			KD:         CalculateKD(r.Kills, r.Deaths),
 		})
 		franchiseMap[key].TotalMatches += r.Matches
 		franchiseMap[key].TotalMaps += r.Maps
@@ -316,7 +315,7 @@ func (ps *PlayerService) GetFranchiseCareer(ctx context.Context, playerID int) (
 	result := make([]FranchiseCareerEntry, 0, len(franchiseOrder))
 	for _, key := range franchiseOrder {
 		f := franchiseMap[key]
-		f.CareerKD = calculateKD(f.TotalKills, f.TotalDeaths)
+		f.CareerKD = CalculateKD(f.TotalKills, f.TotalDeaths)
 		result = append(result, *f)
 	}
 

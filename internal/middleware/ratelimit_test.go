@@ -38,7 +38,7 @@ func TestRateLimit_AllowsFirstTwentyRequests(t *testing.T) {
 func TestRateLimit_BlocksAfterBurst(t *testing.T) {
 	ip := "192.0.2.11"
 
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		fireRequest(ip)
 	}
 
@@ -50,7 +50,7 @@ func TestRateLimit_DifferentIPsHaveIndependentBuckets(t *testing.T) {
 	ipA := "192.0.2.20"
 	ipB := "192.0.2.21"
 
-	for i := 0; i < 21; i++ {
+	for range 21 {
 		fireRequest(ipA)
 	}
 
@@ -63,7 +63,7 @@ func TestRateLimit_ExtractsFirstIPFromXForwardedFor(t *testing.T) {
 	edge1 := fmt.Sprintf("%s, 13.32.0.1", clientIP)
 	edge2 := fmt.Sprintf("%s, 13.32.0.99", clientIP)
 
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		fireRequest(edge1)
 	}
 
@@ -73,7 +73,7 @@ func TestRateLimit_ExtractsFirstIPFromXForwardedFor(t *testing.T) {
 }
 
 func TestRateLimit_UniqueIPsPerTest(t *testing.T) {
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		ip := fmt.Sprintf("10.0.%d.1", i)
 		code := fireRequest(ip)
 		assert.Equal(t, http.StatusOK, code, "fresh IP %s should be allowed", ip)

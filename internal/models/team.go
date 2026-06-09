@@ -52,10 +52,12 @@ type TeamRoster struct {
 }
 
 type Coach struct {
-	ID       uint   `json:"id" gorm:"primaryKey"`
-	Name     string `json:"name" gorm:"not null;size:100"`
-	TeamID   uint   `json:"team_id"`
-	SeasonID uint   `json:"season_id"`
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	Name      string    `json:"name" gorm:"not null;size:100"`
+	TeamID    uint      `json:"team_id"`
+	SeasonID  uint      `json:"season_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (Coach) TableName() string { return "coaches" }

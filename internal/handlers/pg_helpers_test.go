@@ -73,6 +73,9 @@ func runTests(m *testing.M) int {
 		&models.TeamTournamentStats{},
 		&models.Coach{},
 		&models.PlayerTransfer{},
+		&models.User{},
+		&models.MatchThread{},
+		&models.ThreadPost{},
 	); err != nil {
 		log.Println("gorm: automigrate failed:", err)
 		return m.Run()

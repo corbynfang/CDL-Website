@@ -1,5 +1,35 @@
 // TypeScript interfaces matching the Go backend models
 
+export interface AppUser {
+  id: number;
+  supabase_uid: string;
+  username: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ThreadPost {
+  id: number;
+  thread_id: number;
+  user_id: number;
+  body: string;
+  edited: boolean;
+  created_at: string;
+  updated_at: string;
+  user: AppUser;
+}
+
+export interface ThreadResponse {
+  thread_id: number;
+  data: ThreadPost[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
 export interface Season {
   id: number;
   name: string;

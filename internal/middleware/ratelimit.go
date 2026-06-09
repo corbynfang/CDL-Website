@@ -42,7 +42,6 @@ func getVisitor(ip string) *rate.Limiter {
 
 	v, exists := visitors[ip]
 	if !exists {
-		// 2 tokens per second sustained, burst up to 20 tokens.
 		v = &visitor{limiter: rate.NewLimiter(rate.Every(500*time.Millisecond), 20)}
 		visitors[ip] = v
 	}

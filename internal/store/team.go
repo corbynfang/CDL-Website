@@ -47,9 +47,9 @@ func (s *gormTeamStore) ListActiveCDL(ctx context.Context) ([]models.Team, error
 }
 
 func (s *gormTeamStore) ListForSeason(ctx context.Context, seasonID, scope string) ([]models.Team, error) {
-	var sql string
+	var rawSQL string
 	if scope == "era" {
-		sql = `
+		rawSQL = `
 			SELECT DISTINCT t.*
 			FROM teams t
 			WHERE t.is_cdl_franchise = true
@@ -63,7 +63,7 @@ func (s *gormTeamStore) ListForSeason(ctx context.Context, seasonID, scope strin
 			  )
 			ORDER BY t.name ASC`
 	} else {
-		sql = `
+		rawSQL = `
 			SELECT DISTINCT t.*
 			FROM teams t
 			WHERE t.is_cdl_franchise = true
@@ -81,7 +81,7 @@ func (s *gormTeamStore) ListForSeason(ctx context.Context, seasonID, scope strin
 			ORDER BY t.name ASC`
 	}
 	var teams []models.Team
-	err := s.db.WithContext(ctx).Raw(sql, seasonID).Scan(&teams).Error
+	err := s.db.WithContext(ctx).Raw(rawSQL, seasonID).Scan(&teams).Error
 	return teams, err
 }
 

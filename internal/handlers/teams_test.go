@@ -1,8 +1,5 @@
 package handlers
 
-// teams_test.go — handler-level tests for GetTeamPlayers scope/season_id parsing
-// and store-method routing. Uses a fake TeamStore so no SQL/DB is involved.
-
 import (
 	"context"
 	"encoding/json"
@@ -17,8 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// fakeTeamStore records which roster method the handler routed to and the
-// season_id it forwarded. Non-roster methods are unused no-ops.
 type fakeTeamStore struct {
 	calledMethod string
 	calledSeason string
@@ -41,8 +36,8 @@ func (f *fakeTeamStore) ListActiveCDL(context.Context) ([]models.Team, error) { 
 func (f *fakeTeamStore) ListForSeason(context.Context, string, string) ([]models.Team, error) {
 	return nil, nil
 }
-func (f *fakeTeamStore) ListAll(context.Context) ([]models.Team, error)          { return nil, nil }
-func (f *fakeTeamStore) GetByID(context.Context, int) (*models.Team, error)       { return nil, nil }
+func (f *fakeTeamStore) ListAll(context.Context) ([]models.Team, error)     { return nil, nil }
+func (f *fakeTeamStore) GetByID(context.Context, int) (*models.Team, error) { return nil, nil }
 func (f *fakeTeamStore) GetStats(context.Context, int) ([]models.TeamTournamentStats, error) {
 	return nil, nil
 }

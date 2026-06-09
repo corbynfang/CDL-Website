@@ -125,7 +125,7 @@ func (s *gormPlayerStore) ListMatchHistoryRows(ctx context.Context, playerID int
 		Preload("Team").
 		Joins("JOIN matches ON matches.id = player_match_stats.match_id").
 		Order("CASE WHEN matches.match_date <= '0001-01-02 00:00:00+00'::timestamptz THEN 0 ELSE 1 END DESC, matches.match_date DESC, player_match_stats.match_id DESC").
-		Limit(100).
+		Limit(500).
 		Find(&stats).Error
 	return stats, err
 }

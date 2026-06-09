@@ -17,6 +17,7 @@ func SecurityHeaders() gin.HandlerFunc {
 var allowedOrigins = []string{
 	"https://cdlytics.com",
 	"https://www.cdlytics.com",
+	"http://localhost:3000",
 	"http://localhost:5173",
 	"http://localhost:5174",
 }
@@ -32,8 +33,8 @@ func CORS() gin.HandlerFunc {
 			}
 		}
 
-		c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Cache-Control")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Cache-Control, Authorization")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)

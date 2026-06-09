@@ -1,8 +1,24 @@
 package handlers
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/corbynfang/CDL-Website/internal/middleware"
+	"github.com/gin-gonic/gin"
+)
 
-func RegisterRoutes(rg gin.IRoutes, h *Handler) {
+func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
+	auth := rg.Group("/auth")
+	auth.Use(middleware.RequireAuth())
+	auth.POST("/profile", h.SyncProfile)
+	auth.GET("/me", h.GetMe)
+	auth.DELETE("/me", h.DeleteMe)
+
+	rg.GET("/matches/:id/thread", h.GetThread)
+	protected := rg.Group("/")
+	protected.Use(middleware.RequireAuth())
+	protected.POST("/matches/:id/thread/posts", h.CreatePost)
+	protected.PUT("/thread/posts/:id", h.EditPost)
+	protected.DELETE("/thread/posts/:id", h.DeletePost)
+
 	rg.GET("/seasons", h.GetSeasons)
 	rg.GET("/seasons/:id", h.GetSeason)
 	rg.GET("/seasons/active", h.GetActiveSeason)

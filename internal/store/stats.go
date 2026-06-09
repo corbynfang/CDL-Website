@@ -58,7 +58,6 @@ func (s *gormStatsStore) GetAllKDRows(ctx context.Context, limit int, seasonID s
 	}
 	rows := make([]KDRow, 0)
 	err := query.
-		Group("pts.player_id").
 		Having("SUM(pts.total_kills) > 0 OR SUM(pts.total_deaths) > 0").
 		Order("(CASE WHEN SUM(pts.total_deaths) > 0 THEN SUM(pts.total_kills)::decimal / SUM(pts.total_deaths) ELSE 0 END) DESC").
 		Limit(limit).

@@ -102,6 +102,9 @@ type PlayerTournamentStats struct {
 	ControlCaptures  int     `json:"control_captures" gorm:"default:0"`
 	ControlMaps      int     `json:"control_maps" gorm:"default:0"`
 
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
 	Player     Player     `json:"player" gorm:"foreignKey:PlayerID"`
 	Team       Team       `json:"team" gorm:"foreignKey:TeamID"`
 	Tournament Tournament `json:"tournament" gorm:"foreignKey:TournamentID"`

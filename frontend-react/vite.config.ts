@@ -12,9 +12,8 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://d2ifjmrbn1xida.cloudfront.net',
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: true,
       },
     },
   },

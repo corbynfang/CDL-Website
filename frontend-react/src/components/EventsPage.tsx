@@ -65,7 +65,7 @@ export default function EventsPage() {
 
       {loading && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {Array.from({ length: 9 }).map((_, i) => <EventCardSkeleton key={i} />)}
+          {Array.from({ length: 9 }, (_, i) => <EventCardSkeleton key={`skeleton-${i}`} />)}
         </div>
       )}
 
