@@ -9,7 +9,7 @@ import {
 } from "../../test/fixtures/events";
 import { sampleTeams } from "../../test/fixtures/teams";
 
-vi.mock("../../utils/logoAssets", () => ({
+vi.mock("../../utils/assets", () => ({
 	getTeamLogo: vi.fn().mockReturnValue(null),
 	getPlayerAvatar: vi.fn().mockReturnValue("/placeholder.png"),
 }));

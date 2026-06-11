@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import { getTeamLogo } from "../utils/logoAssets";
+import { getTeamLogo } from "../utils/assets";
 import type { Season } from "../types";
+import PageMeta from "./PageMeta";
 
 interface Team {
   id: number;
@@ -34,6 +35,11 @@ const Teams = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <PageMeta
+        title="CDL Teams"
+        description="Every Call of Duty League franchise and team — rosters, season history, and performance stats. Filter by CDL season."
+        canonical="/teams"
+      />
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
         <div>
           <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">

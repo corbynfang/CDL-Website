@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { getTeamLogo } from "../../utils/logoAssets";
+import { getTeamLogo } from "../../utils/assets";
 import type { BracketMatch } from "../../services/api";
 
 interface Props {

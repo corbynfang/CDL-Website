@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import { getPlayerAvatar } from "../utils/avatarAssets";
+import { getPlayerAvatar } from "../utils/assets";
 import type { Player, PaginatedResponse } from "../types";
+import PageMeta from "./PageMeta";
 
 const LIMIT = 25;
 
@@ -50,6 +51,11 @@ const Players = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <PageMeta
+        title="CDL Players"
+        description="Browse every Call of Duty League player — gamertags, countries, roles, and active status. Click through to view individual K/D stats and match history."
+        canonical="/players"
+      />
       <div className="mb-8 flex items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">

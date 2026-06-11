@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useApi } from "../hooks/useApi";
-import { getTeamLogo } from "../utils/logoAssets";
-import { getPlayerAvatar } from "../utils/avatarAssets";
-import type { Player, Team, Franchise } from "../types";
+import { useApi } from "../../hooks/useApi";
+import { getTeamLogo, getPlayerAvatar } from "../../utils/assets";
+import type { Player, Team, Franchise } from "../../types";
 
 interface FranchiseResponse {
   franchise: Franchise;

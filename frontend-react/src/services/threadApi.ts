@@ -1,12 +1,16 @@
-import type { AxiosResponse } from 'axios';
-import api from './api';
-import type { ThreadResponse, ThreadPost } from '../types';
+import type { AxiosResponse } from "axios";
+import api from "./api";
+import type { ThreadResponse, ThreadPost } from "../types";
 
 export const threadApi = {
-  getThread: async (matchId: number, page = 1, limit = 25): Promise<ThreadResponse> => {
+  getThread: async (
+    matchId: number,
+    page = 1,
+    limit = 25,
+  ): Promise<ThreadResponse> => {
     const response: AxiosResponse<ThreadResponse> = await api.get(
       `/matches/${matchId}/thread`,
-      { params: { page, limit } }
+      { params: { page, limit } },
     );
     return response.data;
   },
@@ -14,7 +18,7 @@ export const threadApi = {
   createPost: async (matchId: number, body: string): Promise<ThreadPost> => {
     const response: AxiosResponse<ThreadPost> = await api.post(
       `/matches/${matchId}/thread/posts`,
-      { body }
+      { body },
     );
     return response.data;
   },

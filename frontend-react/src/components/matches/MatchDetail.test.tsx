@@ -7,15 +7,15 @@ import {
   matchDetailNoMapsFixture,
   matchDetailEmptyStatsFixture,
   matchDetailZeroDamageFixture,
-} from "../test/fixtures/matchDetail";
+} from "../../test/fixtures/matchDetail";
 
-vi.mock("../hooks/useApi", () => ({ useApi: vi.fn() }));
+vi.mock("../../hooks/useApi", () => ({ useApi: vi.fn() }));
 
-vi.mock("../utils/logoAssets", () => ({
+vi.mock("../../utils/assets", () => ({
   getTeamLogo: vi.fn().mockReturnValue(null),
 }));
 
-vi.mock("../context/AuthContext", () => ({
+vi.mock("../../context/AuthContext", () => ({
   useAuth: () => ({
     session: null,
     user: null,
@@ -32,7 +32,7 @@ vi.mock("../context/AuthContext", () => ({
   }),
 }));
 
-vi.mock("../services/threadApi", () => ({
+vi.mock("../../services/threadApi", () => ({
   threadApi: {
     getThread: vi.fn().mockResolvedValue({
       thread_id: 1,
@@ -42,7 +42,7 @@ vi.mock("../services/threadApi", () => ({
   },
 }));
 
-import { useApi } from "../hooks/useApi";
+import { useApi } from "../../hooks/useApi";
 const mockUseApi = vi.mocked(useApi);
 
 function renderMatch(id = "42") {
@@ -93,7 +93,6 @@ describe("MatchDetail — response contract rendering", () => {
       refetch: vi.fn(),
     });
     renderMatch();
-    // team1_score=3 and team2_score=1 both appear
     const threes = screen.getAllByText("3");
     expect(threes.length).toBeGreaterThan(0);
   });
@@ -131,7 +130,6 @@ describe("MatchDetail — empty states", () => {
       refetch: vi.fn(),
     });
     expect(() => renderMatch("43")).not.toThrow();
-    // Header still shows team names
     expect(screen.getByText("OpTic Texas")).toBeInTheDocument();
   });
 
@@ -189,7 +187,6 @@ describe("MatchDetail — player stats in scoreboard", () => {
       refetch: vi.fn(),
     });
     renderMatch();
-    // Each player appears in both maps, so getAllByText is needed.
     expect(screen.getAllByText("Shotzzy").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Cellium").length).toBeGreaterThan(0);
   });
@@ -214,7 +211,6 @@ describe("MatchDetail — player stats in scoreboard", () => {
       refetch: vi.fn(),
     });
     renderMatch();
-    // damage=0 and bp_rating=0 both render "—"
     const dashes = screen.getAllByText("—");
     expect(dashes.length).toBeGreaterThanOrEqual(2);
   });
@@ -227,7 +223,6 @@ describe("MatchDetail — player stats in scoreboard", () => {
       refetch: vi.fn(),
     });
     renderMatch();
-    // "Hill" appears once per Hardpoint map scoreboard; use getAllByText when multiple HP maps are present.
     expect(screen.getAllByText("Hill").length).toBeGreaterThan(0);
   });
 
@@ -239,7 +234,6 @@ describe("MatchDetail — player stats in scoreboard", () => {
       refetch: vi.fn(),
     });
     renderMatch();
-    // Column headers appear once per S&D map scoreboard; use getAllByText when multiple S&D maps are present.
     expect(screen.getAllByText("Plants").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Defuses").length).toBeGreaterThan(0);
     expect(screen.getAllByText("FB").length).toBeGreaterThan(0);

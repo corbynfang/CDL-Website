@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import type { TournamentTeam } from "../../types";
-import { getTeamLogo } from "../../utils/logoAssets";
+import { getTeamLogo } from "../../utils/assets";
 
 interface Props {
 	teams: TournamentTeam[] | null;

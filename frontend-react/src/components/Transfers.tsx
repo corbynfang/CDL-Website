@@ -1,7 +1,8 @@
 import { useApi } from "../hooks/useApi";
 import { Link } from "react-router-dom";
-import { getPlayerAvatar } from "../utils/avatarAssets";
+import { getPlayerAvatar } from "../utils/assets";
 import type { PlayerTransfer } from "../types";
+import PageMeta from "./PageMeta";
 
 interface TransfersResponse {
   transfers: PlayerTransfer[];
@@ -61,6 +62,11 @@ const Transfers = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <PageMeta
+        title="CDL Transfers & Roster Moves"
+        description="Complete history of Call of Duty League player transfers, signings, and roster moves. Track which players moved between teams and when."
+        canonical="/transfers"
+      />
       <div className="mb-8">
         <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">
           Roster Moves

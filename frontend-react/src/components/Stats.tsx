@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import { getPlayerAvatar } from "../utils/avatarAssets";
+import { getPlayerAvatar } from "../utils/assets";
 import type { Season } from "../types";
+import PageMeta from "./PageMeta";
 
 interface PlayerStats {
   player_id: number;
@@ -46,6 +47,11 @@ const Stats = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <PageMeta
+        title="CDL K/D Rankings"
+        description="Call of Duty League K/D leaderboards by season. See which players have the highest kill/death ratios across Hardpoint, Search & Destroy, and Control."
+        canonical="/stats"
+      />
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
         <div>
           <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">

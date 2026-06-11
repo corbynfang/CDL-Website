@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useApi } from "../hooks/useApi";
 import type { Tournament } from "../types";
+import PageMeta from "./PageMeta";
 import {
   deriveStatus,
   isHidden,
@@ -19,7 +20,7 @@ interface Filters {
   status: string;
 }
 
-export default function EventsPage() {
+export default function Events() {
   const [filters, setFilters] = useState<Filters>({
     game: "",
     type: "",
@@ -55,6 +56,11 @@ export default function EventsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <PageMeta
+        title="CDL Events & Tournaments"
+        description="All Call of Duty League tournaments — Majors, Championship events, and more. Browse brackets, results, and player stats for every CDL event."
+        canonical="/events"
+      />
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
         <div>
           <p className="text-xs uppercase tracking-widest text-[#737373] mb-2">

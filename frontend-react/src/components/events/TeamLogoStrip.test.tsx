@@ -7,12 +7,12 @@ import {
 	unknownTeam,
 } from "../../test/fixtures/teams";
 
-vi.mock("../../utils/logoAssets", () => ({
+vi.mock("../../utils/assets", () => ({
 	getTeamLogo: vi.fn().mockReturnValue(null),
 	getPlayerAvatar: vi.fn().mockReturnValue("/placeholder.png"),
 }));
 
-import { getTeamLogo } from "../../utils/logoAssets";
+import { getTeamLogo } from "../../utils/assets";
 
 describe("TeamLogoStrip", () => {
 	beforeEach(() => vi.mocked(getTeamLogo).mockReturnValue(""));

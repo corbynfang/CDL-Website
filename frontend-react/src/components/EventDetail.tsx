@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import PageMeta from "./PageMeta";
 import { useApi } from "../hooks/useApi";
 import type {
   TournamentDetail,
@@ -17,7 +18,7 @@ import EventMatches from "./events/EventMatches";
 import EventTeams from "./events/EventTeams";
 import EventStats from "./events/EventStats";
 
-export default function EventDetailPage() {
+export default function EventDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [tab, setTab] = useState<TabId>("overview");
   // Tracks which tabs have been opened at least once — prevents re-fetching on tab switch.
@@ -81,8 +82,39 @@ export default function EventDetailPage() {
 
   const { tournament, team_count } = data;
 
+  const locationStr = tournament.location ? ` in ${tournament.location}` : "";
+  const dateStr = tournament.start_date
+    ? ` (${new Date(tournament.start_date).getFullYear()})`
+    : "";
+  const metaDesc = `${tournament.name}${dateStr} — CDL tournament results, bracket, match scores, and player stats. ${team_count} teams competed${locationStr}.`;
+
+  const eventSchema = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    name: tournament.name,
+    description: metaDesc,
+    startDate: tournament.start_date,
+    endDate: tournament.end_date || undefined,
+    url: `https://cdlytics.com/events/${slug}`,
+    location: tournament.location
+      ? { "@type": "Place", name: tournament.location, address: tournament.country || undefined }
+      : undefined,
+    sport: "Call of Duty",
+    organizer: { "@type": "Organization", name: "Call of Duty League" },
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      <PageMeta
+        title={`${tournament.name} Results & Stats`}
+        description={metaDesc}
+        canonical={`/events/${slug}`}
+        type="article"
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema) }}
+      />
       <EventHero
         event={tournament}
         teamCount={team_count}

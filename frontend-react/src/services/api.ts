@@ -1,5 +1,5 @@
-import axios from 'axios';
-import type { AxiosResponse } from 'axios';
+import axios from "axios";
+import type { AxiosResponse } from "axios";
 import type {
   Team,
   Player,
@@ -15,8 +15,8 @@ import type {
   TournamentDetail,
   TournamentTeam,
   PaginatedResponse,
-  ApiResponse
-} from '../types';
+  ApiResponse,
+} from "../types";
 
 // Bracket data shape returned by GET /tournaments/:id/bracket
 export interface BracketMatch {
@@ -47,10 +47,10 @@ export interface BracketData {
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://cdlytics.com/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || "https://cdlytics.com/api/v1",
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -60,16 +60,16 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    console.error("API Error:", error.response?.data || error.message);
     return Promise.reject(error);
-  }
+  },
 );
 
 // Team API functions
 export const teamApi = {
   // Get all teams
   getTeams: async (): Promise<Team[]> => {
-    const response: AxiosResponse<Team[]> = await api.get('/teams');
+    const response: AxiosResponse<Team[]> = await api.get("/teams");
     return response.data;
   },
 
@@ -79,36 +79,35 @@ export const teamApi = {
     return response.data;
   },
 
-  // Create new team
-  createTeam: async (team: Omit<Team, 'id' | 'created_at' | 'updated_at'>): Promise<Team> => {
-    const response: AxiosResponse<Team> = await api.post('/teams', team);
-    return response.data;
-  },
-
   // Get team players
   getTeamPlayers: async (teamId: number): Promise<Player[]> => {
-    const response: AxiosResponse<Player[]> = await api.get(`/teams/${teamId}/players`);
+    const response: AxiosResponse<Player[]> = await api.get(
+      `/teams/${teamId}/players`,
+    );
     return response.data;
   },
 
   // Get team stats
   getTeamStats: async (teamId: number): Promise<TeamTournamentStats[]> => {
-    const response: AxiosResponse<TeamTournamentStats[]> = await api.get(`/teams/${teamId}/stats`);
+    const response: AxiosResponse<TeamTournamentStats[]> = await api.get(
+      `/teams/${teamId}/stats`,
+    );
     return response.data;
   },
 
-  // Create team stats
-  createTeamStats: async (teamId: number, stats: Omit<TeamTournamentStats, 'id' | 'created_at'>): Promise<TeamTournamentStats> => {
-    const response: AxiosResponse<TeamTournamentStats> = await api.post(`/teams/${teamId}/stats`, stats);
-    return response.data;
-  },
 };
 
 // Player API functions
 export const playerApi = {
   // Get a page of players (?page=1&limit=25 by default)
-  getPlayers: async (page = 1, limit = 25): Promise<PaginatedResponse<Player>> => {
-    const response: AxiosResponse<PaginatedResponse<Player>> = await api.get('/players', { params: { page, limit } });
+  getPlayers: async (
+    page = 1,
+    limit = 25,
+  ): Promise<PaginatedResponse<Player>> => {
+    const response: AxiosResponse<PaginatedResponse<Player>> = await api.get(
+      "/players",
+      { params: { page, limit } },
+    );
     return response.data;
   },
 
@@ -118,27 +117,19 @@ export const playerApi = {
     return response.data;
   },
 
-  // Create new player
-  createPlayer: async (player: Omit<Player, 'id' | 'created_at' | 'updated_at'>): Promise<Player> => {
-    const response: AxiosResponse<Player> = await api.post('/players', player);
-    return response.data;
-  },
-
   // Get player stats
   getPlayerStats: async (playerId: number): Promise<PlayerMatchStats[]> => {
-    const response: AxiosResponse<PlayerMatchStats[]> = await api.get(`/players/${playerId}/stats`);
-    return response.data;
-  },
-
-  // Create player stats
-  createPlayerStats: async (playerId: number, stats: Omit<PlayerMatchStats, 'id' | 'created_at'>): Promise<PlayerMatchStats> => {
-    const response: AxiosResponse<PlayerMatchStats> = await api.post(`/players/${playerId}/stats`, stats);
+    const response: AxiosResponse<PlayerMatchStats[]> = await api.get(
+      `/players/${playerId}/stats`,
+    );
     return response.data;
   },
 
   // Get player KD stats
   getPlayerKDStats: async (playerId: number): Promise<PlayerKDStatsData> => {
-    const response: AxiosResponse<PlayerKDStatsData> = await api.get(`/players/${playerId}/kd`);
+    const response: AxiosResponse<PlayerKDStatsData> = await api.get(
+      `/players/${playerId}/kd`,
+    );
     return response.data;
   },
 };
@@ -147,23 +138,33 @@ export const playerApi = {
 export const statsApi = {
   // Get top KD players — backend wraps array as { timestamp, players, count }
   getTopKDPlayers: async (): Promise<TopKDPlayer[]> => {
-    const response: AxiosResponse<{ players: TopKDPlayer[]; count: number; timestamp: number }> =
-      await api.get('/players/top-kd');
+    const response: AxiosResponse<{
+      players: TopKDPlayer[];
+      count: number;
+      timestamp: number;
+    }> = await api.get("/players/top-kd");
     return response.data.players;
   },
 
   // Get all player KD stats — backend wraps array as { timestamp, players, count }
   getAllPlayersKDStats: async (): Promise<AllKDPlayer[]> => {
-    const response: AxiosResponse<{ players: AllKDPlayer[]; count: number; timestamp: number }> =
-      await api.get('/stats/all-kd-by-tournament');
+    const response: AxiosResponse<{
+      players: AllKDPlayer[];
+      count: number;
+      timestamp: number;
+    }> = await api.get("/stats/all-kd-by-tournament");
     return response.data.players;
   },
 };
 
 // Health check
 export const healthApi = {
-  checkHealth: async (): Promise<ApiResponse<{ status: string; message: string }>> => {
-    const response: AxiosResponse<ApiResponse<{ status: string; message: string }>> = await api.get('/health');
+  checkHealth: async (): Promise<
+    ApiResponse<{ status: string; message: string }>
+  > => {
+    const response: AxiosResponse<
+      ApiResponse<{ status: string; message: string }>
+    > = await api.get("/health");
     return response.data;
   },
 };
@@ -171,8 +172,17 @@ export const healthApi = {
 // Transfers API functions
 export const transfersApi = {
   // Get all transfers
-  getTransfers: async (params?: { season?: string; team_id?: number; type?: string; player_id?: number }): Promise<PlayerTransfer[]> => {
-    const response: AxiosResponse<{ transfers: PlayerTransfer[]; count: number; timestamp: number }> = await api.get('/transfers', { params });
+  getTransfers: async (params?: {
+    season?: string;
+    team_id?: number;
+    type?: string;
+    player_id?: number;
+  }): Promise<PlayerTransfer[]> => {
+    const response: AxiosResponse<{
+      transfers: PlayerTransfer[];
+      count: number;
+      timestamp: number;
+    }> = await api.get("/transfers", { params });
     return response.data.transfers;
   },
 };
@@ -180,31 +190,46 @@ export const transfersApi = {
 // Events (tournaments) API
 export const eventsApi = {
   getAll: async (params?: { season_id?: number }): Promise<Tournament[]> => {
-    const response: AxiosResponse<Tournament[]> = await api.get('/tournaments', { params });
+    const response: AxiosResponse<Tournament[]> = await api.get(
+      "/tournaments",
+      { params },
+    );
     return response.data;
   },
   getBySlug: async (slug: string): Promise<TournamentDetail> => {
-    const response: AxiosResponse<TournamentDetail> = await api.get(`/tournaments/slug/${slug}`);
+    const response: AxiosResponse<TournamentDetail> = await api.get(
+      `/tournaments/slug/${slug}`,
+    );
     return response.data;
   },
   getById: async (id: number): Promise<Tournament> => {
-    const response: AxiosResponse<Tournament> = await api.get(`/tournaments/${id}`);
+    const response: AxiosResponse<Tournament> = await api.get(
+      `/tournaments/${id}`,
+    );
     return response.data;
   },
   getMatches: async (id: number): Promise<Match[]> => {
-    const response: AxiosResponse<Match[]> = await api.get(`/tournaments/${id}/matches`);
+    const response: AxiosResponse<Match[]> = await api.get(
+      `/tournaments/${id}/matches`,
+    );
     return response.data;
   },
   getTeams: async (id: number): Promise<TournamentTeam[]> => {
-    const response: AxiosResponse<TournamentTeam[]> = await api.get(`/tournaments/${id}/teams`);
+    const response: AxiosResponse<TournamentTeam[]> = await api.get(
+      `/tournaments/${id}/teams`,
+    );
     return response.data;
   },
   getBracket: async (id: number): Promise<BracketData> => {
-    const response: AxiosResponse<BracketData> = await api.get(`/tournaments/${id}/bracket`);
+    const response: AxiosResponse<BracketData> = await api.get(
+      `/tournaments/${id}/bracket`,
+    );
     return response.data;
   },
   getStats: async (id: number): Promise<PlayerTournamentStats[]> => {
-    const response: AxiosResponse<PlayerTournamentStats[]> = await api.get(`/tournaments/${id}/stats`);
+    const response: AxiosResponse<PlayerTournamentStats[]> = await api.get(
+      `/tournaments/${id}/stats`,
+    );
     return response.data;
   },
 };

@@ -7,14 +7,14 @@ import NotFound from "./components/NotFound";
 
 const Home          = lazy(() => import("./components/Home"));
 const Players       = lazy(() => import("./components/Players"));
-const PlayerDetail  = lazy(() => import("./components/PlayerDetail"));
+const PlayerDetail  = lazy(() => import("./components/players/PlayerDetail"));
 const Teams         = lazy(() => import("./components/Teams"));
-const TeamDetail    = lazy(() => import("./components/TeamDetail"));
+const TeamDetail    = lazy(() => import("./components/teams/TeamDetail"));
 const Stats         = lazy(() => import("./components/Stats"));
 const Transfers     = lazy(() => import("./components/Transfers"));
-const MatchDetail   = lazy(() => import("./components/MatchDetail"));
-const EventsPage      = lazy(() => import("./components/EventsPage"));
-const EventDetailPage = lazy(() => import("./components/EventDetailPage"));
+const MatchDetail   = lazy(() => import("./components/matches/MatchDetail"));
+const Events      = lazy(() => import("./components/Events"));
+const EventDetail = lazy(() => import("./components/EventDetail"));
 const PrivacyPage     = lazy(() => import("./components/legal/PrivacyPage"));
 const TermsPage       = lazy(() => import("./components/legal/TermsPage"));
 const DisclaimerPage  = lazy(() => import("./components/legal/DisclaimerPage"));
@@ -51,10 +51,10 @@ function App() {
               <Suspense><Transfers /></Suspense>
             } />
             <Route path="events" element={
-              <Suspense><EventsPage /></Suspense>
+              <Suspense><Events /></Suspense>
             } />
             <Route path="events/:slug" element={
-              <Suspense><EventDetailPage /></Suspense>
+              <Suspense><EventDetail /></Suspense>
             } />
             <Route path="privacy"    element={<Suspense><PrivacyPage /></Suspense>} />
             <Route path="terms"      element={<Suspense><TermsPage /></Suspense>} />

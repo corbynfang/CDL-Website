@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
+import PageMeta from "./PageMeta";
 import { isFeatured, isHidden } from "../utils/eventUtils";
 import type { Tournament, Team, PaginatedResponse, Player } from "../types";
 
@@ -150,14 +151,22 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      <PageMeta
+        canonical="/"
+        title="CDL Stats & Analytics"
+        description="The independent source for Call of Duty League statistics. Search player K/D ratios, tournament brackets, team rosters, and transfer history across every CDL season."
+      />
       <div className="max-w-2xl mx-auto px-4 pt-28 pb-20">
         {/* Hero */}
         <div className="text-center mb-10">
           <h1 className="font-grotesk text-5xl font-bold tracking-tight text-white mb-3">
             CDLytics
           </h1>
-          <p className="text-[#a3a3a3] text-lg">
-            Search Call of Duty League players, teams, events, and stats.
+          <p className="text-[#a3a3a3] text-lg mb-1">
+            The independent stats database for Call of Duty League.
+          </p>
+          <p className="text-[#5a5a5a] text-sm">
+            Player K/D ratios · tournament brackets · transfer history · every season
           </p>
         </div>
 
@@ -274,9 +283,77 @@ const Home = () => {
             )}
           </>
         )}
+
+        {/* FAQ */}
+        <FAQ />
       </div>
     </div>
   );
 };
+
+const FAQ_ITEMS = [
+  {
+    q: "What is CDLytics?",
+    a: "CDLytics is an independent statistics database for the Call of Duty League (CDL). It tracks player K/D ratios, match results, tournament brackets, team rosters, and transfer history across every CDL season.",
+  },
+  {
+    q: "Which CDL seasons does CDLytics cover?",
+    a: "CDLytics covers all CDL seasons from launch through the current season, including Black Ops Cold War, Vanguard, Modern Warfare II, Modern Warfare III, and Black Ops 6.",
+  },
+  {
+    q: "How are K/D ratios calculated?",
+    a: "K/D ratios are calculated from official match data. Overall K/D is kills divided by deaths across all maps played. Mode-specific K/D (Hardpoint, Search & Destroy, Control) is calculated from maps of that mode only.",
+  },
+  {
+    q: "Who has the highest K/D ratio in CDL history?",
+    a: "K/D rankings change each season. Visit the Stats page to see the current leaderboard filtered by season, including overall and mode-specific breakdowns.",
+  },
+  {
+    q: "Is CDLytics affiliated with Activision or the CDL?",
+    a: "No. CDLytics is an independent fan-built project and is not affiliated with, endorsed by, or sponsored by Activision, the Call of Duty League, or any listed team.",
+  },
+];
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
+};
+
+function FAQ() {
+  return (
+    <div className="mt-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <p className="text-xs uppercase tracking-widest text-[#737373] mb-6">
+        FAQ
+      </p>
+      <div className="flex flex-col gap-px">
+        {FAQ_ITEMS.map(({ q, a }) => (
+          <details
+            key={q}
+            className="group bg-[#111111] border border-[#1a1a1a] open:border-[#2a2a2a]"
+          >
+            <summary className="flex items-center justify-between px-5 py-4 cursor-pointer list-none select-none">
+              <span className="text-white text-sm font-medium">{q}</span>
+              <span className="text-[#404040] group-open:text-[#737373] text-lg ml-4 shrink-0 transition-colors">
+                +
+              </span>
+            </summary>
+            <p className="px-5 pb-5 text-[#737373] text-sm leading-relaxed">
+              {a}
+            </p>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default Home;

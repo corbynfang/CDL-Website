@@ -1,4 +1,4 @@
-import { getTeamLogo } from "../../utils/logoAssets";
+import { getTeamLogo } from "../../utils/assets";
 import type { TournamentTeam } from "../../types";
 
 interface Props {

@@ -9,17 +9,15 @@ import {
   playerMatchesFixture,
   playerMatchesEmptyFixture,
   playerMatchesNullKDFixture,
-} from "../test/fixtures/playerDetail";
+} from "../../test/fixtures/playerDetail";
 
-// Mock useApi — each test controls what each URL returns.
-vi.mock("../hooks/useApi", () => ({ useApi: vi.fn() }));
-
-// Mock asset helpers — tests don't need real image files on disk.
-vi.mock("../utils/avatarAssets", () => ({
+vi.mock("../../hooks/useApi", () => ({ useApi: vi.fn() }));
+vi.mock("../../utils/assets", () => ({
   getPlayerAvatar: vi.fn().mockReturnValue("/placeholder.png"),
 }));
+vi.mock("../PageMeta", () => ({ default: () => null }));
 
-import { useApi } from "../hooks/useApi";
+import { useApi } from "../../hooks/useApi";
 const mockUseApi = vi.mocked(useApi);
 
 const careerDefault = { player_id: 1, gamertag: "Shotzzy", franchises: [] };

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import type { PlayerTournamentStats } from "../../types";
-import { getPlayerAvatar } from "../../utils/avatarAssets";
+import { getPlayerAvatar } from "../../utils/assets";
 
 interface Props {
 	stats: PlayerTournamentStats[] | null;

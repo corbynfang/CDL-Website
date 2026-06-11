@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import EventOverview from "./EventOverview";
 import { completedMajor, upcomingQualifier } from "../../test/fixtures/events";
 
-vi.mock("../../utils/logoAssets", () => ({
+vi.mock("../../utils/assets", () => ({
 	getTeamLogo: vi.fn().mockReturnValue(null),
 	getPlayerAvatar: vi.fn().mockReturnValue("/placeholder.png"),
 }));

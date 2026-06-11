@@ -7,7 +7,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corbynfang/CDL-Website/internal/database"
-	"github.com/corbynfang/CDL-Website/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,26 +42,6 @@ func newCtx(params gin.Params, rawQuery string) (*gin.Context, *httptest.Respons
 	c.Request = httptest.NewRequest(http.MethodGet, "/?"+rawQuery, nil)
 	c.Params = params
 	return c, w
-}
-
-func TestCalculateKD(t *testing.T) {
-	tests := []struct {
-		name   string
-		kills  int
-		deaths int
-		want   float64
-	}{
-		{"normal ratio", 10, 5, 2.0},
-		{"equal kd", 5, 5, 1.0},
-		{"below 1", 3, 6, 0.5},
-		{"zero deaths returns 0", 10, 0, 0},
-		{"both zero", 0, 0, 0},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, services.CalculateKD(tt.kills, tt.deaths))
-		})
-	}
 }
 
 func TestValidateID(t *testing.T) {

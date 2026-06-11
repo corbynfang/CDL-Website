@@ -405,4 +405,4 @@ export interface PlayerCareerResponse {
   player_id: number;
   gamertag: string;
   franchises: PlayerFranchiseEntry[];
-} 
+}

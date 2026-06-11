@@ -29,6 +29,7 @@ import (
 )
 
 type Handler struct {
+	db          *gorm.DB
 	players     *services.PlayerService
 	teams       *services.TeamService
 	seasons     *services.SeasonService
@@ -54,6 +55,7 @@ func New(db *gorm.DB) *Handler {
 	threadStore := store.NewGormThreadStore(db)
 
 	return &Handler{
+		db:          db,
 		players:     services.NewPlayerService(playerStore),
 		teams:       services.NewTeamService(teamStore, seasonStore),
 		seasons:     services.NewSeasonService(seasonStore),

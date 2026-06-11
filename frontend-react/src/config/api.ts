@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'https://cdlytics.com/api/v1',
+  BASE_URL: import.meta.env.VITE_API_URL || "https://cdlytics.com/api/v1",
 
   TIMEOUT: 10000,
 
@@ -11,9 +11,8 @@ export const API_CONFIG = {
 } as const;
 
 export const getApiUrl = (endpoint: string): string => {
-
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-  const baseUrl = API_CONFIG.BASE_URL.replace(/\/$/, '');
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
+  const baseUrl = API_CONFIG.BASE_URL.replace(/\/$/, "");
 
   return `${baseUrl}/${cleanEndpoint}`;
 };
@@ -26,8 +25,8 @@ export const isProduction = (): boolean => {
   return import.meta.env.PROD;
 };
 
-export const getEnvironment = (): 'development' | 'production' => {
-  return isProduction() ? 'production' : 'development';
+export const getEnvironment = (): "development" | "production" => {
+  return isProduction() ? "production" : "development";
 };
 
 export default API_CONFIG;

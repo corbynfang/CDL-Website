@@ -7,7 +7,7 @@ import {
 	bracketMatchNoWinner,
 } from "../../test/fixtures/matches";
 
-vi.mock("../../utils/logoAssets", () => ({
+vi.mock("../../utils/assets", () => ({
 	getTeamLogo: vi.fn().mockReturnValue(null),
 	getPlayerAvatar: vi.fn().mockReturnValue("/placeholder.png"),
 }));
@@ -43,7 +43,7 @@ describe("BracketMatchCard", () => {
 	});
 
 	it("uses team logo from getTeamLogo when available", async () => {
-		const { getTeamLogo } = await import("../../utils/logoAssets");
+		const { getTeamLogo } = await import("../../utils/assets");
 		vi.mocked(getTeamLogo).mockReturnValue("/logos/optic.png");
 		wrap(<BracketMatchCard match={bracketMatchComplete} />);
 		const imgs = screen.getAllByRole("img");

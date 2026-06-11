@@ -5,8 +5,8 @@ import {
 	CARD_W,
 	EWC_BAND,
 	EWC_X_OFFSET,
-} from "../../lib/bracketLayout";
-import type { Connector } from "../../lib/bracketLayout";
+} from "../../utils/bracketLayout";
+import type { Connector } from "../../utils/bracketLayout";
 import BracketMatchCard from "./BracketMatchCard";
 
 interface Props {

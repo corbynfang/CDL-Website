@@ -34,7 +34,14 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
+	r.GET("/robots.txt", func(c *gin.Context) {
+		c.Header("Content-Type", "text/plain; charset=utf-8")
+		c.Header("Cache-Control", "public, max-age=86400")
+		c.String(http.StatusOK, "User-agent: *\nAllow: /\nSitemap: https://cdlytics.com/sitemap.xml\n")
+	})
+
 	h := handlers.New(database.DB)
+	r.GET("/sitemap.xml", h.GetSitemap)
 
 	api := r.Group("/api/v1")
 	api.Use(middleware.RateLimit())
