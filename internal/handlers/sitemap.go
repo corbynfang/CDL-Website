@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -23,7 +24,7 @@ func (h *Handler) GetSitemap(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 	db := h.db.WithContext(ctx)
 

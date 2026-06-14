@@ -1,14 +1,16 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) GetTournaments(c *gin.Context) {
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	tournaments, err := h.tournaments.ListTournaments(ctx, c.Query("season_id"))
@@ -21,7 +23,7 @@ func (h *Handler) GetTournaments(c *gin.Context) {
 }
 
 func (h *Handler) GetTournamentBySlug(c *gin.Context) {
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	detail, err := h.tournaments.GetTournamentBySlug(ctx, c.Param("slug"))
@@ -38,7 +40,7 @@ func (h *Handler) GetTournament(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
 		return
 	}
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	tournament, err := h.tournaments.GetTournamentByID(ctx, id)
@@ -55,7 +57,7 @@ func (h *Handler) GetTournamentBracket(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
 		return
 	}
-	ctx, cancel := getContext(15)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	result, err := h.tournaments.AssembleBracket(ctx, tournamentID)
@@ -72,7 +74,8 @@ func (h *Handler) GetTournamentMatches(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
 		return
 	}
-	ctx, cancel := getContext(15)
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	matches, err := h.tournaments.ListTournamentMatches(ctx, id)
@@ -90,7 +93,7 @@ func (h *Handler) GetTournamentTeams(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
 		return
 	}
-	ctx, cancel := getContext(15)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	teams, err := h.tournaments.GetTournamentTeams(ctx, id)
@@ -107,7 +110,7 @@ func (h *Handler) GetTournamentStats(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tournament ID"})
 		return
 	}
-	ctx, cancel := getContext(15)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	stats, err := h.tournaments.GetTournamentStats(ctx, id)

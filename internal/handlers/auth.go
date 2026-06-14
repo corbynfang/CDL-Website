@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -19,7 +21,7 @@ func (h *Handler) SyncProfile(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	user, err := h.users.SyncProfile(ctx, uid, body.Username)
@@ -33,7 +35,7 @@ func (h *Handler) SyncProfile(c *gin.Context) {
 func (h *Handler) GetMe(c *gin.Context) {
 	uid := c.GetString("supabase_uid")
 
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	user, err := h.users.GetBySupabaseUID(ctx, uid)
@@ -51,7 +53,7 @@ func (h *Handler) GetMe(c *gin.Context) {
 func (h *Handler) DeleteMe(c *gin.Context) {
 	uid := c.GetString("supabase_uid")
 
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	user, err := h.users.GetBySupabaseUID(ctx, uid)

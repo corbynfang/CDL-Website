@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import type { BracketData } from "../../services/api";
 import {
 	computeBracketLayout,
@@ -137,7 +137,7 @@ export default function BracketTree({
 	isFullscreen,
 	onFullscreen,
 }: Props) {
-	const layout = computeBracketLayout(data);
+	const layout = useMemo(() => computeBracketLayout(data), [data]);
 	const isEWC = data.event_format === "ewc_group_stage_single_elim";
 	const LABEL_H = 28; // height reserved for column labels above the canvas
 
@@ -287,7 +287,7 @@ export default function BracketTree({
 
 					{layout.nodes.map((n) => (
 						<div
-							key={n.match.id}
+							key={`${n.roundKey}-${n.x}-${n.y}`}
 							className="absolute"
 							style={{ left: n.x, top: isEWC ? n.y - 20 : n.y, width: CARD_W }}
 						>

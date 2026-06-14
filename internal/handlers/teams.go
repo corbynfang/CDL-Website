@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/models"
 	"github.com/corbynfang/CDL-Website/internal/services"
@@ -12,7 +14,7 @@ import (
 )
 
 func (h *Handler) GetTeams(c *gin.Context) {
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	teams, err := h.teams.List(ctx, c.Query("season_id"), c.Query("scope"))
@@ -36,7 +38,7 @@ func (h *Handler) GetTeam(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
 		return
 	}
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	team, err := h.teams.GetByID(ctx, id)
@@ -62,12 +64,10 @@ func (h *Handler) GetTeamPlayers(c *gin.Context) {
 		}
 	}
 
-	// scope=current (default) → latest-match roster; scope=all → full stint union.
 	scope := c.DefaultQuery("scope", "current")
 	fetch := h.teams.GetCurrentRoster
 	switch scope {
 	case "current":
-		// default
 	case "all":
 		fetch = h.teams.GetPlayers
 	default:
@@ -75,7 +75,7 @@ func (h *Handler) GetTeamPlayers(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	var players []models.Player
@@ -93,7 +93,7 @@ func (h *Handler) GetTeamStats(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
 		return
 	}
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	stats, err := h.teams.GetStats(ctx, id)

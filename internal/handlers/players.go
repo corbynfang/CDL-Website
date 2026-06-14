@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +17,7 @@ func (h *Handler) GetPlayers(c *gin.Context) {
 		search = search[:50]
 	}
 
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	players, total, err := h.players.List(ctx, search, limit, offset)
@@ -36,7 +38,7 @@ func (h *Handler) GetPlayer(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
 		return
 	}
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	player, err := h.players.GetByID(ctx, id)
@@ -53,7 +55,7 @@ func (h *Handler) GetPlayerStats(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
 		return
 	}
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	stats, err := h.players.GetMatchStats(ctx, id)
@@ -70,7 +72,7 @@ func (h *Handler) GetPlayerKDStats(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
 		return
 	}
-	ctx, cancel := getContext(15)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	result, err := h.players.GetKDStats(ctx, playerID)
@@ -87,7 +89,7 @@ func (h *Handler) GetPlayerMatches(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
 		return
 	}
-	ctx, cancel := getContext(15)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	result, err := h.players.GetMatchHistory(ctx, playerID)
@@ -104,7 +106,7 @@ func (h *Handler) GetPlayerFranchiseCareer(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID"})
 		return
 	}
-	ctx, cancel := getContext(15)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	result, err := h.players.GetFranchiseCareer(ctx, playerID)

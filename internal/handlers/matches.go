@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -14,7 +16,7 @@ func (h *Handler) GetMatch(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid match ID"})
 		return
 	}
-	ctx, cancel := getContext(15)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	detail, err := h.matches.GetMatchDetail(ctx, id)

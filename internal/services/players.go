@@ -8,38 +8,28 @@ import (
 
 	"github.com/corbynfang/CDL-Website/internal/models"
 	"github.com/corbynfang/CDL-Website/internal/store"
+	"golang.org/x/sync/errgroup"
 )
 
-// CalculateKD returns kills/deaths, or 0 if deaths is 0.
-func CalculateKD(kills, deaths int) float64 {
-	if deaths == 0 {
-		return 0
-	}
-	return float64(kills) / float64(deaths)
+type playerRes struct {
+	player *models.Player
+	err    error
 }
 
+type tournamentRes struct {
+	val []models.PlayerTournamentStats
+	err error
+}
+
+type splitRes struct {
+	val []store.ModeKDSplit
+	err error
+}
 
 type PlayerService struct {
 	store store.PlayerStore
 }
 
-func NewPlayerService(s store.PlayerStore) *PlayerService {
-	return &PlayerService{store: s}
-}
-
-func (ps *PlayerService) List(ctx context.Context, search string, limit, offset int) ([]models.Player, int64, error) {
-	return ps.store.List(ctx, search, limit, offset)
-}
-
-func (ps *PlayerService) GetByID(ctx context.Context, id int) (*models.Player, error) {
-	return ps.store.GetByID(ctx, id)
-}
-
-func (ps *PlayerService) GetMatchStats(ctx context.Context, playerID int) ([]models.PlayerMatchStats, error) {
-	return ps.store.ListMatchStats(ctx, playerID)
-}
-
-// PlayerKDStats is the assembled K/D profile returned by GetKDStats.
 type PlayerKDStats struct {
 	PlayerID       int                 `json:"player_id"`
 	Gamertag       string              `json:"gamertag"`
@@ -64,14 +54,79 @@ type TournamentKDEntry struct {
 	MapsPlayed     int     `json:"maps_played"`
 }
 
-func (ps *PlayerService) GetKDStats(ctx context.Context, playerID int) (*PlayerKDStats, error) {
-	player, err := ps.store.GetByID(ctx, playerID)
-	if err != nil {
-		return nil, err
-	}
+type PlayerMatchHistory struct {
+	PlayerID int          `json:"player_id"`
+	Events   []MatchEvent `json:"events"`
+	Total    int          `json:"total"`
+}
 
-	tournamentStats, err := ps.store.ListTournamentStats(ctx, playerID)
-	if err != nil {
+type MatchEvent struct {
+	Event        string        `json:"event"`
+	Year         int           `json:"year"`
+	TournamentID uint          `json:"tournament_id"`
+	Matches      []MatchResult `json:"matches"`
+}
+
+type MatchResult struct {
+	MatchID      uint    `json:"match_id"`
+	Date         string  `json:"date"`
+	Opponent     string  `json:"opponent"`
+	OpponentAbbr string  `json:"opponent_abbr"`
+	Result       string  `json:"result"`
+	KD           float64 `json:"kd"`
+	Kills        int     `json:"kills"`
+	Deaths       int     `json:"deaths"`
+}
+
+func CalculateKD(kills, deaths int) float64 {
+	if deaths == 0 {
+		return 0
+	}
+	return float64(kills) / float64(deaths)
+}
+
+func NewPlayerService(s store.PlayerStore) *PlayerService {
+	return &PlayerService{store: s}
+}
+
+func (ps *PlayerService) List(ctx context.Context, search string, limit, offset int) ([]models.Player, int64, error) {
+	return ps.store.List(ctx, search, limit, offset)
+}
+
+func (ps *PlayerService) GetByID(ctx context.Context, id int) (*models.Player, error) {
+	return ps.store.GetByID(ctx, id)
+}
+
+func (ps *PlayerService) GetMatchStats(ctx context.Context, playerID int) ([]models.PlayerMatchStats, error) {
+	return ps.store.ListMatchStats(ctx, playerID)
+}
+
+func (ps *PlayerService) GetKDStats(ctx context.Context, playerID int) (*PlayerKDStats, error) {
+	g, ctx := errgroup.WithContext(ctx)
+
+	var player *models.Player
+	var tournamentStats []models.PlayerTournamentStats
+	var splits []store.ModeKDSplit
+
+	g.Go(func() error {
+		var err error
+		player, err = ps.store.GetByID(ctx, playerID)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		tournamentStats, err = ps.store.ListTournamentStats(ctx, playerID)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		splits, err = ps.store.ListModeKDSplits(ctx, playerID)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -92,12 +147,6 @@ func (ps *PlayerService) GetKDStats(ctx context.Context, playerID int) (*PlayerK
 		})
 	}
 
-	// Mode splits come from per-map stats joined to match_maps.mode, which is
-	// populated for every era — the pre-aggregated tournament columns are not.
-	splits, err := ps.store.ListModeKDSplits(ctx, playerID)
-	if err != nil {
-		return nil, err
-	}
 	var hpK, hpD, sndK, sndD, ctlK, ctlD int
 	for _, sp := range splits {
 		switch sp.Mode {
@@ -123,31 +172,6 @@ func (ps *PlayerService) GetKDStats(ctx context.Context, playerID int) (*PlayerK
 		ControlKDRatio: CalculateKD(ctlK, ctlD),
 		Tournaments:    entries,
 	}, nil
-}
-
-// PlayerMatchHistory is the assembled match-history response for a single player.
-type PlayerMatchHistory struct {
-	PlayerID int          `json:"player_id"`
-	Events   []MatchEvent `json:"events"`
-	Total    int          `json:"total"`
-}
-
-type MatchEvent struct {
-	Event        string        `json:"event"`
-	Year         int           `json:"year"`
-	TournamentID uint          `json:"tournament_id"`
-	Matches      []MatchResult `json:"matches"`
-}
-
-type MatchResult struct {
-	MatchID      uint    `json:"match_id"`
-	Date         string  `json:"date"`
-	Opponent     string  `json:"opponent"`
-	OpponentAbbr string  `json:"opponent_abbr"`
-	Result       string  `json:"result"`
-	KD           float64 `json:"kd"`
-	Kills        int     `json:"kills"`
-	Deaths       int     `json:"deaths"`
 }
 
 func (ps *PlayerService) GetMatchHistory(ctx context.Context, playerID int) (*PlayerMatchHistory, error) {

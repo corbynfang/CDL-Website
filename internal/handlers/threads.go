@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/services"
 	"github.com/gin-gonic/gin"
@@ -18,7 +20,7 @@ func (h *Handler) GetThread(c *gin.Context) {
 	}
 
 	page, limit, _ := parsePagination(c)
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	posts, total, threadID, err := h.threads.GetThread(ctx, uint(matchID), page, limit)
@@ -42,7 +44,7 @@ func (h *Handler) CreatePost(c *gin.Context) {
 	}
 
 	uid := c.GetString("supabase_uid")
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	user, err := h.users.GetBySupabaseUID(ctx, uid)
@@ -92,7 +94,7 @@ func (h *Handler) EditPost(c *gin.Context) {
 	}
 
 	uid := c.GetString("supabase_uid")
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	user, err := h.users.GetBySupabaseUID(ctx, uid)
@@ -138,7 +140,7 @@ func (h *Handler) DeletePost(c *gin.Context) {
 	}
 
 	uid := c.GetString("supabase_uid")
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	user, err := h.users.GetBySupabaseUID(ctx, uid)

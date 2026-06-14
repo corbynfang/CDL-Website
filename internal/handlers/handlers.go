@@ -17,10 +17,8 @@ package handlers
 //   stats.go      — GetTopKDPlayers, GetAllPlayersKDStats
 
 import (
-	"context"
 	"math"
 	"strconv"
-	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/services"
 	"github.com/corbynfang/CDL-Website/internal/store"
@@ -73,10 +71,6 @@ func validateID(id string) (int, error) {
 	return strconv.Atoi(id)
 }
 
-func getContext(seconds int) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), time.Duration(seconds)*time.Second)
-}
-
 func noCacheHeaders(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 	c.Header("Pragma", "no-cache")
@@ -110,9 +104,6 @@ func parsePagination(c *gin.Context) (page, limit, offset int) {
 }
 
 func buildMeta(page, limit, total int) PaginationMeta {
-	pages := int(math.Ceil(float64(total) / float64(limit)))
-	if pages < 1 {
-		pages = 1
-	}
+	pages := max(int(math.Ceil(float64(total)/float64(limit))), 1)
 	return PaginationMeta{Page: page, Limit: limit, Total: total, TotalPages: pages}
 }

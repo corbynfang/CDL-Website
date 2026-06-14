@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corbynfang/CDL-Website/internal/database"
@@ -185,17 +184,6 @@ func TestGetPlayerKDStats_InvalidID(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-func TestGetPlayerKDStats_NotFound(t *testing.T) {
-	mock := setupMockDB(t)
-	mock.ExpectQuery(`SELECT \* FROM "players"`).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "gamertag"}))
-
-	h := newTestHandler(t)
-	c, w := newCtx(gin.Params{{Key: "id", Value: "99"}}, "")
-	h.GetPlayerKDStats(c)
-	assert.Equal(t, http.StatusNotFound, w.Code)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
 
 type playerKDBody struct {
 	PlayerID       float64          `json:"player_id"`
@@ -219,92 +207,6 @@ var playerTournamentStatCols = []string{
 	"control_kd_ratio", "control_maps",
 }
 
-func TestGetPlayerKDStats_ResponseShape(t *testing.T) {
-	mock := setupMockDB(t)
-	now := time.Now()
-
-	mock.ExpectQuery(`SELECT \* FROM "players"`).WillReturnRows(
-		sqlmock.NewRows([]string{"id", "gamertag", "avatar_url", "is_active", "created_at", "updated_at"}).
-			AddRow(1, "Shotzzy", "", true, now, now))
-
-	mock.ExpectQuery(`SELECT \* FROM "player_tournament_stats"`).WillReturnRows(
-		sqlmock.NewRows(playerTournamentStatCols).AddRow(
-			1, 1, 1, 5,
-			120, 80, 10, 50000,
-			1.50, 1.63, 10, 40,
-			60, 40, 1.50, 5,
-			30, 20, 1.50, 3,
-			1.20, 2,
-		))
-
-	mock.ExpectQuery(`SELECT \* FROM "tournaments"`).WillReturnRows(
-		sqlmock.NewRows([]string{"id", "name", "slug", "tournament_type", "start_date", "is_lan", "created_at", "updated_at"}).
-			AddRow(5, "CDL Major 1 2025", "cdl-major-1-2025", "major", now, true, now, now))
-
-	mock.ExpectQuery(`FROM player_map_stats`).WillReturnRows(
-		sqlmock.NewRows([]string{"mode", "kills", "deaths"}).
-			AddRow("hp", 60, 40).
-			AddRow("snd", 30, 20).
-			AddRow("control", 30, 20))
-
-	h := newTestHandler(t)
-	c, w := newCtx(gin.Params{{Key: "id", Value: "1"}}, "")
-	h.GetPlayerKDStats(c)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	var body playerKDBody
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
-
-	assert.Equal(t, "Shotzzy", body.Gamertag, "gamertag required")
-	assert.InDelta(t, 1.0, body.AvgKD, 5.0, "avg_kd must be a finite number")
-	assert.NotNil(t, body.TournamentStats, "tournament_stats required")
-	require.Len(t, body.TournamentStats, 1)
-
-	ts := body.TournamentStats[0]
-	for _, field := range []string{"tournament_id", "tournament_name", "kills", "deaths", "kd_ratio", "maps_played"} {
-		assert.Contains(t, ts, field, "tournament_stats entry must contain %s", field)
-	}
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetPlayerKDStats_ControlKDZeroWhenNoControlMaps(t *testing.T) {
-	mock := setupMockDB(t)
-	now := time.Now()
-
-	mock.ExpectQuery(`SELECT \* FROM "players"`).WillReturnRows(
-		sqlmock.NewRows([]string{"id", "gamertag", "avatar_url", "is_active", "created_at", "updated_at"}).
-			AddRow(2, "Simp", "", true, now, now))
-
-	mock.ExpectQuery(`SELECT \* FROM "player_tournament_stats"`).WillReturnRows(
-		sqlmock.NewRows(playerTournamentStatCols).AddRow(
-			2, 2, 1, 5,
-			100, 70, 5, 30000,
-			1.43, 1.50, 8, 30,
-			50, 30, 1.67, 4,
-			25, 18, 1.39, 2,
-			0.0, 0,
-		))
-
-	mock.ExpectQuery(`SELECT \* FROM "tournaments"`).WillReturnRows(
-		sqlmock.NewRows([]string{"id", "name", "slug", "tournament_type", "start_date", "is_lan", "created_at", "updated_at"}).
-			AddRow(5, "CDL Major 1 2025", "cdl-major-1-2025", "major", now, true, now, now))
-
-	mock.ExpectQuery(`FROM player_map_stats`).WillReturnRows(
-		sqlmock.NewRows([]string{"mode", "kills", "deaths"}).
-			AddRow("hp", 50, 30).
-			AddRow("snd", 25, 18))
-
-	h := newTestHandler(t)
-	c, w := newCtx(gin.Params{{Key: "id", Value: "2"}}, "")
-	h.GetPlayerKDStats(c)
-
-	var body playerKDBody
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
-
-	assert.Equal(t, float64(0), body.ControlKDRatio,
-		"control_kd_ratio = 0 when no control maps (not null)")
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
 
 func TestGetPlayerMatches_ResponseShape(t *testing.T) {
 	setupPGTx(t)

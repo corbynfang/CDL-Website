@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"strconv"
@@ -20,7 +21,7 @@ func (h *Handler) GetTopKDPlayers(c *gin.Context) {
 		}
 	}
 
-	ctx, cancel := getContext(15)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	rows, err := h.stats.GetTopKD(ctx, limit)
@@ -46,7 +47,7 @@ func (h *Handler) GetAllPlayersKDStats(c *gin.Context) {
 		}
 	}
 
-	ctx, cancel := getContext(30)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 
 	rows, err := h.stats.GetAllKD(ctx, limit, c.Query("season_id"))

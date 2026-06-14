@@ -19,20 +19,28 @@ var (
 	visitorsMu sync.Mutex
 )
 
+var done = make(chan struct{})
+
 func init() {
-	go cleanupVisitors()
+	go cleanupVisitors(done)
 }
 
-func cleanupVisitors() {
+func cleanupVisitors(done <-chan struct{}) { // learning new goroutines i can do
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
 	for {
-		time.Sleep(time.Minute)
-		visitorsMu.Lock()
-		for ip, v := range visitors {
-			if time.Since(v.lastSeen) > 5*time.Minute {
-				delete(visitors, ip)
+		select {
+		case <-ticker.C:
+			visitorsMu.Lock()
+			for ip, v := range visitors {
+				if time.Since(v.lastSeen) > 5*time.Minute {
+					delete(visitors, ip)
+				}
 			}
+			visitorsMu.Unlock()
+		case <-done:
+			return
 		}
-		visitorsMu.Unlock()
 	}
 }
 

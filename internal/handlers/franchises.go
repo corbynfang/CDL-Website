@@ -1,14 +1,16 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) GetFranchises(c *gin.Context) {
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	franchises, err := h.franchises.List(ctx)
@@ -26,7 +28,7 @@ func (h *Handler) GetFranchise(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing franchise key"})
 		return
 	}
-	ctx, cancel := getContext(10)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
 	detail, err := h.franchises.GetByKey(ctx, key)

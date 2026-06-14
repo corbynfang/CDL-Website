@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"time"
@@ -12,7 +13,7 @@ import (
 func (h *Handler) GetTransfers(c *gin.Context) {
 	noCacheHeaders(c)
 
-	ctx, cancel := getContext(15)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
 	transfers, err := h.transfers.List(ctx, services.TransferFilters{
