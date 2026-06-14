@@ -1,0 +1,9 @@
+# Local secret values — never commit
+terraform.tfvars
+*.tfvars
+
+# Local state (using S3 backend, but just in case)
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
