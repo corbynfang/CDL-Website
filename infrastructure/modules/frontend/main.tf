@@ -50,15 +50,10 @@ resource "aws_s3_bucket_policy" "frontend" {
   })
 }
 
-# --- Route 53 Hosted Zone ---
-# After terraform apply, point your domain registrar's nameservers at these NS records.
-
 resource "aws_route53_zone" "main" {
   name = var.domain_name
   tags = var.tags
 }
-
-# --- ACM Certificate (must be us-east-1 for CloudFront) ---
 
 resource "aws_acm_certificate" "main" {
   domain_name               = var.domain_name
@@ -72,7 +67,6 @@ resource "aws_acm_certificate" "main" {
   tags = var.tags
 }
 
-# Terraform automatically creates the CNAME records Route 53 needs to validate the cert
 resource "aws_route53_record" "cert_validation" {
   for_each = {
     for dvo in aws_acm_certificate.main.domain_validation_options : dvo.domain_name => {
@@ -94,10 +88,6 @@ resource "aws_acm_certificate_validation" "main" {
   certificate_arn         = aws_acm_certificate.main.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
-
-# --- CloudFront Response Headers Policy ---
-# Adds security headers to every response CloudFront sends to browsers.
-# Covers both the API and S3/frontend paths.
 
 resource "aws_cloudfront_response_headers_policy" "security" {
   name = "${var.prefix}-security-headers"
@@ -127,8 +117,6 @@ resource "aws_cloudfront_response_headers_policy" "security" {
   }
 }
 
-# --- CloudFront Distribution ---
-
 resource "aws_cloudfront_distribution" "main" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -143,15 +131,14 @@ resource "aws_cloudfront_distribution" "main" {
     origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
   }
 
-  # Origin 2: ALB (serves the Go API)
   origin {
-    origin_id   = "alb-api"
-    domain_name = var.alb_dns_name
+    origin_id   = "apigw-api"
+    domain_name = var.api_gateway_domain
 
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only" # ALB only has an HTTP listener
+      origin_protocol_policy = "https-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
@@ -175,10 +162,10 @@ resource "aws_cloudfront_distribution" "main" {
     max_ttl     = 31536000 # 1 year
   }
 
-  # Ordered behavior: /api/* goes to the ALB, not cached.
+  # Ordered behavior: /api/* goes to API Gateway, not cached.
   ordered_cache_behavior {
     path_pattern               = "/api/*"
-    target_origin_id           = "alb-api"
+    target_origin_id           = "apigw-api"
     viewer_protocol_policy     = "redirect-to-https"
     allowed_methods            = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods             = ["GET", "HEAD"]
@@ -227,8 +214,6 @@ resource "aws_cloudfront_distribution" "main" {
 
   depends_on = [aws_acm_certificate_validation.main]
 }
-
-# --- DNS Records (point cdlytics.com at CloudFront) ---
 
 resource "aws_route53_record" "root" {
   zone_id = aws_route53_zone.main.zone_id

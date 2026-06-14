@@ -34,13 +34,13 @@ variable "supabase_url" {
   type        = string
 }
 
-variable "target_group_arn" {
-  description = "ALB target group to register the container with"
+variable "cloud_map_service_arn" {
+  description = "Cloud Map service ARN — ECS registers task IPs here for API Gateway routing"
   type        = string
 }
 
-variable "alb_security_group_id" {
-  description = "ALB security group — ECS allows inbound from this SG only"
+variable "vpc_link_security_group_id" {
+  description = "API Gateway VPC Link security group — ECS tasks allow inbound from this SG only"
   type        = string
 }
 

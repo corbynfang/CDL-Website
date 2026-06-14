@@ -48,15 +48,15 @@ resource "aws_cloudwatch_log_group" "ecs" {
 # --- Security Group for ECS Tasks ---
 resource "aws_security_group" "tasks" {
   name        = "${var.prefix}-ecs-tasks-sg"
-  description = "Allow inbound from ALB only"
+  description = "Allow inbound from ALB only" # description is immutable in AWS; kept as-is to avoid SG replacement
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "API port from ALB"
+    description     = "API port from VPC Link"
     from_port       = var.container_port
     to_port         = var.container_port
     protocol        = "tcp"
-    security_groups = [var.alb_security_group_id]
+    security_groups = [var.vpc_link_security_group_id]
   }
 
   egress {
@@ -138,8 +138,14 @@ resource "aws_ecs_service" "api" {
   name            = "${var.prefix}-api"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.api.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
+  desired_count = 1
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 1
+  }
+
+  force_new_deployment = true
 
   network_configuration {
     subnets          = var.subnet_ids
@@ -147,10 +153,10 @@ resource "aws_ecs_service" "api" {
     assign_public_ip = true # Fargate in public subnet needs a public IP to pull from ECR
   }
 
-  load_balancer {
-    target_group_arn = var.target_group_arn
-    container_name   = "${var.prefix}-api"
-    container_port   = var.container_port
+  service_registries {
+    registry_arn   = var.cloud_map_service_arn
+    container_name = "${var.prefix}-api"
+    container_port = var.container_port
   }
 
   deployment_minimum_healthy_percent = 50

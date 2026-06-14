@@ -2,8 +2,8 @@ variable "prefix" {
   type = string
 }
 
-variable "alb_dns_name" {
-  description = "DNS name of the ALB — CloudFront uses this as the API origin"
+variable "api_gateway_domain" {
+  description = "Hostname of the API Gateway HTTP API — CloudFront uses this as the API origin"
   type        = string
 }
 
