@@ -24,7 +24,12 @@ func TestSyncProfile_CreatesUser(t *testing.T) {
 	var user models.User
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &user))
 	assert.Equal(t, "TestUser", user.Username)
-	assert.Equal(t, "uid-sync", user.SupabaseUID)
+	var raw map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &raw))
+	assert.NotContains(t, raw, "supabase_uid")
+	var stored models.User
+	require.NoError(t, database.DB.Where("username = ?", "TestUser").First(&stored).Error)
+	assert.Equal(t, "uid-sync", stored.SupabaseUID)
 }
 
 func TestSyncProfile_Idempotent(t *testing.T) {

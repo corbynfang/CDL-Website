@@ -43,7 +43,7 @@ func TestAccountCreation_PostLinkedToUser(t *testing.T) {
 
 	user := post["user"].(map[string]any)
 	assert.Equal(t, "Corbyn", user["username"])
-	assert.Equal(t, uid, user["supabase_uid"])
+	assert.NotContains(t, user, "supabase_uid")
 }
 
 func TestDeleteAccount_CascadesToPosts(t *testing.T) {
