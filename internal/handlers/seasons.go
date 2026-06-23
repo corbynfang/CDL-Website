@@ -19,6 +19,7 @@ func (h *Handler) GetSeasons(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch seasons"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, seasons)
 }
 
@@ -36,6 +37,7 @@ func (h *Handler) GetSeason(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Season not found"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, season)
 }
 
@@ -48,5 +50,6 @@ func (h *Handler) GetActiveSeason(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "No active season found"})
 		return
 	}
+	shortCacheHeaders(c)
 	c.JSON(http.StatusOK, season)
 }

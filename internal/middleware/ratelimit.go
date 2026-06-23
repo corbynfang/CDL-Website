@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -57,9 +58,22 @@ func getVisitor(ip string) *rate.Limiter {
 	return v.limiter
 }
 
+// clientIP reads the leftmost IP from X-Forwarded-For, which is the real client
+// IP set by CloudFront before the ALB appends its own address. Falls back to
+// Gin's ClientIP() when the header is absent (direct connections, tests).
+func clientIP(c *gin.Context) string {
+	if xff := c.GetHeader("X-Forwarded-For"); xff != "" {
+		if idx := strings.IndexByte(xff, ','); idx > 0 {
+			return strings.TrimSpace(xff[:idx])
+		}
+		return strings.TrimSpace(xff)
+	}
+	return c.ClientIP()
+}
+
 func RateLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
+		ip := clientIP(c)
 
 		if !getVisitor(ip).Allow() {
 			c.Header("Retry-After", "1")

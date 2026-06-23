@@ -46,6 +46,7 @@ func (h *Handler) GetTeam(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Team not found"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, team)
 }
 
@@ -84,6 +85,7 @@ func (h *Handler) GetTeamPlayers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch team players"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, players)
 }
 
@@ -101,5 +103,6 @@ func (h *Handler) GetTeamStats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch team stats"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, stats)
 }

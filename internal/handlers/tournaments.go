@@ -19,6 +19,7 @@ func (h *Handler) GetTournaments(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tournaments"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, tournaments)
 }
 
@@ -31,6 +32,7 @@ func (h *Handler) GetTournamentBySlug(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tournament not found"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, detail)
 }
 
@@ -48,6 +50,7 @@ func (h *Handler) GetTournament(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tournament not found"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, tournament)
 }
 
@@ -65,6 +68,7 @@ func (h *Handler) GetTournamentBracket(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tournament not found"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, result)
 }
 
@@ -84,6 +88,7 @@ func (h *Handler) GetTournamentMatches(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch matches"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, matches)
 }
 
@@ -101,6 +106,7 @@ func (h *Handler) GetTournamentTeams(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tournament teams"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, teams)
 }
 
@@ -119,5 +125,6 @@ func (h *Handler) GetTournamentStats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stats"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, stats)
 }

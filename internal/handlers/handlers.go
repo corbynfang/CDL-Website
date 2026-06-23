@@ -77,6 +77,14 @@ func noCacheHeaders(c *gin.Context) {
 	c.Header("Expires", "0")
 }
 
+func shortCacheHeaders(c *gin.Context) {
+	c.Header("Cache-Control", "public, max-age=60, s-maxage=300")
+}
+
+func longCacheHeaders(c *gin.Context) {
+	c.Header("Cache-Control", "public, max-age=300, s-maxage=3600")
+}
+
 type PaginationMeta struct {
 	Page       int `json:"page"`
 	Limit      int `json:"limit"`

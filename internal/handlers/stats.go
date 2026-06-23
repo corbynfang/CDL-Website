@@ -12,8 +12,6 @@ import (
 )
 
 func (h *Handler) GetTopKDPlayers(c *gin.Context) {
-	noCacheHeaders(c)
-
 	limit := 25
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
@@ -30,16 +28,14 @@ func (h *Handler) GetTopKDPlayers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch top K/D players"})
 		return
 	}
+	shortCacheHeaders(c)
 	c.JSON(http.StatusOK, gin.H{
-		"timestamp": time.Now().Unix(),
-		"players":   rows,
-		"count":     len(rows),
+		"players": rows,
+		"count":   len(rows),
 	})
 }
 
 func (h *Handler) GetAllPlayersKDStats(c *gin.Context) {
-	noCacheHeaders(c)
-
 	limit := 100
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
@@ -66,9 +62,9 @@ func (h *Handler) GetAllPlayersKDStats(c *gin.Context) {
 		enriched[i] = enrichedRow{PlayerKDRow: row, SeasonKDPlusMinus: row.SeasonKD - 1.0}
 	}
 
+	shortCacheHeaders(c)
 	c.JSON(http.StatusOK, gin.H{
-		"timestamp": time.Now().Unix(),
-		"players":   enriched,
-		"count":     len(enriched),
+		"players": enriched,
+		"count":   len(enriched),
 	})
 }

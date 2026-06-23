@@ -23,13 +23,24 @@ func NewThreadService(s store.ThreadStore) *ThreadService {
 }
 
 func (ts *ThreadService) GetThread(ctx context.Context, matchID uint, page, limit int) ([]models.ThreadPost, int64, uint, error) {
-	thread, err := ts.store.GetOrCreateThread(ctx, matchID)
+	thread, err := ts.store.FindThread(ctx, matchID)
 	if err != nil {
 		return nil, 0, 0, err
+	}
+	if thread == nil {
+		return []models.ThreadPost{}, 0, 0, nil
 	}
 	offset := (page - 1) * limit
 	posts, total, err := ts.store.GetPostsByThreadID(ctx, thread.ID, limit, offset)
 	return posts, total, thread.ID, err
+}
+
+func (ts *ThreadService) EnsureThread(ctx context.Context, matchID uint) (uint, error) {
+	thread, err := ts.store.GetOrCreateThread(ctx, matchID)
+	if err != nil {
+		return 0, err
+	}
+	return thread.ID, nil
 }
 
 func (ts *ThreadService) CreatePost(ctx context.Context, threadID, userID uint, body string) (*models.ThreadPost, error) {

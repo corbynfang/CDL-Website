@@ -19,6 +19,7 @@ func (h *Handler) GetFranchises(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch franchises"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, franchises)
 }
 
@@ -36,5 +37,6 @@ func (h *Handler) GetFranchise(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Franchise not found"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, detail)
 }

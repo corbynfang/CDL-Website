@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/corbynfang/CDL-Website/internal/models"
@@ -10,6 +11,7 @@ import (
 )
 
 type ThreadStore interface {
+	FindThread(ctx context.Context, matchID uint) (*models.MatchThread, error)
 	GetOrCreateThread(ctx context.Context, matchID uint) (*models.MatchThread, error)
 	GetPostsByThreadID(ctx context.Context, threadID uint, limit, offset int) ([]models.ThreadPost, int64, error)
 	CreatePost(ctx context.Context, post *models.ThreadPost) error
@@ -21,6 +23,15 @@ type ThreadStore interface {
 type gormThreadStore struct{ db *gorm.DB }
 
 func NewGormThreadStore(db *gorm.DB) ThreadStore { return &gormThreadStore{db: db} }
+
+func (s *gormThreadStore) FindThread(ctx context.Context, matchID uint) (*models.MatchThread, error) {
+	var thread models.MatchThread
+	err := s.db.WithContext(ctx).Where("match_id = ?", matchID).First(&thread).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &thread, err
+}
 
 func (s *gormThreadStore) GetOrCreateThread(ctx context.Context, matchID uint) (*models.MatchThread, error) {
 	thread := models.MatchThread{MatchID: matchID}

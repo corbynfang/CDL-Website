@@ -28,5 +28,6 @@ func (h *Handler) GetMatch(c *gin.Context) {
 		}
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, detail)
 }

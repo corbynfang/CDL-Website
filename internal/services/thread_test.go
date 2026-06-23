@@ -20,6 +20,13 @@ type mockThreadStore struct {
 	deleteErr error
 }
 
+func (m *mockThreadStore) FindThread(_ context.Context, matchID uint) (*models.MatchThread, error) {
+	if m.thread != nil {
+		return m.thread, nil
+	}
+	return &models.MatchThread{ID: 1, MatchID: matchID}, nil
+}
+
 func (m *mockThreadStore) GetOrCreateThread(_ context.Context, matchID uint) (*models.MatchThread, error) {
 	if m.thread != nil {
 		return m.thread, nil

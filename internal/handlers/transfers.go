@@ -11,8 +11,6 @@ import (
 )
 
 func (h *Handler) GetTransfers(c *gin.Context) {
-	noCacheHeaders(c)
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
 	defer cancel()
 
@@ -27,8 +25,8 @@ func (h *Handler) GetTransfers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transfers"})
 		return
 	}
+	shortCacheHeaders(c)
 	c.JSON(http.StatusOK, gin.H{
-		"timestamp": time.Now().Unix(),
 		"transfers": transfers,
 		"count":     len(transfers),
 	})

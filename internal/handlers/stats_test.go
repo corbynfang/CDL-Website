@@ -14,9 +14,8 @@ import (
 )
 
 type statsEnvelope struct {
-	Timestamp int64            `json:"timestamp"`
-	Players   []map[string]any `json:"players"`
-	Count     int              `json:"count"`
+	Players []map[string]any `json:"players"`
+	Count   int              `json:"count"`
 }
 
 var statPlayerCols = []string{
@@ -37,7 +36,6 @@ func TestGetTopKDPlayers_ResponseShape(t *testing.T) {
 	var body statsEnvelope
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
 
-	assert.NotZero(t, body.Timestamp, "timestamp required")
 	assert.Equal(t, 1, body.Count, "count must equal len(players)")
 	require.Len(t, body.Players, 1)
 

@@ -26,6 +26,7 @@ func (h *Handler) GetPlayers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch players"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, gin.H{
 		"data":       players,
 		"pagination": buildMeta(page, limit, int(total)),
@@ -46,6 +47,7 @@ func (h *Handler) GetPlayer(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, player)
 }
 
@@ -63,6 +65,7 @@ func (h *Handler) GetPlayerStats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, stats)
 }
 
@@ -80,6 +83,7 @@ func (h *Handler) GetPlayerKDStats(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, result)
 }
 
@@ -97,6 +101,7 @@ func (h *Handler) GetPlayerMatches(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player matches"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, result)
 }
 
@@ -114,5 +119,6 @@ func (h *Handler) GetPlayerFranchiseCareer(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
 		return
 	}
+	longCacheHeaders(c)
 	c.JSON(http.StatusOK, result)
 }

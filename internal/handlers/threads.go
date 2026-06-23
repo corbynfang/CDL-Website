@@ -57,7 +57,7 @@ func (h *Handler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	_, _, threadID, err := h.threads.GetThread(ctx, uint(matchID), 1, 1)
+	threadID, err := h.threads.EnsureThread(ctx, uint(matchID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load thread"})
 		return
